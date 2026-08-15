@@ -1,3 +1,4 @@
+using AgentContext.Application.Dtos;
 namespace AgentContext.Application.Contracts;
 
 /// <summary>

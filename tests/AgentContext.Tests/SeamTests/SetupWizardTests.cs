@@ -1,5 +1,6 @@
 using AgentContext.Application.Setup;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;

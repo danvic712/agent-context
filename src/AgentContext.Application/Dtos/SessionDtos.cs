@@ -1,4 +1,4 @@
-namespace AgentContext.Application.Contracts;
+namespace AgentContext.Application.Dtos;
 
 /// <summary>
 /// Input for recording a Session (spec §6.1 save_session): domain tag, structured
