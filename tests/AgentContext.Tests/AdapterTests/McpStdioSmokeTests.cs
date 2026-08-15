@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using AgentContext.Tests.Testcontainers;
 
 namespace AgentContext.Tests.AdapterTests;
 
@@ -13,19 +14,11 @@ namespace AgentContext.Tests.AdapterTests;
 /// </summary>
 public sealed class McpStdioSmokeTests
 {
-    private static string AppBinaryPath()
-    {
-        // Copied from the host project's build output by the test csproj.
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "AppBin", "AgentContext.Host"));
-        Assert.True(File.Exists(path), $"App binary not found at {path}. Build the main project first.");
-        return path;
-    }
-
     private static Process StartStdioServer()
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = AppBinaryPath(),
+            FileName = McpProcess.AppBinaryPath,
             UseShellExecute = false,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
