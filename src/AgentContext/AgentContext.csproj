@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SpaRoot>web\</SpaRoot>
+  </PropertyGroup>
+
+  <!--
+    Build the React UI into wwwroot when the SPA source is newer than the last
+    build (or missing). Vite writes straight to ../wwwroot. Skip with
+    -p:SkipSpaBuild=true (used by the Dockerfile, which prebuilds the UI).
+  -->
+  <Target Name="BuildSpa" BeforeTargets="BeforeBuild" Condition="'$(SkipSpaBuild)' != 'true' And Exists('$(SpaRoot)package.json')">
+    <Exec Command="npm ci" WorkingDirectory="$(SpaRoot)" Condition="!Exists('$(SpaRoot)node_modules\.package-lock.json')" />
+    <Exec Command="npm run build" WorkingDirectory="$(SpaRoot)" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.*" />
+  </ItemGroup>
+
+</Project>

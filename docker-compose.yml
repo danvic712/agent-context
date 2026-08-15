@@ -1,0 +1,31 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: agent_context
+      POSTGRES_PASSWORD: agent_context
+      POSTGRES_DB: agent_context
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_context -d agent_context"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ./src/AgentContext
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
