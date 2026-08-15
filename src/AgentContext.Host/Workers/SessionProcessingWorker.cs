@@ -1,4 +1,4 @@
-using AgentContext.Application.Sessions;
+using AgentContext.Application.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

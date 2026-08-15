@@ -1,4 +1,4 @@
-namespace AgentContext.Application.Sessions;
+namespace AgentContext.Application.Contracts;
 
 /// <summary>
 /// Session recording service (T2): persists a reported Session with Usage

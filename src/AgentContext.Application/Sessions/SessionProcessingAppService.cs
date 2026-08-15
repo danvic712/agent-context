@@ -1,6 +1,7 @@
 using AgentContext.Domain;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using AgentContext.Application.Contracts;
 
 namespace AgentContext.Application.Sessions;
 

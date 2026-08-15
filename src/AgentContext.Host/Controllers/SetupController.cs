@@ -1,4 +1,4 @@
-using AgentContext.Application.Setup;
+using AgentContext.Application.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentContext.Host.Controllers;
