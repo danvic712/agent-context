@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AgentContext.Application.Setup;
 
-/// <inheritdoc cref="ISetupService"/>
-public sealed class SetupService(AgentContextDbContext db) : ISetupService
+/// <inheritdoc cref="ISetupAppService"/>
+public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
 {
     public async Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
