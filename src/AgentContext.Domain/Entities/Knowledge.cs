@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Pgvector;
 
 namespace AgentContext.Domain.Entities;
@@ -36,10 +35,8 @@ public sealed class Knowledge
 
     /// <summary>
     /// pgvector embedding for semantic search (nullable until the pipeline embeds it).
-    /// Dimension 1536 matches the default OpenAI embedding model; migrate if the
-    /// configured endpoint requires another size.
+    /// Column type (vector(1536)) is configured fluently in KnowledgeConfiguration.
     /// </summary>
-    [Column(TypeName = "vector(1536)")]
     public Vector? Embedding { get; set; }
 
     public KnowledgeStatus Status { get; set; } = KnowledgeStatus.Active;
