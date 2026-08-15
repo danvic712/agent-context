@@ -3,6 +3,7 @@ using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 
 namespace AgentContext.Application.Setup;
 

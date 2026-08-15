@@ -1,6 +1,7 @@
 using AgentContext.Application;
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Host.Workers;

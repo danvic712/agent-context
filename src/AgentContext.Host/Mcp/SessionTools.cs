@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using ModelContextProtocol.Server;
 
 namespace AgentContext.Host.Mcp;

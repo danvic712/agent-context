@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using DomainEntity = AgentContext.Domain.Entities.Domain;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 
 namespace AgentContext.Application.Sessions;
 

@@ -1,5 +1,6 @@
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using AgentContext.Domain;
 using DomainEntity = AgentContext.Domain.Entities.Domain;
 using AgentContext.Domain.Entities;
