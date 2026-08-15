@@ -1,5 +1,5 @@
 services:
-  db:
+  Database:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: agent_context
@@ -15,18 +15,18 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
+  Host:
     image: danvic712/agent-context
     build:
       context: .
       dockerfile: Dockerfile
     environment:
-      ConnectionStrings__Default: Host=db;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
+      ConnectionStrings__Default: Host=Database;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       ASPNETCORE_URLS: http://+:8080
     ports:
       - "8080:8080"
     depends_on:
-      db:
+      Database:
         condition: service_healthy
 
 volumes:

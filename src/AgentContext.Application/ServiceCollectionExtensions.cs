@@ -3,7 +3,6 @@ using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Pgvector.EntityFrameworkCore;
 
 namespace AgentContext.Application;
 
@@ -16,11 +15,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
-
         services.AddDbContext<AgentContextDbContext>(options =>
-            options.UseNpgsql(connectionString, o => o.UseVector()));
+            DbContextOptionsFactory.Configure(options, configuration));
 
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();
