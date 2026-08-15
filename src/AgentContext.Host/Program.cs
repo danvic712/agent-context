@@ -1,6 +1,6 @@
 using AgentContext.Application;
 using AgentContext.Infrastructure;
-using AgentContext.Mcp;
+using AgentContext.Host.Mcp;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 

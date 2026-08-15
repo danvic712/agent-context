@@ -1,7 +1,7 @@
 using AgentContext.Application.Setup;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AgentContext.Controllers;
+namespace AgentContext.Host.Controllers;
 
 /// <summary>
 /// First-run wizard endpoints. The UI calls GET /api/setup to decide between the

@@ -1,6 +1,6 @@
 **/bin/
 **/obj/
 **/node_modules/
-wwwroot/
+**/wwwroot/
 .git/
 .gitignore

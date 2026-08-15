@@ -2,7 +2,7 @@ using AgentContext.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AgentContext.Controllers;
+namespace AgentContext.Host.Controllers;
 
 /// <summary>Liveness/readiness probe used by the UI and Docker health checks.</summary>
 [ApiController]

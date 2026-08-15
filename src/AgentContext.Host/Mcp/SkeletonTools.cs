@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using ModelContextProtocol.Server;
 
-namespace AgentContext.Mcp;
+namespace AgentContext.Host.Mcp;
 
 /// <summary>
 /// T1 skeleton placeholder tool proving the stdio MCP loop (list_tools → call_tool).

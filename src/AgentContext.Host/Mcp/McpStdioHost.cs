@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace AgentContext.Mcp;
+namespace AgentContext.Host.Mcp;
 
 /// <summary>
 /// The <c>--mcp-stdio</c> entrypoint (ADR 0006): a single-session MCP server over
@@ -17,7 +17,8 @@ public static class McpStdioHost
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        // Fully qualified: the AgentContext.Host namespace would shadow the Host type.
+        var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder(args);
 
         // All MCP protocol traffic goes over stdio; keep logs on stderr so they do
         // not corrupt the JSON-RPC stream.
