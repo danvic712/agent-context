@@ -14,14 +14,3 @@ public interface ISaveSessionAppService
 
     Task<IReadOnlyList<SessionListItem>> ListAsync(CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// Postgres-as-queue processing (ADR 0005): marks pending Sessions as processed.
-/// Called periodically by <c>SessionProcessingWorker</c>; crash-safe because the
-/// queue state lives in the database, not in memory.
-/// </summary>
-public interface ISessionProcessingAppService
-{
-    /// <summary>Marks all currently-pending sessions Completed. Returns how many were processed.</summary>
-    Task<int> MarkProcessedAsync(CancellationToken cancellationToken = default);
-}
