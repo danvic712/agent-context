@@ -1,3 +1,4 @@
+using AgentContext.Application.Sessions;
 using AgentContext.Application.Setup;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,10 @@ public static class ServiceCollectionExtensions
 
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();
+
+        // Session recording + Postgres-as-queue processing (T2)
+        services.AddScoped<ISaveSessionAppService, SaveSessionAppService>();
+        services.AddScoped<ISessionProcessingAppService, SessionProcessingAppService>();
 
         return services;
     }

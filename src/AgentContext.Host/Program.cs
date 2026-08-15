@@ -1,6 +1,7 @@
 using AgentContext.Application;
-using AgentContext.Infrastructure;
 using AgentContext.Host.Mcp;
+using AgentContext.Host.Workers;
+using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -20,6 +21,9 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 builder.Services.AddControllers();
 builder.Services.AddApplicationServices(builder.Configuration);
+
+// Postgres-as-queue scheduler (ADR 0005): marks pending Sessions processed.
+builder.Services.AddHostedService<SessionProcessingWorker>();
 
 var app = builder.Build();
 
