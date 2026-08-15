@@ -1,4 +1,4 @@
-namespace AgentContext.Application.Setup;
+namespace AgentContext.Application.Contracts;
 
 /// <summary>Current setup state of the platform (first-run wizard gate).</summary>
 public sealed record SetupStatus(bool Configured);

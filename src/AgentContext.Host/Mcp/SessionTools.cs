@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using AgentContext.Application.Sessions;
+using AgentContext.Application.Contracts;
 using ModelContextProtocol.Server;
 
 namespace AgentContext.Host.Mcp;

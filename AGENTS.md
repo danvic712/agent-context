@@ -15,3 +15,7 @@ Default five: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`
 ### Domain docs
 
 Single-context: root `CONTEXT.md` + `docs/adr/`. Read them before exploring. See `docs/agents/domain.md`.
+
+### Coding standards
+
+Root `CODING_STANDARDS.md` documents the repo's C# conventions (notably: interfaces and shared DTOs live in `Contracts` folders, implementations in feature folders).
