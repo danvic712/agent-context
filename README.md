@@ -46,10 +46,10 @@ Users (React UI)
 
 ```bash
 # API + UI (UI served from wwwroot; rebuilt by dotnet build via the SPA target)
-dotnet run --project src/AgentContext -- --web
+dotnet run --project src/AgentContext.Host -- --web
 
 # UI dev server with /api proxied to http://localhost:8080
-cd src/AgentContext/web && npm run dev
+cd web && npm run dev
 ```
 
 Tests run against a real Postgres with pgvector via Testcontainers:
@@ -60,14 +60,20 @@ dotnet test
 
 ## Repository layout
 
+C# split into class libraries by system function, one host project (dual-mode):
+
 ```
-src/AgentContext/        single dual-mode project
-  Controllers/           REST API endpoints
-  Application/           AddApplicationServices + application services (primary test seam)
-  Domain/                MVP entities (Workspace/Domain/User/Membership/Session/Knowledge/Skill/Usage)
-  Infrastructure/        EF Core DbContext + migrations
-  Mcp/                   stdio MCP host + tools
-  web/                   React UI (Vite + TS + shadcn/ui), built into wwwroot
-tests/AgentContext.Tests seam tests (application services against Testcontainers pgvector) + adapter smoke tests
-docker-compose.yml       app + Postgres(pgvector)
+src/AgentContext.Domain/        entities + enums (no dependencies beyond pgvector types)
+src/AgentContext.Infrastructure/ EF Core DbContext + migrations + design-time factory
+src/AgentContext.Application/   application services (primary test seam) + AddApplicationServices
+src/AgentContext.Host/          dual-mode entrypoint: Program (--web / --mcp-stdio),
+                                REST Controllers/, stdio Mcp/, wwwroot (built UI)
+web/                            React UI (Vite + TS + shadcn/ui), built into the host's wwwroot
+tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)
+                                + adapter smoke tests
+AgentContext.slnx               solution (new XML format)
+Dockerfile · docker-compose.yml app + Postgres(pgvector)
 ```
+
+Versions are centralised in `Directory.Packages.props` (CPM, transitive pinning on).
+

@@ -17,7 +17,8 @@ services:
 
   app:
     build:
-      context: ./src/AgentContext
+      context: .
+      dockerfile: Dockerfile
     environment:
       ConnectionStrings__Default: Host=db;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       ASPNETCORE_URLS: http://+:8080

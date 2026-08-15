@@ -19,8 +19,9 @@ export default defineConfig({
     },
   },
   build: {
-    // Production build lands directly in wwwroot so the ASP.NET host serves it.
-    outDir: '../wwwroot',
+    // Production build lands directly in the ASP.NET host's wwwroot so the
+    // host serves the UI without any copy step.
+    outDir: '../src/AgentContext.Host/wwwroot',
     emptyOutDir: true,
   },
 })
