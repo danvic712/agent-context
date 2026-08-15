@@ -12,6 +12,19 @@ namespace AgentContext.Infrastructure;
 /// </summary>
 public static class DbContextOptionsFactory
 {
+    /// <summary>
+    /// Configuration for design-time tooling (dotnet ef), built from the same
+    /// sources the runtime host uses (appsettings.json, environment-specific
+    /// appsettings, environment variables) so the two paths cannot drift.
+    /// </summary>
+    public static IConfigurationRoot BuildDesignTimeConfiguration(string basePath)
+        => new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
     public static string GetConnectionString(IConfiguration configuration)
         => configuration.GetConnectionString("Default")
            ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
