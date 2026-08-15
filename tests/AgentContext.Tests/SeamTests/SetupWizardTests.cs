@@ -24,7 +24,7 @@ public sealed class SetupWizardTests : PostgresTestBase
     public async Task Fresh_platform_is_not_configured()
     {
         await using var db = await MigratedContextAsync();
-        var service = new SetupService(db);
+        var service = new SetupAppService(db);
 
         var status = await service.GetStatusAsync();
 
@@ -35,7 +35,7 @@ public sealed class SetupWizardTests : PostgresTestBase
     public async Task Configure_creates_admin_user_and_personal_workspace()
     {
         await using var db = await MigratedContextAsync();
-        var service = new SetupService(db);
+        var service = new SetupAppService(db);
 
         var result = await service.ConfigureAsync(
             new SetupRequest("Danvic", "danvic@example.com", "correct-horse-battery"));
@@ -60,7 +60,7 @@ public sealed class SetupWizardTests : PostgresTestBase
     public async Task Configure_rejects_invalid_input()
     {
         await using var db = await MigratedContextAsync();
-        var service = new SetupService(db);
+        var service = new SetupAppService(db);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.ConfigureAsync(new SetupRequest("", "danvic@example.com", "password123")));
@@ -76,7 +76,7 @@ public sealed class SetupWizardTests : PostgresTestBase
     public async Task Rerunning_wizard_is_blocked_once_configured()
     {
         await using var db = await MigratedContextAsync();
-        var service = new SetupService(db);
+        var service = new SetupAppService(db);
 
         await service.ConfigureAsync(new SetupRequest("Danvic", "danvic@example.com", "correct-horse-battery"));
         var status = await service.GetStatusAsync();

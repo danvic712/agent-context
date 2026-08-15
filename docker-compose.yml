@@ -16,6 +16,7 @@ services:
       retries: 10
 
   app:
+    image: danvic712/agent-context
     build:
       context: .
       dockerfile: Dockerfile

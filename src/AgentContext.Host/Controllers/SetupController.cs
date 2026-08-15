@@ -9,7 +9,7 @@ namespace AgentContext.Host.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/setup")]
-public sealed class SetupController(ISetupService setup) : ControllerBase
+public sealed class SetupController(ISetupAppService setup) : ControllerBase
 {
     /// <summary>Whether the platform has been configured (admin User + Workspace exist).</summary>
     [HttpGet]

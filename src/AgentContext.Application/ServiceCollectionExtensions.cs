@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(connectionString, o => o.UseVector()));
 
         // First-run wizard
-        services.AddScoped<ISetupService, SetupService>();
+        services.AddScoped<ISetupAppService, SetupAppService>();
 
         return services;
     }

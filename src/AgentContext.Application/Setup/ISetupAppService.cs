@@ -23,7 +23,7 @@ public sealed class SetupAlreadyConfiguredException : InvalidOperationException
 /// First-run wizard service. Runs against a real Postgres via the application
 /// service seam (the primary test seam per spec §Testing Decisions).
 /// </summary>
-public interface ISetupService
+public interface ISetupAppService
 {
     Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken = default);
 
