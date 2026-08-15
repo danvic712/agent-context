@@ -1,4 +1,5 @@
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,9 +7,10 @@ using Microsoft.Extensions.Logging;
 namespace AgentContext.Host.Workers;
 
 /// <summary>
-/// Periodic scheduler for the Postgres-as-queue (ADR 0005): polls for pending
-/// Sessions and marks them processed. No extraction yet (T3). Only a scheduler —
-/// the behaviour lives in <see cref="ISessionProcessingAppService"/>.
+/// Periodic scheduler for the Postgres-as-queue (ADR 0005): polls for an
+/// eligible pending Session and runs the Learning Engine pipeline on it.
+/// Only a scheduler — the behaviour lives in <see cref="ILearningPipelineAppService"/>
+/// (T3, issue #4), so the same seam drives tests and the worker (AC5).
 /// </summary>
 public sealed class SessionProcessingWorker(
     IServiceScopeFactory scopeFactory,
@@ -26,11 +28,15 @@ public sealed class SessionProcessingWorker(
             try
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
-                var processor = scope.ServiceProvider.GetRequiredService<ISessionProcessingAppService>();
-                var processed = await processor.MarkProcessedAsync(stoppingToken);
-                if (processed > 0)
+                var pipeline = scope.ServiceProvider.GetRequiredService<ILearningPipelineAppService>();
+                var result = await pipeline.ProcessNextAsync(stoppingToken);
+
+                if (result.Outcome is not (PipelineOutcome.Idle or PipelineOutcome.NotClaimed))
                 {
-                    logger.LogInformation("Marked {Count} pending session(s) processed.", processed);
+                    logger.LogInformation(
+                        "Pipeline {Outcome} for session {SessionId}: {Created} Knowledge created, " +
+                        "{Corroborated} corroborated.",
+                        result.Outcome, result.SessionId, result.KnowledgeCreated, result.KnowledgeCorroborated);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -39,7 +45,7 @@ public sealed class SessionProcessingWorker(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Session processing tick failed; will retry on the next tick.");
+                logger.LogError(ex, "Learning Engine tick failed; will retry on the next tick.");
             }
         }
     }

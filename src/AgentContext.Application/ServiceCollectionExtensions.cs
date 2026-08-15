@@ -1,10 +1,12 @@
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Learning;
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Setup;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AgentContext.Application;
 
@@ -23,9 +25,18 @@ public static class ServiceCollectionExtensions
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();
 
-        // Session recording + Postgres-as-queue processing (T2)
+        // Session recording (T2)
         services.AddScoped<ISaveSessionAppService, SaveSessionAppService>();
-        services.AddScoped<ISessionProcessingAppService, SessionProcessingAppService>();
+
+        // Learning Engine (T3, issue #4): configured OpenAI-compatible LLM endpoint
+        // (ADR 0003) + the pipeline. LlmOptionsValidator runs on every resolve, so an
+        // invalid/missing Llm config fails where the pipeline uses it (the worker
+        // tick) without blocking platform startup/setup. The worker schedules via
+        // ILearningPipelineAppService.ProcessNextAsync; tests drive ProcessAsync directly.
+        services.AddOptions<LlmOptions>().Bind(configuration.GetSection(LlmOptions.SectionName));
+        services.AddSingleton<IValidateOptions<LlmOptions>, LlmOptionsValidator>();
+        services.AddSingleton<ILlmClient, LlmClient>();
+        services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();
 
         return services;
     }
