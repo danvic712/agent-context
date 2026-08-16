@@ -25,8 +25,8 @@ public sealed class McpStdioSmokeTests
             RedirectStandardError = true,
             Environment =
             {
-                // The shared DI requires a connection string even though the
-                // skeleton echo tool never touches the database.
+                // The shared DI requires a connection string; the toolset tests
+                // only list tools here, so an unreachable host is fine.
                 ["ConnectionStrings__Default"] = "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none",
             },
         };
@@ -91,7 +91,10 @@ public sealed class McpStdioSmokeTests
             {
                 var tools = doc.RootElement.GetProperty("result").GetProperty("tools");
                 var names = tools.EnumerateArray().Select(t => t.GetProperty("name").GetString()).ToList();
-                Assert.Contains("echo", names);
+                // The v1 toolset (spec §6.1 / T9 AC1): exactly these five tools.
+                Assert.Equal(
+                    new[] { "find_similar_solution", "get_skill", "rate_knowledge", "save_session", "search_memory" },
+                    names.OrderBy(n => n).ToArray());
             }
 
             // 3. closing stdin ends the server → clean exit
