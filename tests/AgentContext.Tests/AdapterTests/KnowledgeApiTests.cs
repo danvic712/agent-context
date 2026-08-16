@@ -82,12 +82,22 @@ public sealed class KnowledgeApiTests : PostgresTestBase
     }
 
     [Fact]
-    public async Task Review_returns_only_below_threshold_items_through_rest()
+    public async Task Review_returns_only_review_status_items_through_rest()
     {
         var (_, client) = await SeededAsync(
             llm: null,
             Item("alpha", KnowledgeType.Solution, confidence: 0.8),
             Item("beta", KnowledgeType.Pattern, confidence: 0.3));
+        // Move beta into Review (T8: Review is an explicit status).
+        await using (var db = Fixture.CreateDbContext())
+        {
+            var betaId = await db.Knowledge.AsNoTracking()
+                .Where(k => k.Content == "beta")
+                .Select(k => k.Id)
+                .SingleAsync();
+            await db.Knowledge.Where(k => k.Id == betaId)
+                .ExecuteUpdateAsync(s => s.SetProperty(k => k.Status, KnowledgeStatus.Review));
+        }
 
         var review = await client.GetFromJsonAsync<JsonElement>("/api/knowledge/review");
 
@@ -138,6 +148,43 @@ public sealed class KnowledgeApiTests : PostgresTestBase
         var notUseful = await client.PostAsJsonAsync($"/api/knowledge/{alphaId}/rate", new { useful = false });
         var cleared = (await notUseful.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("confidence").GetDouble();
         Assert.Equal(0, cleared);
+    }
+
+    [Fact]
+    public async Task Archived_list_and_restore_work_through_rest()
+    {
+        var (_, client) = await SeededAsync(llm: null, Item("alpha"));
+        var alphaId = await KnowledgeIdAsync(client, "alpha");
+        await using (var db = Fixture.CreateDbContext())
+        {
+            await db.Knowledge.Where(k => k.Id == alphaId)
+                .ExecuteUpdateAsync(s => s.SetProperty(k => k.Status, KnowledgeStatus.Archived));
+        }
+
+        // Archived list shows the item.
+        var archived = await client.GetFromJsonAsync<JsonElement>("/api/knowledge/archived");
+        Assert.Equal("alpha", Assert.Single(archived.EnumerateArray()).GetProperty("content").GetString());
+
+        // Restore brings it back to Active.
+        var restore = await client.PostAsync($"/api/knowledge/{alphaId}/restore", null);
+        Assert.Equal(HttpStatusCode.NoContent, restore.StatusCode);
+
+        var all = await client.GetFromJsonAsync<JsonElement>("/api/knowledge");
+        Assert.Contains(all.EnumerateArray(), i => i.GetProperty("content").GetString() == "alpha");
+        var archivedAfter = await client.GetFromJsonAsync<JsonElement>("/api/knowledge/archived");
+        Assert.Equal(0, archivedAfter.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Restore_unknown_or_non_archived_id_returns_404()
+    {
+        var (_, client) = await SeededAsync(llm: null, Item("alpha"));
+        var alphaId = await KnowledgeIdAsync(client, "alpha");
+
+        // Active item is not archived → restore must 404.
+        var response = await client.PostAsync($"/api/knowledge/{alphaId}/restore", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

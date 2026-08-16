@@ -185,3 +185,36 @@ export async function deletePricing(model: string): Promise<void> {
   await http.delete(`/analytics/pricing/${encodeURIComponent(model)}`)
 }
 
+export interface EngineHealth {
+  queuedSessions: number
+  processingSessions: number
+  failedSessions: number
+  retryScheduledSessions: number
+  totalSessions: number
+}
+
+export interface HygieneResult {
+  decayed: number
+  movedToReview: number
+  archived: number
+}
+
+export async function getEngineHealth(): Promise<EngineHealth> {
+  const { data } = await http.get<EngineHealth>('/health/engine')
+  return data
+}
+
+export async function listArchivedKnowledge(): Promise<KnowledgeItem[]> {
+  const { data } = await http.get<KnowledgeItem[]>('/knowledge/archived')
+  return data
+}
+
+export async function restoreKnowledge(id: string): Promise<void> {
+  await http.post(`/knowledge/${id}/restore`)
+}
+
+export async function runHygiene(): Promise<HygieneResult> {
+  const { data } = await http.post<HygieneResult>('/knowledge/hygiene/run')
+  return data
+}
+

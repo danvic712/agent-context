@@ -25,14 +25,24 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
 
     public async Task<ReviewKnowledgeResult> ListReviewAsync(CancellationToken cancellationToken = default)
     {
-        var items = await ActiveItems()
-            .Where(k => k.Confidence < RetrievalDefaults.MinConfidence)
+        // T8: Review is an explicit status (hygiene moves decayed items here,
+        // rate_knowledge(not-useful) clears into it). The threshold is attached
+        // for the UI's label — the item set comes from the status, not a query.
+        var items = await db.Knowledge.AsNoTracking()
+            .Where(k => k.Status == KnowledgeStatus.Review)
             .OrderBy(k => k.Confidence)
             .Select(ToItem)
             .ToListAsync(cancellationToken);
 
         return new ReviewKnowledgeResult(RetrievalDefaults.MinConfidence, items);
     }
+
+    public async Task<IReadOnlyList<KnowledgeListItem>> ListArchivedAsync(CancellationToken cancellationToken = default)
+        => await db.Knowledge.AsNoTracking()
+            .Where(k => k.Status == KnowledgeStatus.Archived)
+            .OrderByDescending(k => k.UpdatedAtUtc)
+            .Select(ToItem)
+            .ToListAsync(cancellationToken);
 
     public async Task UpdateVisibilityAsync(Guid id, bool isPrivate, CancellationToken cancellationToken = default)
     {
@@ -60,6 +70,23 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
         }
     }
 
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // AC4 (T8): a user can restore an archived item back to Active. The
+        // restored item is treated as freshly used so decay does not re-archive it.
+        var updated = await db.Knowledge
+            .Where(k => k.Id == id && k.Status == KnowledgeStatus.Archived)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(k => k.Status, KnowledgeStatus.Active)
+                .SetProperty(k => k.LastUsedAtUtc, DateTimeOffset.UtcNow)
+                .SetProperty(k => k.UpdatedAtUtc, DateTimeOffset.UtcNow), cancellationToken);
+
+        if (updated == 0)
+        {
+            throw new KeyNotFoundException($"Archived knowledge {id} not found.");
+        }
+    }
+
     public async Task<RateKnowledgeResult> RateAsync(Guid id, bool useful, CancellationToken cancellationToken = default)
     {
         var current = await db.Knowledge.AsNoTracking()
@@ -72,19 +99,20 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
             throw new KeyNotFoundException($"Knowledge {id} not found.");
         }
 
-        // T5 ticket: rate_knowledge(useful) is the "citation confirms" signal —
-        // +0.1 capped at 1.0; not-useful clears to 0 (the item then falls below
-        // the retrieval threshold → review list). Full citation tracking lands
-        // with retrieval-feedback work; temporal decay is T8.
+        // rate_knowledge(useful) confirms: +0.1 capped at 1.0, and the item is
+        // pulled back to Active (it was confirmed useful). not-useful clears to 0
+        // and moves the item into Review (T8: Review is an explicit status).
         var next = useful
             ? Math.Min(LearningPipelineDefaults.MaxConfidence,
                 current.Value + LearningPipelineDefaults.RateConfidenceBump)
             : 0;
+        var nextStatus = useful ? KnowledgeStatus.Active : KnowledgeStatus.Review;
 
         await db.Knowledge
             .Where(k => k.Id == id)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(k => k.Confidence, next)
+                .SetProperty(k => k.Status, nextStatus)
                 .SetProperty(k => k.UpdatedAtUtc, DateTimeOffset.UtcNow), cancellationToken);
 
         return new RateKnowledgeResult(id, next);

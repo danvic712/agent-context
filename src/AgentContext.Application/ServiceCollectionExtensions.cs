@@ -1,5 +1,6 @@
 using AgentContext.Application.Analytics;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Hygiene;
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Pricing;
@@ -50,6 +51,10 @@ public static class ServiceCollectionExtensions
         // Session overview analytics + model pricing (T7, issue #8)
         services.AddScoped<IPricingAppService, PricingAppService>();
         services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
+
+        // Knowledge hygiene + engine health (T8, issue #9)
+        services.AddScoped<IKnowledgeHygieneAppService, KnowledgeHygieneAppService>();
+        services.AddScoped<IEngineHealthAppService, EngineHealthAppService>();
 
         return services;
     }
