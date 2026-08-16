@@ -130,17 +130,31 @@ export function SkillPackageView({ detail, onChanged, onDeleted, onPublish }: Sk
     }
   }
 
-  const renameFile = async (from: string, to: string) => {
+  const renamePath = async (from: string, to: string) => {
     setError(null)
     setNotice(null)
+    // A rename can target a single file or a whole folder: every manifest entry
+    // under the source path is copied to the new path (byte-exact, Blob), then
+    // the originals are deleted — write-all-then-delete keeps data safe if a
+    // write fails midway.
+    const prefix = `${from}/`
+    const affected = detail.manifest.filter((f) => f.path === from || f.path.startsWith(prefix))
+    if (affected.length === 0) return
+
     try {
-      const blob = await readSkillFile(detail.id, from)
-      const content = await blob.text()
-      const created = await writeSkillFile(detail.id, to, content)
-      const updated = await deleteSkillFile(detail.id, from)
-      void created
+      let updated = detail
+      let newActive: string | null = null
+      for (const f of affected) {
+        const blob = await readSkillFile(detail.id, f.path)
+        const newPath = f.path === from ? to : to + f.path.slice(from.length)
+        if (activeFile === f.path) newActive = newPath
+        updated = await writeSkillFile(detail.id, newPath, blob)
+      }
+      for (const f of affected) {
+        updated = await deleteSkillFile(detail.id, f.path)
+      }
       refresh(updated)
-      setActiveFile(to)
+      if (newActive) setActiveFile(newActive)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('skills.renameFailed'))
     }
@@ -264,7 +278,7 @@ export function SkillPackageView({ detail, onChanged, onDeleted, onPublish }: Sk
             }}
             onCreateFile={createFile}
             onCreateFolder={createFolder}
-            onRename={renameFile}
+            onRename={renamePath}
             onDelete={removeFile}
           />
         </div>
