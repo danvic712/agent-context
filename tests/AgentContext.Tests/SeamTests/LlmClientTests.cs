@@ -1,10 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using AgentContext.Application.Contracts;
 using AgentContext.Application.Learning;
 using AgentContext.Domain;
-using Microsoft.Extensions.Options;
+using AgentContext.Tests.Fakes;
 
 namespace AgentContext.Tests.SeamTests;
 
@@ -110,7 +109,7 @@ public sealed class LlmClientTests
             Model = "llama3.2",
         };
         configure?.Invoke(options);
-        return new LlmClient(Options.Create(options), handler?.ToHttpClient());
+        return new LlmClient(new FakeSettingsAppService(options), handler?.ToHttpClient());
     }
 
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)

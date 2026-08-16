@@ -1,6 +1,8 @@
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Enums;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Settings;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
@@ -25,11 +27,19 @@ public sealed class LearningPipelineTests : PostgresTestBase
         "A concrete fix: configure the connection string with a thirty second timeout and retry with " +
         "exponential backoff so transient database outages never surface to callers.";
 
+    private static LlmOptions TestLlmOptions() => new()
+    {
+        BaseUrl = "http://localhost:11434/v1",
+        ApiKey = "test-key",
+        Model = "llama3.2",
+    };
+
     private async Task<(AgentContextDbContext Db, Guid SessionId)> SeededPendingSessionAsync(
         bool withDomain = true, string summary = """{"task":"t","conclusion":"c"}""")
     {
         var db = Fixture.CreateDbContext();
         await db.Database.MigrateAsync();
+        await new SettingsAppService(db).SaveLlmOptionsAsync(TestLlmOptions());
 
         var workspace = new Workspace { Name = "W", Type = WorkspaceType.Personal };
         db.Workspaces.Add(workspace);
@@ -62,6 +72,7 @@ public sealed class LearningPipelineTests : PostgresTestBase
     {
         var db = Fixture.CreateDbContext();
         await db.Database.MigrateAsync();
+        await new SettingsAppService(db).SaveLlmOptionsAsync(TestLlmOptions());
         var workspace = new Workspace { Name = "W", Type = WorkspaceType.Personal };
         var domain = new DomainEntity { WorkspaceId = workspace.Id, Name = "dev", IsShared = false };
         db.Workspaces.Add(workspace);
@@ -82,7 +93,7 @@ public sealed class LearningPipelineTests : PostgresTestBase
     }
 
     private static LearningPipelineAppService Pipeline(AgentContextDbContext db, FakeLlmClient llm) =>
-        new(db, llm, NullLogger<LearningPipelineAppService>.Instance);
+        new(db, llm, new SettingsAppService(db), NullLogger<LearningPipelineAppService>.Instance);
 
     [Fact]
     public async Task ProcessAsync_creates_knowledge_with_confidence_and_embedding_then_completes_session()
@@ -169,6 +180,33 @@ public sealed class LearningPipelineTests : PostgresTestBase
 
         Assert.Equal(PipelineOutcome.NotClaimed, second.Outcome);
         Assert.Equal(1, await db.Knowledge.CountAsync());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_is_idle_and_leaves_session_pending_when_llm_not_configured()
+    {
+        // The endpoint lives in the settings table; without it the pipeline must
+        // not claim (and therefore never fail) Sessions — it idles until configured.
+        var db = Fixture.CreateDbContext();
+        await db.Database.MigrateAsync();
+        var workspace = new Workspace { Name = "W", Type = WorkspaceType.Personal };
+        var domain = new DomainEntity { WorkspaceId = workspace.Id, Name = "dev", IsShared = false };
+        db.Workspaces.Add(workspace);
+        db.Domains.Add(domain);
+        var session = new Session
+        {
+            WorkspaceId = workspace.Id, DomainId = domain.Id, AgentName = "a",
+            Task = "t", Conclusion = "c", SummaryJson = "{}", Status = SessionStatus.Pending,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+
+        var result = await Pipeline(db, new FakeLlmClient()).ProcessAsync(session.Id);
+
+        Assert.Equal(PipelineOutcome.Idle, result.Outcome);
+        Assert.Null(result.SessionId);
+        Assert.Equal(SessionStatus.Pending, (await db.Sessions.AsNoTracking().SingleAsync()).Status);
+        Assert.Equal(0, await db.Knowledge.CountAsync());
     }
 
     [Fact]

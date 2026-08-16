@@ -1,5 +1,6 @@
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Enums;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
@@ -24,6 +25,7 @@ namespace AgentContext.Application.Learning;
 public sealed class LearningPipelineAppService(
     AgentContextDbContext db,
     ILlmClient llm,
+    ISettingsAppService settings,
     ILogger<LearningPipelineAppService> logger) : ILearningPipelineAppService
 {
     public async Task<LearningPipelineResult> ProcessNextAsync(CancellationToken cancellationToken = default)
@@ -45,6 +47,16 @@ public sealed class LearningPipelineAppService(
 
     public async Task<LearningPipelineResult> ProcessAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
+        // The endpoint is stored in the database (spec: settings REST is a later
+        // ticket, the seam isn't). Without it the pipeline idles and Sessions stay
+        // Pending — never failing them for a configuration gap.
+        if (await settings.GetLlmOptionsAsync(cancellationToken) is null)
+        {
+            logger.LogInformation(
+                "LLM endpoint is not configured; session {SessionId} stays pending.", sessionId);
+            return new LearningPipelineResult(null, PipelineOutcome.Idle);
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         // Atomic claim (Postgres-as-queue): Pending, or a Failed retry whose time

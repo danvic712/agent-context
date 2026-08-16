@@ -1,4 +1,5 @@
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Enums;
 
 namespace AgentContext.Application.Contracts;
 
