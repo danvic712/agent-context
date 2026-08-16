@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Context — Production UI Direction</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --accent:#5e6ad2;
+  --accent-soft:rgba(94,106,210,.14);
+  --ok:#22a06b;
+  --warn:#d97706;
+}
+[data-theme="dark"]{
+  --bg:#0b0c0e; --panel:#111316; --panel2:#17191d; --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+  --txt:#e7e9ec; --mut:#8f97a3; --dim:#5c6470; --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+  --code:#0d0f12;
+}
+[data-theme="light"]{
+  --bg:#f6f6f4; --panel:#ffffff; --panel2:#fbfbf9; --line:rgba(16,17,20,.09); --line2:rgba(16,17,20,.16);
+  --txt:#1a1b1f; --mut:#5f6670; --dim:#9aa1ab; --shadow:0 1px 2px rgba(16,17,20,.05), 0 8px 24px rgba(16,17,20,.07);
+  --code:#fafaf8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#090a0c;font-family:'Instrument Sans',system-ui,sans-serif;padding:32px 16px 60px;color:#d7dade}
+.meta{max-width:1080px;margin:0 auto 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.meta h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.meta .hint{font-size:12px;color:#8f97a3;font-family:'JetBrains Mono',monospace}
+.frame{max-width:1080px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06)}
+
+/* ---- shell ---- */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:640px;background:var(--bg);color:var(--txt);transition:background .25s,color .25s}
+.sidebar{border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px;background:var(--panel)}
+.brand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;font-weight:600;font-size:14px;letter-spacing:-.01em}
+.brand .logo{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700}
+.nav-sec{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:14px 10px 6px;font-weight:600}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;font-size:13px;color:var(--mut);cursor:default;font-weight:500}
+.nav.on{background:var(--accent-soft);color:var(--txt)}
+.nav.on svg{color:var(--accent)}
+.nav svg{width:15px;height:15px;color:var(--dim)}
+.nav .count{margin-left:auto;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--dim);background:var(--panel2);border:1px solid var(--line);padding:1px 7px;border-radius:99px}
+.sidebar .spacer{flex:1}
+.user{display:flex;align-items:center;gap:9px;padding:8px;border-top:1px solid var(--line);margin-top:10px;font-size:12.5px}
+.user .av{width:26px;height:26px;border-radius:50%;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut)}
+.user .r{margin-left:auto;font-size:10px;color:var(--dim)}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.search{flex:1;max-width:380px;display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--mut)}
+.search svg{width:14px;height:14px;color:var(--dim)}
+.search kbd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);border:1px solid var(--line2);border-radius:4px;padding:1px 5px}
+.pill{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mut);border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:8px}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(34,160,107,.18)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+.content{padding:22px 24px 30px;display:flex;flex-direction:column;gap:18px}
+.pagehead{display:flex;align-items:flex-start;justify-content:space-between}
+.pagehead h2{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.pagehead p{font-size:13px;color:var(--mut);margin-top:3px}
+.btn{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:8px 14px;border-radius:8px;cursor:default}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.ghost{border:1px solid var(--line2);color:var(--txt)}
+.btn svg{width:14px;height:14px}
+
+/* skill layout */
+.grid{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+.list{border:1px solid var(--line);border-radius:11px;background:var(--panel);overflow:hidden}
+.listhead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut);font-weight:500}
+.skillrow{display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:default}
+.skillrow:last-child{border-bottom:none}
+.skillrow.on{background:var(--accent-soft)}
+.skillrow .ic{width:30px;height:30px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px}
+.skillrow .nm{font-size:13.5px;font-weight:500;line-height:1.3}
+.skillrow .dm{font-size:11.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.skillrow .ver{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mut);background:var(--panel2);border:1px solid var(--line);padding:2px 7px;border-radius:99px}
+
+.detail{border:1px solid var(--line);border-radius:11px;background:var(--panel);overflow:hidden}
+.detailhead{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.detailhead h3{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.detailhead .tags{margin-left:auto;display:flex;gap:7px;align-items:center}
+.badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;border:1px solid var(--line2);color:var(--mut)}
+.badge.accent{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.filetabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.filetab{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:7px 7px 0 0;color:var(--mut);cursor:default;border:1px solid transparent;border-bottom:none}
+.filetab.on{background:var(--panel2);color:var(--txt);border-color:var(--line)}
+.filetab .ic{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px}
+.ft-md{background:var(--accent)}.ft-ts{background:#37b679}.ft-sql{background:#d97706}.ft-svg{background:#a855f7}
+
+.body{padding:0 18px 18px}
+.mdview{padding:18px 0 6px;font-size:13.5px;line-height:1.65;color:var(--txt)}
+.mdview h1{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.mdview h2{font-size:14px;font-weight:600;margin:16px 0 6px}
+.mdview p{margin:6px 0;color:var(--mut)}
+.mdview .md-note{background:var(--accent-soft);border:1px solid rgba(94,106,210,.25);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:12.5px;margin:12px 0}
+.mdview .md-note b{color:var(--accent)}
+.codeblock{margin:10px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--code)}
+.codeblock .cbhead{display:flex;justify-content:space-between;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);border-bottom:1px solid var(--line)}
+.codeblock pre{padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;overflow-x:auto;color:#cbd2dc}
+.codeblock .k{color:#c792ea}.codeblock .s{color:#a5e3b6}.codeblock .f{color:#82aaff}.codeblock .c{color:#5c6470}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:14px 16px}
+.kpi .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.kpi .v{font-size:21px;font-weight:600;letter-spacing:-.02em;margin-top:5px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11.5px;margin-top:3px;color:var(--mut)}
+.kpi .d.up{color:var(--ok)}.kpi .d.dn{color:var(--warn)}
+
+/* toggle */
+.theme-toggle{display:flex;gap:3px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px}
+.theme-toggle button{border:none;background:transparent;font-size:11.5px;font-weight:500;color:var(--dim);padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+.theme-toggle button.on{background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Agent Context · Direction D — production-grade product UI</h1>
+  <div class="hint">dark / light · refined, not theatrical</div>
+</div>
+
+<div class="frame">
+  <div class="shell" id="shell" data-theme="dark">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="brand"><div class="logo">AC</div>Agent Context</div>
+      <div class="nav-sec">Workspace · 个人</div>
+      <div class="nav on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Knowledge<span class="count">214</span></div>
+      <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Skills<span class="count">12</span></div>
+      <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 4 3 5-6"/></svg>Analytics</div>
+      <div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Health</div>
+      <div class="spacer"></div>
+      <div class="user"><div class="av">DV</div>danvic<div class="r">zh-CN ▾</div></div>
+    </aside>
+
+    <!-- main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>搜索知识、技能、会话…<kbd>⌘K</kbd></div>
+        <div class="pill"><span class="dot"></span>引擎在线 · 队列 0</div>
+        <div class="right">
+          <div class="theme-toggle" id="tt">
+            <button data-t="dark" class="on">暗</button><button data-t="light">亮</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="pagehead">
+          <div><h2>Skills</h2><p>集中管理可复用的能力包 · dev 域 · 12 个技能</p></div>
+          <div style="display:flex;gap:8px">
+            <div class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>导入包</div>
+            <div class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>新建技能</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="list">
+            <div class="listhead"><span>全部技能</span><span>v</span></div>
+            <div class="skillrow on">
+              <div class="ic">🐞</div>
+              <div><div class="nm">SQL 调试</div><div class="dm">dev / sql-debugging</div></div>
+              <div class="ver">v3</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">📊</div>
+              <div><div class="nm">KQL 分析</div><div class="dm">dev / kql-analysis</div></div>
+              <div class="ver">v2</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">🏠</div>
+              <div><div class="nm">家电维修</div><div class="dm">home / appliance-repair</div></div>
+              <div class="ver">v1</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">🧭</div>
+              <div><div class="nm">Craft Agents 引导</div><div class="dm">dev / craft-agents-guide</div></div>
+              <div class="ver">v1</div>
+            </div>
+          </div>
+
+          <div class="detail">
+            <div class="detailhead">
+              <h3>SQL 调试</h3>
+              <div class="tags">
+                <span class="badge accent">dev</span>
+                <span class="badge">v3 · 最近发布</span>
+              </div>
+            </div>
+            <div class="filetabs">
+              <div class="filetab on"><span class="ic ft-md"></span>SKILL.md</div>
+              <div class="filetab"><span class="ic ft-ts"></span>examples/trace-analysis.ts</div>
+              <div class="filetab"><span class="ic ft-sql"></span>tools/kql-snippets.sql</div>
+              <div class="filetab"><span class="ic ft-svg"></span>assets/query-flow.svg</div>
+            </div>
+            <div class="body">
+              <div class="mdview">
+                <h1>SQL 调试</h1>
+                <p>用于诊断数据查询问题的技能包。当查询返回重复事件、聚合异常或性能退化时加载。</p>
+                <div class="md-note"><b>触发条件：</b>结果存在重复行 / 需要关联两个以上数据源 / 聚合结果可疑</div>
+                <h2>诊断步骤</h2>
+                <p>1. 先用 <code>operation_Id</code> 关联原始事件，再进行聚合。</p>
+                <p>2. 聚合前必须去重，否则计数会被放大。</p>
+                <h2>示例</h2>
+                <div class="codeblock">
+                  <div class="cbhead"><span>examples/trace-analysis.ts</span><span>ts</span></div>
+                  <pre><span class="c">// 重复事件排查</span>
+<span class="k">const</span> rows = <span class="k">await</span> query(<span class="s">`
+  SELECT operation_Id, arg_max(timestamp, *)
+  FROM events
+  GROUP BY operation_Id`</span>);</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="l">会话</div><div class="v">128</div><div class="d up">↑ 12% 本周</div></div>
+          <div class="kpi"><div class="l">Tokens</div><div class="v">1.4M</div><div class="d up">↑ 8%</div></div>
+          <div class="kpi"><div class="l">成本</div><div class="v">$2.31</div><div class="d dn">↓ 3%</div></div>
+          <div class="kpi"><div class="l">知识置信度</div><div class="v">0.68</div><div class="d">214 条</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tt = document.getElementById('tt');
+tt.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  document.getElementById('shell').setAttribute('data-theme', b.dataset.t);
+  tt.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+});
+</script>
+
+</body>
+</html>

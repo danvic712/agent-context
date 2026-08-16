@@ -63,6 +63,8 @@
 ## Backlog (open tickets)
 
 - **#12 T11** — Platform localization (en-US/zh-CN, single JSON store, DB-configured language); no open blockers.
+- **#13 T12** — Product-grade UI refactor (Direction D, ref. `docs/design/ui-direction-d.html`) + color theme selector + Skill package model (filesystem storage); coordinates with #12 on i18n structure.
+- **#14 T13** — OpenTelemetry (logs+traces+metrics, enabled by default) + Aspire dashboard service in compose.
 
 ## Notes
 
