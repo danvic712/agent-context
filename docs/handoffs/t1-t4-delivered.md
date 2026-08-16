@@ -58,6 +58,7 @@
 - **#8 T7** — Session overview analytics (sessions / tokens / cost); no blockers.
 - **#9 T8** — Knowledge hygiene + Learning Engine health view (queued/failed/retries); decay + review/archive semantics for `KnowledgeStatus`.
 - **#10 T9** — Craft Agents integration + guide skill + full-loop validation (depends on the above).
+- **#11 T10** — LLM endpoint configuration: setup wizard step + settings REST + settings page; no blockers (builds on the closed #2/#4 seams).
 
 ## Notes
 
