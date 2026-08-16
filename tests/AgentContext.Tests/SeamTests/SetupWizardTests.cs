@@ -1,6 +1,7 @@
 using AgentContext.Application.Setup;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
@@ -64,13 +65,13 @@ public sealed class SetupWizardTests : PostgresTestBase
         await using var db = await MigratedContextAsync();
         var service = new SetupAppService(db);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<LocalizedException>(() =>
             service.ConfigureAsync(new SetupRequest("", "danvic@example.com", "password123")));
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<LocalizedException>(() =>
             service.ConfigureAsync(new SetupRequest("Danvic", "not-an-email", "password123")));
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<LocalizedException>(() =>
             service.ConfigureAsync(new SetupRequest("Danvic", "danvic@example.com", "short")));
     }
 
@@ -85,7 +86,7 @@ public sealed class SetupWizardTests : PostgresTestBase
 
         Assert.True(status.Configured);
 
-        await Assert.ThrowsAsync<SetupAlreadyConfiguredException>(() =>
+        await Assert.ThrowsAsync<LocalizedException>(() =>
             service.ConfigureAsync(new SetupRequest("Other", "other@example.com", "correct-horse-battery")));
 
         // Nothing was written by the blocked rerun.

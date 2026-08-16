@@ -20,19 +20,5 @@ public sealed class SetupController(ISetupAppService setup) : ControllerBase
     /// <summary>Configure the platform: creates the admin User and a Personal Workspace.</summary>
     [HttpPost]
     public async Task<ActionResult<SetupResult>> Configure([FromBody] SetupRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await setup.ConfigureAsync(request, cancellationToken);
-            return Ok(result);
-        }
-        catch (SetupAlreadyConfiguredException)
-        {
-            return Conflict(new { message = "The platform has already been configured." });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => Ok(await setup.ConfigureAsync(request, cancellationToken));
 }

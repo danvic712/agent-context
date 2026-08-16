@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BookOpenIcon, PlusIcon, SendIcon, TrashIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ interface Draft {
 const emptyDraft: Draft = { domain: 'dev', slug: '', name: '', description: '', instructions: '' }
 
 export function SkillManager() {
+  const { t } = useTranslation()
   const [items, setItems] = useState<SkillItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function SkillManager() {
     try {
       setItems(await listSkills())
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load skills')
+      setError(cause instanceof Error ? cause.message : t('skills.failedLoad'))
     } finally {
       setLoading(false)
     }
@@ -67,7 +69,7 @@ export function SkillManager() {
         instructions: detail.instructions,
       })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load skill')
+      setError(cause instanceof Error ? cause.message : t('skills.failedLoadOne'))
     }
   }
 
@@ -88,12 +90,12 @@ export function SkillManager() {
       setDraft(emptyDraft)
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to save skill')
+      setError(cause instanceof Error ? cause.message : t('skills.failedSave'))
     }
   }
 
   const remove = async (item: SkillItem) => {
-    if (!window.confirm(`Delete "${item.slug}"? Every version will be removed.`)) {
+    if (!window.confirm(t('skills.deleteConfirm', { slug: item.slug }))) {
       return
     }
     setError(null)
@@ -101,7 +103,7 @@ export function SkillManager() {
       await deleteSkill(item.id)
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to delete skill')
+      setError(cause instanceof Error ? cause.message : t('skills.failedDelete'))
     }
   }
 
@@ -110,12 +112,12 @@ export function SkillManager() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {editing ? `Publish a new version of “${editing.slug}”` : 'Create a Skill'}
+            {editing
+              ? t('skills.publishTitle', { slug: editing.slug })
+              : t('skills.createTitle')}
           </CardTitle>
           <CardDescription>
-            {editing
-              ? 'The current version stays as history; the edits land as the next version.'
-              : 'Markdown instructions managed centrally, versioned per domain.'}
+            {editing ? t('skills.publishDescription') : t('skills.createDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,47 +130,47 @@ export function SkillManager() {
           >
             <div className="flex gap-3">
               <Field className="flex-1">
-                <FieldLabel>Domain</FieldLabel>
+                <FieldLabel>{t('skills.domain')}</FieldLabel>
                 <Input
                   value={draft.domain}
                   onChange={(e) => setDraft({ ...draft, domain: e.target.value })}
                   disabled={editing !== null}
-                  placeholder="dev"
+                  placeholder={t('skills.domainPlaceholder')}
                 />
               </Field>
               <Field className="flex-1">
-                <FieldLabel>Slug</FieldLabel>
+                <FieldLabel>{t('skills.slug')}</FieldLabel>
                 <Input
                   value={draft.slug}
                   onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
                   disabled={editing !== null}
-                  placeholder="coding-guide"
+                  placeholder={t('skills.slugPlaceholder')}
                 />
               </Field>
             </div>
             <Field>
-              <FieldLabel>Name</FieldLabel>
+              <FieldLabel>{t('skills.name')}</FieldLabel>
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="Coding Guide"
+                placeholder={t('skills.namePlaceholder')}
               />
             </Field>
             <Field>
-              <FieldLabel>Description</FieldLabel>
+              <FieldLabel>{t('skills.description')}</FieldLabel>
               <Input
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                placeholder="Repo conventions"
+                placeholder={t('skills.descriptionPlaceholder')}
               />
             </Field>
             <Field>
-              <FieldLabel>Instructions (markdown)</FieldLabel>
+              <FieldLabel>{t('skills.instructions')}</FieldLabel>
               <Textarea
                 value={draft.instructions}
                 onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
                 rows={6}
-                placeholder="# Guide&#10;&#10;Follow the standards…"
+                placeholder={t('skills.instructionsPlaceholder')}
               />
             </Field>
             <div className="flex items-center gap-2">
@@ -176,12 +178,12 @@ export function SkillManager() {
                 {editing ? (
                   <>
                     <SendIcon data-icon="inline-start" className="size-4" />
-                    Publish new version
+                    {t('skills.publishNewVersion')}
                   </>
                 ) : (
                   <>
                     <PlusIcon data-icon="inline-start" className="size-4" />
-                    Create
+                    {t('skills.create')}
                   </>
                 )}
               </Button>
@@ -195,7 +197,7 @@ export function SkillManager() {
                     setDraft(emptyDraft)
                   }}
                 >
-                  Cancel
+                  {t('skills.cancel')}
                 </Button>
               )}
             </div>
@@ -206,11 +208,11 @@ export function SkillManager() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">
-            No skills yet. Create one above — agents can then load it with get_skill.
+            {t('skills.empty')}
           </CardContent>
         </Card>
       ) : (
@@ -224,7 +226,7 @@ export function SkillManager() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge variant="secondary">{item.domainName}</Badge>
-                  <Badge variant="outline">v{item.version}</Badge>
+                  <Badge variant="outline">{t('skills.version', { version: item.version })}</Badge>
                 </div>
               </div>
               <CardDescription className="line-clamp-2">{item.description}</CardDescription>
@@ -233,16 +235,16 @@ export function SkillManager() {
               <p className="font-mono text-xs text-muted-foreground">{item.slug}</p>
               <div className="flex shrink-0 items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => void startEdit(item)}>
-                  Edit & publish
+                  {t('skills.editAndPublish')}
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => void remove(item)}
-                  aria-label={`Delete ${item.slug}`}
+                  aria-label={t('skills.deleteAria', { slug: item.slug })}
                 >
                   <TrashIcon data-icon="inline-start" className="size-4" />
-                  Delete
+                  {t('common.delete')}
                 </Button>
               </div>
             </CardContent>

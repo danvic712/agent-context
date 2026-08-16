@@ -1,4 +1,5 @@
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Application.Pricing;
 using AgentContext.Infrastructure;
 using AgentContext.Tests.Testcontainers;
@@ -56,9 +57,9 @@ public sealed class PricingTests : PostgresTestBase
         await using var db = await MigratedDbAsync();
         var service = Service(db);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SaveModelPricingRequest(" ", 1m, 1m)));
-        await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SaveModelPricingRequest("gpt-4o", -1m, 1m)));
-        await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SaveModelPricingRequest("gpt-4o", 1m, -1m)));
+        await Assert.ThrowsAsync<LocalizedException>(() => service.SaveAsync(new SaveModelPricingRequest(" ", 1m, 1m)));
+        await Assert.ThrowsAsync<LocalizedException>(() => service.SaveAsync(new SaveModelPricingRequest("gpt-4o", -1m, 1m)));
+        await Assert.ThrowsAsync<LocalizedException>(() => service.SaveAsync(new SaveModelPricingRequest("gpt-4o", 1m, -1m)));
     }
 
     [Fact]

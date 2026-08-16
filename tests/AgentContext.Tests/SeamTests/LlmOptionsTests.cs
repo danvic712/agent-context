@@ -1,4 +1,5 @@
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 
 namespace AgentContext.Tests.SeamTests;
 
@@ -31,9 +32,9 @@ public sealed class LlmOptionsTests
     {
         var errors = LlmOptions.Validate(new LlmOptions());
 
-        Assert.Contains(errors, e => e.Contains("BaseUrl", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(errors, e => e.Contains("ApiKey", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(errors, e => e.Contains("Model", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(ErrorCodes.Llm.BaseUrlRequired, errors);
+        Assert.Contains(ErrorCodes.Llm.ApiKeyRequired, errors);
+        Assert.Contains(ErrorCodes.Llm.ModelRequired, errors);
     }
 
     [Fact]
@@ -41,7 +42,7 @@ public sealed class LlmOptionsTests
     {
         var errors = LlmOptions.Validate(new LlmOptions { BaseUrl = "not a uri", ApiKey = "k", Model = "m" });
 
-        Assert.Contains(errors, e => e.Contains("BaseUrl", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(ErrorCodes.Llm.BaseUrlInvalid, errors);
     }
 
     [Fact]

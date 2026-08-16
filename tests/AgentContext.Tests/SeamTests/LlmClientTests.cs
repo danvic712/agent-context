@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 using AgentContext.Domain;
 using AgentContext.Tests.Fakes;
 
@@ -90,6 +91,36 @@ public sealed class LlmClientTests
     }
 
     [Fact]
+    public async Task Extraction_prompt_uses_english_by_default()
+    {
+        var handler = new StubHttpMessageHandler(_ => JsonResponse(OpenAiChatCompletion("{\"knowledgeItems\":[]}")));
+        var client = CreateClient(handler: handler);
+
+        await client.ExtractKnowledgeAsync("{}");
+
+        using var body = JsonDocument.Parse(handler.Requests[0].Body!);
+        var system = body.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        Assert.Contains("Extract reusable Knowledge items", system);
+        Assert.Contains("\"Problem\"", system);
+    }
+
+    [Fact]
+    public async Task Extraction_prompt_switches_to_the_configured_language()
+    {
+        var handler = new StubHttpMessageHandler(_ => JsonResponse(OpenAiChatCompletion("{\"knowledgeItems\":[]}")));
+        var client = CreateClient(language: "zh-CN", handler: handler);
+
+        await client.ExtractKnowledgeAsync("{}");
+
+        using var body = JsonDocument.Parse(handler.Requests[0].Body!);
+        var system = body.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        // Chinese instructions, while the JSON schema shape (API contract) is preserved.
+        Assert.Contains("提取可复用的知识条目", system);
+        Assert.Contains("knowledgeItems", system);
+        Assert.DoesNotContain("Extract reusable Knowledge items", system);
+    }
+
+    [Fact]
     public async Task EmbedAsync_rejects_a_dimension_mismatch()
     {
         var handler = new StubHttpMessageHandler(_ => JsonResponse(OpenAiEmbeddings([1f, 2f, 3f])));
@@ -100,7 +131,7 @@ public sealed class LlmClientTests
         Assert.Contains("1536", ex.Message);
     }
 
-    private static LlmClient CreateClient(Action<LlmOptions>? configure = null, StubHttpMessageHandler? handler = null)
+    private static LlmClient CreateClient(Action<LlmOptions>? configure = null, StubHttpMessageHandler? handler = null, string? language = null)
     {
         var options = new LlmOptions
         {
@@ -109,7 +140,7 @@ public sealed class LlmClientTests
             Model = "llama3.2",
         };
         configure?.Invoke(options);
-        return new LlmClient(new FakeSettingsAppService(options), handler?.ToHttpClient());
+        return new LlmClient(new FakeSettingsAppService(options, language), new TranslationService(), handler?.ToHttpClient());
     }
 
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)

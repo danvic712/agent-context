@@ -1,3 +1,4 @@
+using System.Net;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
@@ -6,6 +7,7 @@ using System.Text.Json;
 using DomainEntity = AgentContext.Domain.Entities.Domain;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 
 namespace AgentContext.Application.Sessions;
 
@@ -21,13 +23,13 @@ public sealed class SaveSessionAppService(AgentContextDbContext db, IPricingAppS
         // US7: remembering a session means the full original context is stored.
         if (request.Remembered && string.IsNullOrWhiteSpace(request.FullContext))
         {
-            throw new ArgumentException("FullContext is required when Remembered is true.", nameof(request));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Session.FullContextRequired);
         }
 
         var workspace = await db.Workspaces
             .OrderBy(w => w.CreatedAtUtc)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new InvalidOperationException("The platform has not been configured yet. Run the first-run wizard first.");
+            ?? throw new LocalizedException(HttpStatusCode.InternalServerError, ErrorCodes.Platform.NotConfigured);
 
         // Domain tagging is explicit; an unknown domain falls back to inference
         // by being registered on the spot (spec US6 / T2 acceptance).
@@ -96,7 +98,7 @@ public sealed class SaveSessionAppService(AgentContextDbContext db, IPricingAppS
     {
         var session = await WithOverviewIncludes(db.Sessions)
             .SingleOrDefaultAsync(s => s.Id == sessionId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Session.NotFound, sessionId);
 
         return MapDetail(session);
     }

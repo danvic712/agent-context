@@ -13,6 +13,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // The i18n store lives at the repo root (../../i18n, ADR 0008) — allow Vite
+    // to serve files outside web/ so both frontend and backend read the same JSON.
+    fs: { allow: ['..'] },
     proxy: {
       // Dev: the REST API runs on the ASP.NET Core host (default 8080).
       '/api': 'http://localhost:8080',

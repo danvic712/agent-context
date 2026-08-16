@@ -2,6 +2,7 @@ using AgentContext.Application.Sessions;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Pricing;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Domain;
 using DomainEntity = AgentContext.Domain.Entities.Domain;
 using AgentContext.Domain.Entities;
@@ -130,8 +131,9 @@ public sealed class SaveSessionTests : PostgresTestBase
     {
         var (db, service) = await SeededAsync();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() =>
             service.SaveAsync(new SaveSessionRequest(Domain: "dev", Task: "t", Conclusion: "c", Remembered: true)));
+        Assert.Equal(ErrorCodes.Session.FullContextRequired, ex.ErrorCode);
     }
 
     [Fact]
@@ -186,8 +188,9 @@ public sealed class SaveSessionTests : PostgresTestBase
         await db.Database.MigrateAsync(); // no workspace seeded
         var service = new SaveSessionAppService(db, new PricingAppService(db));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() =>
             service.SaveAsync(new SaveSessionRequest(Domain: "dev", Task: "t", Conclusion: "c")));
+        Assert.Equal(ErrorCodes.Platform.NotConfigured, ex.ErrorCode);
     }
 
     [Fact]

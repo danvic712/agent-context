@@ -1,5 +1,7 @@
+using System.Net;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ namespace AgentContext.Application.Settings;
 /// Reads and writes platform settings in the <c>settings</c> key/value table.
 /// The LLM endpoint (ADR 0003) is stored as four keys; a missing/invalid set
 /// reads back as <c>null</c> so the Learning Engine idles until configured.
+/// The platform language (T11) is a single key resolved per call.
 /// </summary>
 public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppService
 {
@@ -62,7 +65,8 @@ public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppS
         var errors = LlmOptions.Validate(options);
         if (errors.Count > 0)
         {
-            throw new ArgumentException(string.Join("; ", errors), nameof(options));
+            // Coded error (T11): the first validation failure, translated at the surface.
+            throw new LocalizedException(HttpStatusCode.BadRequest, errors[0]);
         }
         var upsert = (string key, string value) =>
         {
@@ -99,6 +103,35 @@ public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppS
         else if (storedEmbeddingModel is not null)
         {
             db.AppSettings.Remove(storedEmbeddingModel);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<string> GetLanguageAsync(CancellationToken cancellationToken = default)
+    {
+        var stored = await db.AppSettings.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Key == SettingKeys.Language, cancellationToken);
+
+        return LocalizationDefaults.Normalize(stored?.Value);
+    }
+
+    public async Task SaveLanguageAsync(string locale, CancellationToken cancellationToken = default)
+    {
+        if (!LocalizationDefaults.TryNormalize(locale, out var normalized))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Settings.UnsupportedLanguage, locale ?? string.Empty);
+        }
+
+        var existing = await db.AppSettings
+            .FirstOrDefaultAsync(e => e.Key == SettingKeys.Language, cancellationToken);
+        if (existing is null)
+        {
+            db.AppSettings.Add(new AppSetting { Key = SettingKeys.Language, Value = normalized });
+        }
+        else
+        {
+            existing.Value = normalized;
         }
 
         await db.SaveChangesAsync(cancellationToken);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CircleCheckIcon, DatabaseIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import { getHealth } from '@/lib/api'
 type Tab = 'knowledge' | 'review' | 'archived' | 'skills' | 'analytics' | 'health' | 'settings'
 
 export function AppShell() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('knowledge')
   const [healthy, setHealthy] = useState<boolean | null>(null)
 
@@ -29,75 +31,46 @@ export function AppShell() {
     }
   }, [])
 
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'knowledge', label: t('appShell.tabs.knowledge') },
+    { id: 'review', label: t('appShell.tabs.review') },
+    { id: 'archived', label: t('appShell.tabs.archived') },
+    { id: 'skills', label: t('appShell.tabs.skills') },
+    { id: 'analytics', label: t('appShell.tabs.analytics') },
+    { id: 'health', label: t('appShell.tabs.health') },
+    { id: 'settings', label: t('appShell.tabs.settings') },
+  ]
+
   return (
     <div className="flex min-h-svh flex-col">
       <header className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-2 font-semibold">
           <DatabaseIcon data-icon="inline-start" />
-          Agent Context
+          {t('appShell.title')}
         </div>
         {healthy === null ? (
-          <Badge variant="secondary">checking…</Badge>
+          <Badge variant="secondary">{t('appShell.checking')}</Badge>
         ) : healthy ? (
           <Badge variant="default">
             <CircleCheckIcon data-icon="inline-start" />
-            healthy
+            {t('appShell.healthy')}
           </Badge>
         ) : (
-          <Badge variant="destructive">degraded</Badge>
+          <Badge variant="destructive">{t('appShell.degraded')}</Badge>
         )}
       </header>
       <main className="flex flex-1 flex-col gap-6 p-6">
         <nav className="flex items-center gap-2">
-          <Button
-            variant={tab === 'knowledge' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('knowledge')}
-          >
-            Knowledge
-          </Button>
-          <Button
-            variant={tab === 'review' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('review')}
-          >
-            Review
-          </Button>
-          <Button
-            variant={tab === 'archived' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('archived')}
-          >
-            Archived
-          </Button>
-          <Button
-            variant={tab === 'skills' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('skills')}
-          >
-            Skills
-          </Button>
-          <Button
-            variant={tab === 'analytics' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('analytics')}
-          >
-            Analytics
-          </Button>
-          <Button
-            variant={tab === 'health' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('health')}
-          >
-            Health
-          </Button>
-          <Button
-            variant={tab === 'settings' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('settings')}
-          >
-            Settings
-          </Button>
+          {tabs.map((item) => (
+            <Button
+              key={item.id}
+              variant={tab === item.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </Button>
+          ))}
         </nav>
         {tab === 'skills' ? (
           <SkillManager />

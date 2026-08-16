@@ -13,30 +13,14 @@ public sealed class SessionsController(ISaveSessionAppService sessions) : Contro
     [HttpPost]
     public async Task<ActionResult<SaveSessionResult>> Save([FromBody] SaveSessionRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await sessions.SaveAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(Get), new { id = result.SessionId }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await sessions.SaveAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = result.SessionId }, result);
     }
 
     /// <summary>Session detail including Usage rows (spec §6.2 overview data).</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SessionDetail>> Get(Guid id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Ok(await sessions.GetAsync(id, cancellationToken));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
+        => Ok(await sessions.GetAsync(id, cancellationToken));
 
     /// <summary>All sessions with token/cost rollups from Usage.</summary>
     [HttpGet]

@@ -1,0 +1,222 @@
+{
+  "ui": {
+    "common": {
+      "loading": "加载中…",
+      "delete": "删除",
+      "cancel": "取消",
+      "save": "保存",
+      "saved": "已保存 ✓"
+    },
+    "appShell": {
+      "title": "Agent Context",
+      "checking": "检查中…",
+      "healthy": "正常",
+      "degraded": "异常",
+      "tabs": {
+        "knowledge": "知识",
+        "review": "复查",
+        "archived": "已归档",
+        "skills": "技能",
+        "analytics": "分析",
+        "health": "引擎",
+        "settings": "设置"
+      }
+    },
+    "wizard": {
+      "welcome": "欢迎使用 Agent Context",
+      "stepAccountDescription": "Agent Context 为你的 AI 代理提供共享上下文层。首先创建管理员账号和个人工作区。",
+      "stepLlmDescription": "可选:将 Learning Engine 指向你的 LLM 端点。你也可以稍后在设置中配置。",
+      "stepLanguageTitle": "选择平台语言",
+      "stepLanguageDescription": "整个平台 — 界面、错误消息和提取的知识 — 将使用此语言。你也可以稍后在设置中更改。",
+      "english": "English",
+      "chinese": "中文 (简体)",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "Ada Lovelace",
+      "email": "邮箱",
+      "emailPlaceholder": "ada@example.com",
+      "password": "密码",
+      "passwordPlaceholder": "至少 8 个字符",
+      "setupFailed": "设置失败",
+      "continue": "继续",
+      "back": "返回",
+      "skip": "跳过",
+      "settingUp": "正在设置…",
+      "createWorkspace": "创建我的工作区",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "apiKey": "API 密钥",
+      "apiKeyPlaceholder": "sk-…",
+      "model": "模型",
+      "modelPlaceholder": "gpt-4o-mini",
+      "embeddingModel": "嵌入模型(可选)",
+      "embeddingModelPlaceholder": "text-embedding-3-small",
+      "skipForNow": "稍后跳过?",
+      "skipForNowDescription": "不配置 LLM 端点时,Learning Engine 将保持空闲,不会提炼知识,直到你在设置中配置为止。",
+      "validationError": "请填写所有字段;密码至少需要 8 个字符。",
+      "failedGeneric": "设置失败,请重试。"
+    },
+    "knowledge": {
+      "reviewThresholdNote": "置信度低于阈值({{threshold}})的条目 — 建议复查的候选项。",
+      "archivedNote": "由卫生机制归档 — 可恢复到 Active,或永久删除。",
+      "emptyAll": "尚无知识。通过 Craft Agents 上报会话后,Learning Engine 会在此提炼知识。",
+      "emptyReview": "没有低于置信度阈值的条目 — 知识库状态良好。",
+      "emptyArchived": "尚无归档 — 卫生机制尚未移动任何条目。",
+      "noDomain": "无领域",
+      "fromTask": "来自 “{{task}}”",
+      "private": "私有",
+      "restore": "恢复",
+      "unmarkPrivate": "取消私有",
+      "markPrivate": "标记为私有",
+      "deleteConfirm": "删除 “{{title}}”?此操作无法撤销。",
+      "failedLoad": "加载知识失败",
+      "failedUpdate": "更新条目失败",
+      "failedRestore": "恢复条目失败",
+      "failedDelete": "删除条目失败",
+      "deleteAria": "删除 {{title}}"
+    },
+    "skills": {
+      "createTitle": "创建技能",
+      "publishTitle": "发布 “{{slug}}” 的新版本",
+      "createDescription": "集中管理的 Markdown 指令,按领域版本化。",
+      "publishDescription": "当前版本保留为历史;编辑内容将作为下一版本发布。",
+      "domain": "领域",
+      "domainPlaceholder": "dev",
+      "slug": "别名 (Slug)",
+      "slugPlaceholder": "coding-guide",
+      "name": "名称",
+      "namePlaceholder": "Coding Guide",
+      "description": "描述",
+      "descriptionPlaceholder": "仓库约定",
+      "instructions": "指令 (Markdown)",
+      "instructionsPlaceholder": "# Guide\n\nFollow the standards…",
+      "publishNewVersion": "发布新版本",
+      "create": "创建",
+      "cancel": "取消",
+      "empty": "尚无技能。在上方创建一个 — 代理随后可通过 get_skill 加载。",
+      "editAndPublish": "编辑并发布",
+      "deleteConfirm": "删除 “{{slug}}”?所有版本都将被删除。",
+      "failedLoad": "加载技能失败",
+      "failedLoadOne": "加载技能失败",
+      "failedSave": "保存技能失败",
+      "failedDelete": "删除技能失败",
+      "deleteAria": "删除 {{slug}}",
+      "version": "v{{version}}"
+    },
+    "analytics": {
+      "overviewTitle": "会话概览",
+      "overviewDescription": "平台范围内的会话、token 与成本 — 成本由维护的模型定价表计算。",
+      "domain": "领域",
+      "domainPlaceholder": "所有领域",
+      "agent": "代理",
+      "agentPlaceholder": "所有代理",
+      "sessions": "{{count}} 个会话",
+      "tokens": "{{count}} 个 token",
+      "byDomain": "按领域",
+      "byAgent": "按代理",
+      "noSessions": "暂无会话。",
+      "pricingTitle": "模型定价",
+      "pricingDescription": "用于计算 Usage 成本(US28)的每 token 美元费率。没有定价行的模型成本为 0。",
+      "model": "模型",
+      "modelPlaceholder": "gpt-4o",
+      "inputPerToken": "输入 / token",
+      "outputPerToken": "输出 / token",
+      "addOrUpdate": "添加 / 更新",
+      "pricingEmpty": "尚无定价记录 — 在上方添加一条以开始计算 Usage 成本。",
+      "inPerToken": "入 ${{value}}",
+      "outPerToken": "出 ${{value}}",
+      "deletePricingAria": "删除 {{model}} 的定价",
+      "failedLoad": "加载分析失败",
+      "failedSavePricing": "保存定价失败",
+      "failedDeletePricing": "删除定价失败"
+    },
+    "engineHealth": {
+      "learningEngineTitle": "Learning Engine",
+      "learningEngineDescription": "基于 Postgres 队列的 sessions 表的队列深度与重试可见性(US29)。",
+      "queued": "{{count}} 个排队中",
+      "processing": "{{count}} 个处理中",
+      "failed": "{{count}} 个失败",
+      "retryScheduled": "{{count}} 个已安排重试",
+      "totalSessions": "{{count}} 个总会话",
+      "hygieneTitle": "知识卫生",
+      "hygieneDescription": "衰减长期未用的知识,将衰减条目移入复查,再归档长期未动的复查条目(US20)。定时运行 — 也可以立即触发。",
+      "runHygiene": "立即运行卫生清理",
+      "decayed": "{{count}} 个已衰减",
+      "movedToReview": "{{count}} 个已移至复查",
+      "archived": "{{count}} 个已归档",
+      "failedLoad": "加载引擎状态失败",
+      "failedRun": "运行卫生清理失败"
+    },
+    "settings": {
+      "llmTitle": "LLM 端点",
+      "llmDescription": "Learning Engine 用于提取与嵌入的 OpenAI 兼容端点(ADR 0003)。更改立即生效 — 无需重启。",
+      "configured": "已配置",
+      "notConfigured": "未配置 — 引擎空闲",
+      "keyMasked": "密钥 {{masked}}",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "apiKey": "API 密钥",
+      "apiKeyPlaceholder": "sk-…",
+      "apiKeyUnchangedPlaceholder": "•••••• (留空则保持不变)",
+      "apiKeyKeepHint": "留空将保留现有密钥。",
+      "model": "模型",
+      "modelPlaceholder": "gpt-4o-mini",
+      "embeddingModel": "嵌入模型(可选)",
+      "embeddingModelPlaceholder": "text-embedding-3-small",
+      "save": "保存",
+      "saved": "已保存 ✓",
+      "saveFailed": "保存失败",
+      "language": "平台语言",
+      "languageDescription": "平台级语言 (BCP-47)。应用于界面、后端错误消息与新知识提取。",
+      "english": "English",
+      "chinese": "中文 (简体)",
+      "failedLoad": "加载设置失败",
+      "failedSave": "保存设置失败"
+    }
+  },
+  "errors": {
+    "internal": {
+      "error": "发生了意外错误。"
+    },
+    "setup": {
+      "displayNameRequired": "需要填写显示名称。",
+      "emailInvalid": "需要有效的邮箱地址。",
+      "passwordTooShort": "密码至少需要 8 个字符。",
+      "alreadyConfigured": "平台已经配置完成。"
+    },
+    "llm": {
+      "baseUrlRequired": "需要填写 BaseUrl(例如 https://api.openai.com/v1 或 http://localhost:11434/v1)。",
+      "baseUrlInvalid": "BaseUrl 必须是完整的 http(s) URL。",
+      "apiKeyRequired": "需要填写 ApiKey。",
+      "modelRequired": "需要填写 Model。",
+      "notConfigured": "LLM 端点尚未配置。请先保存 LLM 设置(BaseUrl/ApiKey/Model)。"
+    },
+    "skill": {
+      "slugExists": "领域 “{1}” 中已存在别名为 “{0}” 的技能。",
+      "slugInvalid": "别名必须是小写字母数字单词,以单个连字符分隔。",
+      "nameRequired": "需要填写名称。",
+      "notFound": "找不到技能 {0}。",
+      "slugNotFound": "领域 “{1}” 中找不到技能 “{0}”。"
+    },
+    "pricing": {
+      "modelRequired": "需要填写模型名称。",
+      "negativeCost": "每 token 成本不能为负。"
+    },
+    "session": {
+      "fullContextRequired": "当 Remembered 为 true 时,必须提供 FullContext。",
+      "notFound": "找不到会话 {0}。"
+    },
+    "knowledge": {
+      "notFound": "找不到知识条目 {0}。",
+      "notArchived": "找不到已归档的知识条目 {0}。"
+    },
+    "platform": {
+      "notConfigured": "平台尚未配置。请先运行首次设置向导。"
+    },
+    "settings": {
+      "unsupportedLanguage": "不支持的语言 “{0}”。支持的 locale:en-US、zh-CN。"
+    }
+  },
+  "prompts": {
+    "extraction": "你是知识平台的 Learning Engine。从用户提供的 agent 会话摘要中提取可复用的知识条目(Problem / Solution / Pattern)。\n\n规则:\n- \"Problem\": 会话中描述的反复出现的问题。\n- \"Solution\": 解决问题的具体方法,包含足够的上下文以便复用。\n- \"Pattern\": 可推广到本会话之外的方法或约定。\n- title: 简短且自包含(最长约 80 个字符)。content: 可复用的知识本身,1-3 句话。\n- title 和 content 使用中文撰写;保留代码标识符、技术术语以及摘要中的关键原文片段(如有)。\n- selfAssessment: 0..1 —— 你对该条目正确且有价值的信心程度。\n- 仅输出严格 JSON,格式如下:\n  {\"knowledgeItems\":[{\"type\":\"Problem\"|\"Solution\"|\"Pattern\",\"title\":\"...\",\"content\":\"...\",\"selfAssessment\":0.8}]}\n- 当摘要中没有可复用的内容时返回空数组。不要凭空编造摘要中不存在的知识。"
+  }
+}

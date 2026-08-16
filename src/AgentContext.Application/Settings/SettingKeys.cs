@@ -7,4 +7,7 @@ public static class SettingKeys
     public const string LlmApiKey = "llm.apiKey";
     public const string LlmModel = "llm.model";
     public const string LlmEmbeddingModel = "llm.embeddingModel";
+
+    /// <summary>Platform language (BCP-47 locale, T11): "en-US" | "zh-CN", missing → en-US.</summary>
+    public const string Language = "language";
 }

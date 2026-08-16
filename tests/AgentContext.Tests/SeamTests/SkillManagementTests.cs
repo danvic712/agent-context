@@ -1,4 +1,5 @@
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Application.Skills;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
@@ -57,9 +58,9 @@ public sealed class SkillManagementTests : PostgresTestBase
         var service = Service(db);
         await service.CreateAsync(new CreateSkillRequest("dev", "coding-guide", "A", "d", "i"));
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() =>
             service.CreateAsync(new CreateSkillRequest("dev", "coding-guide", "B", "d", "i")));
-        Assert.Contains("already exists", ex.Message);
+        Assert.Equal(ErrorCodes.Skill.SlugExists, ex.ErrorCode);
     }
 
     [Fact]
@@ -67,8 +68,9 @@ public sealed class SkillManagementTests : PostgresTestBase
     {
         var (db, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() =>
             Service(db).CreateAsync(new CreateSkillRequest("dev", "Coding Guide!", "A", "d", "i")));
+        Assert.Equal(ErrorCodes.Skill.SlugInvalid, ex.ErrorCode);
     }
 
     [Fact]
@@ -104,8 +106,8 @@ public sealed class SkillManagementTests : PostgresTestBase
     {
         var (db, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).GetBySlugAsync("dev", "nope"));
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).GetBySlugAsync("home", "coding-guide"));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).GetBySlugAsync("dev", "nope"));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).GetBySlugAsync("home", "coding-guide"));
     }
 
     [Fact]
@@ -140,7 +142,7 @@ public sealed class SkillManagementTests : PostgresTestBase
         await service.DeleteAsync(v1.Id);
 
         Assert.Equal(0, await db.Skills.CountAsync(s => s.Slug == "coding-guide"));
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetBySlugAsync("dev", "coding-guide"));
+        await Assert.ThrowsAsync<LocalizedException>(() => service.GetBySlugAsync("dev", "coding-guide"));
     }
 
     [Fact]
@@ -148,7 +150,7 @@ public sealed class SkillManagementTests : PostgresTestBase
     {
         var (db, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).DeleteAsync(Guid.NewGuid()));
     }
 
     [Fact]
@@ -156,7 +158,7 @@ public sealed class SkillManagementTests : PostgresTestBase
     {
         var (db, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<LocalizedException>(() =>
             Service(db).PublishAsync(Guid.NewGuid(), new PublishSkillRequest("A", "d", "i")));
     }
 

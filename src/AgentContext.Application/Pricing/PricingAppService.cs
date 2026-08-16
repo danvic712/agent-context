@@ -1,5 +1,7 @@
+using System.Net;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -27,12 +29,12 @@ public sealed class PricingAppService(AgentContextDbContext db) : IPricingAppSer
         var model = request.Model.Trim();
         if (string.IsNullOrWhiteSpace(model))
         {
-            throw new ArgumentException("Model name is required.", nameof(request));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Pricing.ModelRequired);
         }
 
         if (request.InputCostPerToken < 0 || request.OutputCostPerToken < 0)
         {
-            throw new ArgumentException("Per-token costs cannot be negative.", nameof(request));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Pricing.NegativeCost);
         }
 
         var existing = await db.ModelPricings.FirstOrDefaultAsync(p => p.Model == model, cancellationToken);

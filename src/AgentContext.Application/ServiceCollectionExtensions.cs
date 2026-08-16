@@ -3,6 +3,7 @@ using AgentContext.Application.Contracts;
 using AgentContext.Application.Hygiene;
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 using AgentContext.Application.Pricing;
 using AgentContext.Application.Retrieval;
 using AgentContext.Application.Sessions;
@@ -27,6 +28,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContext<AgentContextDbContext>(options =>
             DbContextOptionsFactory.Configure(options, configuration));
+
+        // Localization (T11): embedded i18n JSON, shared with the frontend (ADR 0008).
+        services.AddSingleton<ITranslationService, TranslationService>();
 
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();

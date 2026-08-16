@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArchiveIcon, BookOpenIcon, LockIcon, TrashIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ interface KnowledgeManagerProps {
 }
 
 export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
+  const { t } = useTranslation()
   const [items, setItems] = useState<KnowledgeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
         setThreshold(null)
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load knowledge')
+      setError(cause instanceof Error ? cause.message : t('knowledge.failedLoad'))
     } finally {
       setLoading(false)
     }
@@ -64,7 +66,7 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
       await setKnowledgePrivate(item.id, !item.isPrivate)
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to update item')
+      setError(cause instanceof Error ? cause.message : t('knowledge.failedUpdate'))
     }
   }
 
@@ -74,12 +76,12 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
       await restoreKnowledge(item.id)
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to restore item')
+      setError(cause instanceof Error ? cause.message : t('knowledge.failedRestore'))
     }
   }
 
   const remove = async (item: KnowledgeItem) => {
-    if (!window.confirm(`Delete "${item.title}"? This cannot be undone.`)) {
+    if (!window.confirm(t('knowledge.deleteConfirm', { title: item.title }))) {
       return
     }
     setError(null)
@@ -87,7 +89,7 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
       await deleteKnowledge(item.id)
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to delete item')
+      setError(cause instanceof Error ? cause.message : t('knowledge.failedDelete'))
     }
   }
 
@@ -95,26 +97,24 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
     <div className="flex flex-col gap-4">
       {mode === 'review' && threshold !== null && (
         <p className="text-sm text-muted-foreground">
-          Items below the Confidence threshold ({threshold}) — candidates for review.
+          {t('knowledge.reviewThresholdNote', { threshold })}
         </p>
       )}
 
       {mode === 'archived' && (
-        <p className="text-sm text-muted-foreground">
-          Archived by hygiene — restore them back to Active or delete permanently.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('knowledge.archivedNote')}</p>
       )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">
-            {mode === 'all' && 'No knowledge yet. Report sessions through Craft Agents and the Learning Engine will distill them here.'}
-            {mode === 'review' && 'Nothing below the Confidence threshold — the knowledge base is healthy.'}
-            {mode === 'archived' && 'Nothing archived — hygiene has not moved any items yet.'}
+            {mode === 'all' && t('knowledge.emptyAll')}
+            {mode === 'review' && t('knowledge.emptyReview')}
+            {mode === 'archived' && t('knowledge.emptyArchived')}
           </CardContent>
         </Card>
       ) : (
@@ -138,7 +138,7 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
                   {item.isPrivate && (
                     <Badge variant="outline">
                       <LockIcon data-icon="inline-start" className="size-3" />
-                      private
+                      {t('knowledge.private')}
                     </Badge>
                   )}
                 </div>
@@ -147,27 +147,27 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
             </CardHeader>
             <CardContent className="flex items-center justify-between gap-4">
               <p className="text-xs text-muted-foreground">
-                {item.domainName ?? 'no domain'}
-                {item.sourceSessionTask ? ` · from “${item.sourceSessionTask}”` : ''}
+                {item.domainName ?? t('knowledge.noDomain')}
+                {item.sourceSessionTask ? ` · ${t('knowledge.fromTask', { task: item.sourceSessionTask })}` : ''}
               </p>
               <div className="flex shrink-0 items-center gap-2">
                 {mode === 'archived' ? (
                   <Button variant="outline" size="sm" onClick={() => void restore(item)}>
-                    Restore
+                    {t('knowledge.restore')}
                   </Button>
                 ) : (
                   <Button variant="outline" size="sm" onClick={() => void togglePrivate(item)}>
-                    {item.isPrivate ? 'Unmark private' : 'Mark private'}
+                    {item.isPrivate ? t('knowledge.unmarkPrivate') : t('knowledge.markPrivate')}
                   </Button>
                 )}
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => void remove(item)}
-                  aria-label={`Delete ${item.title}`}
+                  aria-label={t('knowledge.deleteAria', { title: item.title })}
                 >
                   <TrashIcon data-icon="inline-start" className="size-4" />
-                  Delete
+                  {t('common.delete')}
                 </Button>
               </div>
             </CardContent>

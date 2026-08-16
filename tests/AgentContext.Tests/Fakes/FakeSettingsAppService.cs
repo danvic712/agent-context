@@ -1,5 +1,6 @@
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 
 namespace AgentContext.Tests.Fakes;
 
@@ -7,8 +8,13 @@ namespace AgentContext.Tests.Fakes;
 public sealed class FakeSettingsAppService : ISettingsAppService
 {
     private LlmOptions? _options;
+    private string? _language;
 
-    public FakeSettingsAppService(LlmOptions? options) => _options = options;
+    public FakeSettingsAppService(LlmOptions? options, string? language = null)
+    {
+        _options = options;
+        _language = language;
+    }
 
     public Task<LlmOptions?> GetLlmOptionsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(_options);
@@ -16,6 +22,16 @@ public sealed class FakeSettingsAppService : ISettingsAppService
     public Task SaveLlmOptionsAsync(LlmOptions options, CancellationToken cancellationToken = default)
     {
         _options = options;
+        return Task.CompletedTask;
+    }
+
+    public Task<string> GetLanguageAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(LocalizationDefaults.Normalize(_language));
+
+    public Task SaveLanguageAsync(string locale, CancellationToken cancellationToken = default)
+    {
+        LocalizationDefaults.TryNormalize(locale, out var normalized);
+        _language = normalized;
         return Task.CompletedTask;
     }
 }

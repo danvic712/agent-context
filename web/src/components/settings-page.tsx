@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { SettingsIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { LanguagesIcon, SettingsIcon } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,14 +13,17 @@ import {
 } from '@/components/ui/card'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { getLlmOptions, saveLlmOptions, type LlmOptionsDto } from '@/lib/api'
+import { getLanguage, getLlmOptions, saveLanguage, saveLlmOptions, type LlmOptionsDto } from '@/lib/api'
+import i18n from '@/i18n'
 
 export function SettingsPage() {
+  const { t } = useTranslation()
   const [options, setOptions] = useState<LlmOptionsDto | null>(null)
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('')
   const [embeddingModel, setEmbeddingModel] = useState('')
+  const [language, setLanguage] = useState<string>(i18n.language)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -28,15 +32,19 @@ export function SettingsPage() {
     setLoading(true)
     setError(null)
     try {
-      const current = await getLlmOptions()
+      const [current, lang] = await Promise.all([getLlmOptions(), getLanguage()])
       setOptions(current)
       setBaseUrl(current.baseUrl ?? '')
       setModel(current.model ?? '')
       setEmbeddingModel(current.embeddingModel ?? '')
       // The API key is never returned — the field stays blank, a masked badge shows it's set.
       setApiKey('')
+      setLanguage(lang.language)
+      if (lang.language !== i18n.language) {
+        await i18n.changeLanguage(lang.language)
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load settings')
+      setError(cause instanceof Error ? cause.message : t('settings.failedLoad'))
     } finally {
       setLoading(false)
     }
@@ -60,7 +68,19 @@ export function SettingsPage() {
       setApiKey('')
       setSaved(true)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to save settings')
+      setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
+    }
+  }
+
+  const changeLanguage = async (locale: string) => {
+    setError(null)
+    try {
+      await saveLanguage(locale)
+      setLanguage(locale)
+      // react-i18next re-renders the whole tree — no reload hack (T11 AC2).
+      await i18n.changeLanguage(locale)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
     }
   }
 
@@ -69,92 +89,115 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <SettingsIcon className="size-4 text-muted-foreground" />
-            LLM endpoint
+            <LanguagesIcon className="size-4 text-muted-foreground" />
+            {t('settings.language')}
           </CardTitle>
-          <CardDescription>
-            The OpenAI-compatible endpoint the Learning Engine uses for extraction and
-            embedding (ADR 0003). Changes apply immediately — no restart needed.
-          </CardDescription>
+          <CardDescription>{t('settings.languageDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Field>
+            <FieldLabel htmlFor="settings-language">{t('settings.language')}</FieldLabel>
+            <FieldContent>
+              <select
+                id="settings-language"
+                value={language}
+                onChange={(e) => void changeLanguage(e.target.value)}
+                className="flex h-9 w-full items-center rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+              >
+                <option value="en-US">{t('settings.english')}</option>
+                <option value="zh-CN">{t('settings.chinese')}</option>
+              </select>
+            </FieldContent>
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <SettingsIcon className="size-4 text-muted-foreground" />
+            {t('settings.llmTitle')}
+          </CardTitle>
+          <CardDescription>{t('settings.llmDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
           ) : (
             <>
               <div className="flex items-center gap-2">
                 {options?.configured ? (
-                  <Badge variant="default">configured</Badge>
+                  <Badge variant="default">{t('settings.configured')}</Badge>
                 ) : (
-                  <Badge variant="outline">not configured — engine idles</Badge>
+                  <Badge variant="outline">{t('settings.notConfigured')}</Badge>
                 )}
                 {options?.configured && options.maskedApiKey && (
-                  <Badge variant="secondary">key {options.maskedApiKey}</Badge>
+                  <Badge variant="secondary">{t('settings.keyMasked', { masked: options.maskedApiKey })}</Badge>
                 )}
               </div>
 
               <Field>
-                <FieldLabel htmlFor="settings-base-url">Base URL</FieldLabel>
+                <FieldLabel htmlFor="settings-base-url">{t('settings.baseUrl')}</FieldLabel>
                 <FieldContent>
                   <Input
                     id="settings-base-url"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="https://api.openai.com/v1"
+                    placeholder={t('settings.baseUrlPlaceholder')}
                   />
                 </FieldContent>
               </Field>
               <Field>
-                <FieldLabel htmlFor="settings-api-key">API key</FieldLabel>
+                <FieldLabel htmlFor="settings-api-key">{t('settings.apiKey')}</FieldLabel>
                 <FieldContent>
                   <Input
                     id="settings-api-key"
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={options?.configured ? '•••••• (unchanged if left blank)' : 'sk-…'}
+                    placeholder={
+                      options?.configured ? t('settings.apiKeyUnchangedPlaceholder') : t('settings.apiKeyPlaceholder')
+                    }
                     autoComplete="off"
                   />
                   {options?.configured && apiKey === '' && (
-                    <p className="text-xs text-muted-foreground">
-                      Leaving it blank keeps the existing key.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('settings.apiKeyKeepHint')}</p>
                   )}
                 </FieldContent>
               </Field>
               <Field>
-                <FieldLabel htmlFor="settings-model">Model</FieldLabel>
+                <FieldLabel htmlFor="settings-model">{t('settings.model')}</FieldLabel>
                 <FieldContent>
                   <Input
                     id="settings-model"
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
-                    placeholder="gpt-4o-mini"
+                    placeholder={t('settings.modelPlaceholder')}
                   />
                 </FieldContent>
               </Field>
               <Field>
-                <FieldLabel htmlFor="settings-embedding-model">Embedding model (optional)</FieldLabel>
+                <FieldLabel htmlFor="settings-embedding-model">{t('settings.embeddingModel')}</FieldLabel>
                 <FieldContent>
                   <Input
                     id="settings-embedding-model"
                     value={embeddingModel}
                     onChange={(e) => setEmbeddingModel(e.target.value)}
-                    placeholder="text-embedding-3-small"
+                    placeholder={t('settings.embeddingModelPlaceholder')}
                   />
                 </FieldContent>
               </Field>
 
               <div className="flex items-center gap-3">
                 <Button size="sm" onClick={() => void save()}>
-                  Save
+                  {t('settings.save')}
                 </Button>
-                {saved && <p className="text-sm text-muted-foreground">Saved ✓</p>}
+                {saved && <p className="text-sm text-muted-foreground">{t('settings.saved')}</p>}
               </div>
 
               {error && (
                 <Alert variant="destructive">
-                  <AlertTitle>Save failed</AlertTitle>
+                  <AlertTitle>{t('settings.saveFailed')}</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
