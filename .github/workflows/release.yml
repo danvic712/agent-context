@@ -3,8 +3,9 @@ name: release
 # Versioned releases: pushing a v* tag (e.g. v0.0.1) builds the multi-arch
 # Docker image and, only once that build succeeds, pushes it to GHCR under
 # BOTH `latest` and the tag name (v0.0.1), then creates a GitHub Release.
-# Kept separate from the build workflow on purpose — no tests here; the image
-# is the gate.
+# Release notes come from RELEASE_NOTES.md at the tag's commit (update it
+# before tagging). Kept separate from the build workflow on purpose — no tests
+# here; the image is the gate.
 
 on:
   push:
@@ -51,6 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create the release
-        run: gh release create "${{ github.ref_name }}" --generate-notes
+        # Curated release notes (written before tagging) instead of an
+        # auto-generated commit list. The checkout is the tagged commit, so
+        # RELEASE_NOTES.md is the version being released.
+        run: gh release create "${{ github.ref_name }}" --notes-file RELEASE_NOTES.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
