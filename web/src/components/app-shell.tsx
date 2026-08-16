@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button'
 import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
+import { SettingsPage } from '@/components/settings-page'
 import { SkillManager } from '@/components/skill-manager'
 import { getHealth } from '@/lib/api'
 
-type Tab = 'knowledge' | 'review' | 'archived' | 'skills' | 'analytics' | 'health'
+type Tab = 'knowledge' | 'review' | 'archived' | 'skills' | 'analytics' | 'health' | 'settings'
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>('knowledge')
@@ -90,6 +91,13 @@ export function AppShell() {
           >
             Health
           </Button>
+          <Button
+            variant={tab === 'settings' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab('settings')}
+          >
+            Settings
+          </Button>
         </nav>
         {tab === 'skills' ? (
           <SkillManager />
@@ -97,6 +105,8 @@ export function AppShell() {
           <AnalyticsOverview />
         ) : tab === 'health' ? (
           <EngineHealthView />
+        ) : tab === 'settings' ? (
+          <SettingsPage />
         ) : (
           <KnowledgeManager
             mode={tab === 'review' ? 'review' : tab === 'archived' ? 'archived' : 'all'}
