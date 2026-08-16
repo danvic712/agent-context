@@ -36,6 +36,11 @@ jobs:
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           platforms: linux/amd64,linux/arm64
+          # buildx defaults to provenance: true, which appends an attestation
+          # manifest per architecture that GHCR lists as an "unknown/unknown"
+          # platform. This repo has no need for SLSA provenance — disable it so
+          # the image index only contains the two real architectures.
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
