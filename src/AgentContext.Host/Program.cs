@@ -30,6 +30,9 @@ builder.Services.AddApplicationServices(builder.Configuration);
 // Postgres-as-queue scheduler (ADR 0005): marks pending Sessions processed.
 builder.Services.AddHostedService<SessionProcessingWorker>();
 
+// Knowledge hygiene (T8): temporal decay → review → archive on a PeriodicTimer.
+builder.Services.AddHostedService<KnowledgeHygieneWorker>();
+
 var app = builder.Build();
 
 // No manual steps: ensure the database exists, then apply EF Core migrations at

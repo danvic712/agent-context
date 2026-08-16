@@ -70,9 +70,17 @@ public sealed class KnowledgeManagementTests : PostgresTestBase
     }
 
     [Fact]
-    public async Task ListReview_returns_only_below_threshold_items()
+    public async Task ListReview_returns_only_review_status_items()
     {
-        var (db, _, lowId, _) = await SeededAsync();
+        var (db, _, _, _) = await SeededAsync();
+        // T8: Review is an explicit status; the low-confidence Active item stays
+        // in the main list until hygiene moves it. Move one item into Review.
+        var lowId = await db.Knowledge.AsNoTracking()
+            .Where(k => k.Title == "Low")
+            .Select(k => k.Id)
+            .SingleAsync();
+        await db.Knowledge.Where(k => k.Id == lowId)
+            .ExecuteUpdateAsync(s => s.SetProperty(k => k.Status, KnowledgeStatus.Review));
 
         var review = await Service(db).ListReviewAsync();
 
@@ -80,6 +88,19 @@ public sealed class KnowledgeManagementTests : PostgresTestBase
         var item = Assert.Single(review.Items);
         Assert.Equal(lowId, item.Id);
         Assert.True(item.Confidence < review.Threshold);
+    }
+
+    [Fact]
+    public async Task ListArchived_returns_only_archived_items()
+    {
+        var (db, alphaId, _, _) = await SeededAsync();
+        await db.Knowledge.Where(k => k.Id == alphaId)
+            .ExecuteUpdateAsync(s => s.SetProperty(k => k.Status, KnowledgeStatus.Archived));
+
+        var archived = await Service(db).ListArchivedAsync();
+
+        var item = Assert.Single(archived);
+        Assert.Equal(alphaId, item.Id);
     }
 
     [Fact]

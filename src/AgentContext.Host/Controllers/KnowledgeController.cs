@@ -37,10 +37,15 @@ public sealed class KnowledgeController(
     public async Task<ActionResult<IReadOnlyList<KnowledgeListItem>>> List(CancellationToken cancellationToken)
         => Ok(await knowledge.ListAsync(cancellationToken));
 
-    /// <summary>Sub-threshold Active Knowledge + the threshold (review list, AC2).</summary>
+    /// <summary>Review-status Knowledge (T8: hygiene/rate moved items here).</summary>
     [HttpGet("review")]
     public async Task<ActionResult<ReviewKnowledgeResult>> Review(CancellationToken cancellationToken)
         => Ok(await knowledge.ListReviewAsync(cancellationToken));
+
+    /// <summary>Archived Knowledge — restore or permanently remove (T8 AC4).</summary>
+    [HttpGet("archived")]
+    public async Task<ActionResult<IReadOnlyList<KnowledgeListItem>>> Archived(CancellationToken cancellationToken)
+        => Ok(await knowledge.ListArchivedAsync(cancellationToken));
 
     /// <summary>Toggle the per-item private marker (AC2).</summary>
     [HttpPatch("{id:guid}")]
@@ -50,6 +55,21 @@ public sealed class KnowledgeController(
         try
         {
             await knowledge.UpdateVisibilityAsync(id, request.IsPrivate, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Restore an Archived item back to Active (T8 AC4).</summary>
+    [HttpPost("{id:guid}/restore")]
+    public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await knowledge.RestoreAsync(id, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException ex)
