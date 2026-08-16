@@ -151,10 +151,13 @@ export function SkillManager() {
                   type="button"
                   onClick={() => void select(item)}
                   className={cn(
-                    'flex items-center gap-2.5 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0',
-                    selectedId === item.id ? 'bg-accent/15' : 'hover:bg-secondary',
+                    'relative flex items-center gap-2.5 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0',
+                    selectedId === item.id ? 'bg-[var(--hi-soft)]' : 'hover:bg-secondary',
                   )}
                 >
+                  {selectedId === item.id && (
+                    <span className="absolute bottom-0 left-0 top-0 w-[3px]" style={{ background: 'var(--hi)' }} />
+                  )}
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary">
                     <BookOpenIcon className="size-4 text-muted-foreground" />
                   </div>
@@ -178,7 +181,7 @@ export function SkillManager() {
       {creating ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t('skills.createTitle')}</CardTitle>
+            <CardTitle className="serif text-lg">{t('skills.createTitle')}</CardTitle>
             <CardDescription>{t('skills.createSkillDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,7 +244,7 @@ export function SkillManager() {
       ) : publishing ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t('skills.publishTitle', { slug: publishing.slug })}</CardTitle>
+            <CardTitle className="serif text-lg">{t('skills.publishTitle', { slug: publishing.slug })}</CardTitle>
             <CardDescription>{t('skills.publishDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
