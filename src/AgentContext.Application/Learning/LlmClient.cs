@@ -77,8 +77,12 @@ public sealed class LlmClient(ISettingsAppService settings, HttpClient? httpClie
     {
         var openAiOptions = CreateClientOptions(options.BaseUrl);
         var credential = new ApiKeyCredential(options.ApiKey);
+        // Pass the schema's fixed dimension explicitly: the OpenAI-compatible
+        // endpoint must return vector(1536). Some deployments (e.g. Azure
+        // text-embedding-3-large) default to a different size and only honor
+        // the requested dimension when told (T9 integration fix).
         return new OpenAI.Embeddings.EmbeddingClient(options.EffectiveEmbeddingModel, credential, openAiOptions)
-            .AsIEmbeddingGenerator();
+            .AsIEmbeddingGenerator(LearningPipelineDefaults.EmbeddingDimensions);
     }
 
     private OpenAIClientOptions CreateClientOptions(string baseUrl)

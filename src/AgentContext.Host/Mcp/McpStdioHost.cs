@@ -36,7 +36,8 @@ public static class McpStdioHost
                 };
             })
             .WithStdioServerTransport()
-            .WithTools<SkeletonTools>()
+            // The v1 toolset (spec §6.1): save_session, search_memory,
+            // find_similar_solution, get_skill, rate_knowledge — five tools.
             .WithTools<SessionTools>()
             .WithTools<KnowledgeTools>()
             .WithTools<SkillTools>()
