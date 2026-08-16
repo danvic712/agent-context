@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AgentContext.Application.Contracts;
@@ -61,6 +62,99 @@ public sealed class KnowledgeApiTests : PostgresTestBase
         }
 
         return (factory, factory.CreateClient());
+    }
+
+    [Fact]
+    public async Task List_returns_knowledge_with_confidence_through_rest()
+    {
+        var (_, client) = await SeededAsync(
+            llm: null,
+            Item("alpha", KnowledgeType.Solution, confidence: 0.8),
+            Item("beta", KnowledgeType.Pattern, confidence: 0.3));
+
+        var list = await client.GetFromJsonAsync<JsonElement>("/api/knowledge");
+
+        Assert.Equal(2, list.GetArrayLength());
+        var alpha = list.EnumerateArray().Single(i => i.GetProperty("content").GetString() == "alpha");
+        Assert.Equal("Solution", alpha.GetProperty("type").GetString());
+        Assert.True(alpha.GetProperty("confidence").GetDouble() > 0);
+        Assert.Equal("dev", alpha.GetProperty("domainName").GetString());
+    }
+
+    [Fact]
+    public async Task Review_returns_only_below_threshold_items_through_rest()
+    {
+        var (_, client) = await SeededAsync(
+            llm: null,
+            Item("alpha", KnowledgeType.Solution, confidence: 0.8),
+            Item("beta", KnowledgeType.Pattern, confidence: 0.3));
+
+        var review = await client.GetFromJsonAsync<JsonElement>("/api/knowledge/review");
+
+        Assert.True(review.GetProperty("threshold").GetDouble() == 0.5);
+        var item = Assert.Single(review.GetProperty("items").EnumerateArray());
+        Assert.Equal("beta", item.GetProperty("content").GetString());
+        Assert.True(item.GetProperty("confidence").GetDouble() < review.GetProperty("threshold").GetDouble());
+    }
+
+    [Fact]
+    public async Task Patch_toggles_the_private_marker_through_rest()
+    {
+        var (_, client) = await SeededAsync(llm: null, Item("alpha"));
+        var alphaId = await KnowledgeIdAsync(client, "alpha");
+
+        var response = await client.PatchAsJsonAsync($"/api/knowledge/{alphaId}", new { isPrivate = true });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var after = await client.GetFromJsonAsync<JsonElement>("/api/knowledge");
+        Assert.True(after[0].GetProperty("isPrivate").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Delete_removes_the_item_through_rest()
+    {
+        var (_, client) = await SeededAsync(llm: null, Item("alpha"), Item("beta"));
+        var alphaId = await KnowledgeIdAsync(client, "alpha");
+
+        var response = await client.DeleteAsync($"/api/knowledge/{alphaId}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var after = await client.GetFromJsonAsync<JsonElement>("/api/knowledge");
+        Assert.Equal(1, after.GetArrayLength());
+        Assert.Equal("beta", after[0].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task Rate_bumps_and_clears_confidence_through_rest()
+    {
+        var (_, client) = await SeededAsync(llm: null, Item("alpha", confidence: 0.6));
+        var alphaId = await KnowledgeIdAsync(client, "alpha");
+
+        var useful = await client.PostAsJsonAsync($"/api/knowledge/{alphaId}/rate", new { useful = true });
+        useful.EnsureSuccessStatusCode();
+        var bumped = (await useful.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("confidence").GetDouble();
+        Assert.Equal(0.7, bumped, 3);
+
+        var notUseful = await client.PostAsJsonAsync($"/api/knowledge/{alphaId}/rate", new { useful = false });
+        var cleared = (await notUseful.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("confidence").GetDouble();
+        Assert.Equal(0, cleared);
+    }
+
+    [Fact]
+    public async Task Unknown_id_returns_404()
+    {
+        var (_, client) = await SeededAsync();
+
+        var response = await client.DeleteAsync($"/api/knowledge/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private static async Task<Guid> KnowledgeIdAsync(HttpClient client, string content)
+    {
+        var list = await client.GetFromJsonAsync<JsonElement>("/api/knowledge");
+        return list.EnumerateArray().Single(i => i.GetProperty("content").GetString() == content)
+            .GetProperty("id").GetGuid();
     }
 
     private static Knowledge Item(string content, KnowledgeType type = KnowledgeType.Solution, double confidence = 0.8)
