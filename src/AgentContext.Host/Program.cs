@@ -3,6 +3,8 @@ using AgentContext.Host.Mcp;
 using AgentContext.Host.Workers;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
 
 // Dual-mode entrypoint (ADR 0006): `--mcp-stdio` runs the MCP server over stdio for
@@ -30,10 +32,18 @@ builder.Services.AddHostedService<SessionProcessingWorker>();
 
 var app = builder.Build();
 
-// No manual steps: apply EF Core migrations at startup against Postgres(pgvector).
+// No manual steps: ensure the database exists, then apply EF Core migrations at
+// startup against Postgres(pgvector). Exists/Create is migration-compatible
+// (unlike EnsureCreated, which would bypass the migration history).
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AgentContextDbContext>();
+    var creator = db.GetService<IRelationalDatabaseCreator>();
+    if (!await creator.ExistsAsync())
+    {
+        await creator.CreateAsync();
+    }
+
     await db.Database.MigrateAsync();
 }
 
