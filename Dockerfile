@@ -6,6 +6,8 @@ WORKDIR /src/web
 COPY web/package*.json ./
 RUN npm ci
 COPY web/ ./
+# The i18n store lives at the repo root (ADR 0008); web/ imports it via ../../.
+COPY i18n/ ../i18n/
 # Vite outDir is ../src/AgentContext.Host/wwwroot.
 RUN npm run build
 
