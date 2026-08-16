@@ -40,7 +40,6 @@ export function SettingsPage() {
       setBaseUrl(current.baseUrl ?? '')
       setModel(current.model ?? '')
       setEmbeddingModel(current.embeddingModel ?? '')
-      // The API key is never returned — the field stays blank, a masked badge shows it's set.
       setApiKey('')
       setLanguage(lang.language)
       if (lang.language !== i18n.language) {
@@ -80,7 +79,6 @@ export function SettingsPage() {
     try {
       await saveLanguage(locale)
       setLanguage(locale)
-      // react-i18next re-renders the whole tree — no reload hack (T11 AC2).
       await i18n.changeLanguage(locale)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
@@ -88,65 +86,69 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <SettingsIcon className="size-4 text-muted-foreground" />
-            {t('settings.theme')}
-          </CardTitle>
-          <CardDescription>{t('settings.themeDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div role="radiogroup" aria-label={t('settings.theme')} className="flex flex-wrap gap-2">
-            {(
-              [
-                ['light', t('settings.themeLight')],
-                ['dark', t('settings.themeDark')],
-                ['system', t('settings.themeSystem')],
-              ] as const
-            ).map(([value, label]) => (
-              <Button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={mode === value}
-                variant={mode === value ? 'default' : 'outline'}
-                onClick={() => void setMode(value)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4">
+      {/* Theme + language side by side on wide screens, stacked otherwise */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <SettingsIcon className="size-4 text-muted-foreground" />
+              {t('settings.theme')}
+            </CardTitle>
+            <CardDescription>{t('settings.themeDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div role="radiogroup" aria-label={t('settings.theme')} className="flex flex-wrap gap-2">
+              {(
+                [
+                  ['light', t('settings.themeLight')],
+                  ['dark', t('settings.themeDark')],
+                  ['system', t('settings.themeSystem')],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === value}
+                  variant={mode === value ? 'default' : 'outline'}
+                  onClick={() => void setMode(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <LanguagesIcon className="size-4 text-muted-foreground" />
-            {t('settings.language')}
-          </CardTitle>
-          <CardDescription>{t('settings.languageDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Field>
-            <FieldLabel htmlFor="settings-language">{t('settings.language')}</FieldLabel>
-            <FieldContent>
-              <select
-                id="settings-language"
-                value={language}
-                onChange={(e) => void changeLanguage(e.target.value)}
-                className="flex h-9 w-full items-center rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-              >
-                <option value="en-US">{t('settings.english')}</option>
-                <option value="zh-CN">{t('settings.chinese')}</option>
-              </select>
-            </FieldContent>
-          </Field>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LanguagesIcon className="size-4 text-muted-foreground" />
+              {t('settings.language')}
+            </CardTitle>
+            <CardDescription>{t('settings.languageDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Field>
+              <FieldLabel htmlFor="settings-language">{t('settings.language')}</FieldLabel>
+              <FieldContent>
+                <select
+                  id="settings-language"
+                  value={language}
+                  onChange={(e) => void changeLanguage(e.target.value)}
+                  className="flex h-9 w-full items-center rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <option value="en-US">{t('settings.english')}</option>
+                  <option value="zh-CN">{t('settings.chinese')}</option>
+                </select>
+              </FieldContent>
+            </Field>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* LLM endpoint — full width */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -178,57 +180,59 @@ export function SettingsPage() {
                 )}
               </div>
 
-              <Field>
-                <FieldLabel htmlFor="settings-base-url">{t('settings.baseUrl')}</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="settings-base-url"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder={t('settings.baseUrlPlaceholder')}
-                  />
-                </FieldContent>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="settings-api-key">{t('settings.apiKey')}</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="settings-api-key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={
-                      options?.configured ? t('settings.apiKeyUnchangedPlaceholder') : t('settings.apiKeyPlaceholder')
-                    }
-                    autoComplete="off"
-                  />
-                  {options?.configured && apiKey === '' && (
-                    <p className="text-xs text-muted-foreground">{t('settings.apiKeyKeepHint')}</p>
-                  )}
-                </FieldContent>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="settings-model">{t('settings.model')}</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="settings-model"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder={t('settings.modelPlaceholder')}
-                  />
-                </FieldContent>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="settings-embedding-model">{t('settings.embeddingModel')}</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="settings-embedding-model"
-                    value={embeddingModel}
-                    onChange={(e) => setEmbeddingModel(e.target.value)}
-                    placeholder={t('settings.embeddingModelPlaceholder')}
-                  />
-                </FieldContent>
-              </Field>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="settings-base-url">{t('settings.baseUrl')}</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="settings-base-url"
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder={t('settings.baseUrlPlaceholder')}
+                    />
+                  </FieldContent>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="settings-api-key">{t('settings.apiKey')}</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="settings-api-key"
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={
+                        options?.configured ? t('settings.apiKeyUnchangedPlaceholder') : t('settings.apiKeyPlaceholder')
+                      }
+                      autoComplete="off"
+                    />
+                    {options?.configured && apiKey === '' && (
+                      <p className="text-xs text-muted-foreground">{t('settings.apiKeyKeepHint')}</p>
+                    )}
+                  </FieldContent>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="settings-model">{t('settings.model')}</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="settings-model"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      placeholder={t('settings.modelPlaceholder')}
+                    />
+                  </FieldContent>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="settings-embedding-model">{t('settings.embeddingModel')}</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="settings-embedding-model"
+                      value={embeddingModel}
+                      onChange={(e) => setEmbeddingModel(e.target.value)}
+                      placeholder={t('settings.embeddingModelPlaceholder')}
+                    />
+                  </FieldContent>
+                </Field>
+              </div>
 
               <div className="flex items-center gap-3">
                 <Button size="sm" onClick={() => void save()}>
