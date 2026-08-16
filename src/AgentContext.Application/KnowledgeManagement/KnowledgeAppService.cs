@@ -1,6 +1,8 @@
+using System.Net;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 using AgentContext.Application.Retrieval;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
@@ -54,7 +56,7 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
 
         if (updated == 0)
         {
-            throw new KeyNotFoundException($"Knowledge {id} not found.");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Knowledge.NotFound, id);
         }
     }
 
@@ -66,7 +68,7 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
 
         if (deleted == 0)
         {
-            throw new KeyNotFoundException($"Knowledge {id} not found.");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Knowledge.NotFound, id);
         }
     }
 
@@ -83,7 +85,7 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
 
         if (updated == 0)
         {
-            throw new KeyNotFoundException($"Archived knowledge {id} not found.");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Knowledge.NotArchived, id);
         }
     }
 
@@ -96,7 +98,7 @@ public sealed class KnowledgeAppService(AgentContextDbContext db) : IKnowledgeAp
 
         if (current is null)
         {
-            throw new KeyNotFoundException($"Knowledge {id} not found.");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Knowledge.NotFound, id);
         }
 
         // rate_knowledge(useful) confirms: +0.1 capped at 1.0, and the item is

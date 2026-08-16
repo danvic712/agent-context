@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace AgentContext.Host.Controllers;
 
 /// <summary>
-/// Platform settings surface (T10, issue #11): reads and edits the Learning
-/// Engine's LLM endpoint (ADR 0003), stored in the DB-backed settings table —
-/// setter-uppable at runtime, no restart needed (LlmClient resolves per call).
+/// Platform settings surface: the Learning Engine's LLM endpoint (T10, ADR 0003)
+/// and the platform language (T11, ADR 0008) — both stored in the DB-backed
+/// settings table and resolved per call, so no restart is needed.
 /// </summary>
 [ApiController]
 [Route("api/settings")]
@@ -44,14 +44,7 @@ public sealed class SettingsController(ISettingsAppService settings) : Controlle
     public async Task<ActionResult<LlmOptionsDto>> SaveLlmOptions(
         [FromBody] LlmOptions request, CancellationToken cancellationToken)
     {
-        try
-        {
-            await settings.SaveLlmOptionsAsync(request, cancellationToken);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        await settings.SaveLlmOptionsAsync(request, cancellationToken);
 
         var saved = await settings.GetLlmOptionsAsync(cancellationToken);
         return Ok(new LlmOptionsDto(
@@ -60,6 +53,26 @@ public sealed class SettingsController(ISettingsAppService settings) : Controlle
             saved is null ? null : Mask(saved.ApiKey),
             saved?.Model,
             saved?.EmbeddingModel));
+    }
+
+    /// <summary>
+    /// The platform language (T11): a supported BCP-47 locale, defaulting to
+    /// en-US when nothing is stored yet. Invalid stored values also fall back.
+    /// </summary>
+    [HttpGet("language")]
+    public async Task<ActionResult<SettingsLanguageDto>> GetLanguage(CancellationToken cancellationToken)
+        => Ok(new SettingsLanguageDto(await settings.GetLanguageAsync(cancellationToken)));
+
+    /// <summary>
+    /// Validates and persists the platform language (T11 AC1). Unsupported
+    /// locale → 400 <c>{ errorCode, message }</c> via the global filter.
+    /// </summary>
+    [HttpPut("language")]
+    public async Task<ActionResult<SettingsLanguageDto>> SaveLanguage(
+        [FromBody] SettingsLanguageDto request, CancellationToken cancellationToken)
+    {
+        await settings.SaveLanguageAsync(request.Language, cancellationToken);
+        return Ok(new SettingsLanguageDto(await settings.GetLanguageAsync(cancellationToken)));
     }
 
     /// <summary>Masks an API key, keeping only a short prefix (e.g. "sk-…").</summary>

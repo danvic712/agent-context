@@ -52,59 +52,29 @@ public sealed class KnowledgeController(
     public async Task<IActionResult> UpdateVisibility(
         Guid id, [FromBody] UpdateKnowledgeVisibilityRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            await knowledge.UpdateVisibilityAsync(id, request.IsPrivate, cancellationToken);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        await knowledge.UpdateVisibilityAsync(id, request.IsPrivate, cancellationToken);
+        return NoContent();
     }
 
     /// <summary>Restore an Archived item back to Active (T8 AC4).</summary>
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
     {
-        try
-        {
-            await knowledge.RestoreAsync(id, cancellationToken);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        await knowledge.RestoreAsync(id, cancellationToken);
+        return NoContent();
     }
 
     /// <summary>Delete an item; it is then gone from retrieval (AC4).</summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        try
-        {
-            await knowledge.DeleteAsync(id, cancellationToken);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        await knowledge.DeleteAsync(id, cancellationToken);
+        return NoContent();
     }
 
     /// <summary>rate_knowledge: useful → +0.1 (capped), not useful → cleared (AC3).</summary>
     [HttpPost("{id:guid}/rate")]
     public async Task<ActionResult<RateKnowledgeResult>> Rate(
         Guid id, [FromBody] RateKnowledgeRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Ok(await knowledge.RateAsync(id, request.Useful, cancellationToken));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
+        => Ok(await knowledge.RateAsync(id, request.Useful, cancellationToken));
 }

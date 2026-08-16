@@ -11,6 +11,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Single JSON localization store (ADR 0008): the same i18n/{locale}.json
+      files the frontend bundles via Vite are embedded here for the backend
+      (TranslationService loads them as manifest resources).
+    -->
+    <EmbeddedResource Include="..\..\i18n\en-US.json" LogicalName="i18n.en-US.json" />
+    <EmbeddedResource Include="..\..\i18n\zh-CN.json" LogicalName="i18n.zh-CN.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Agents.AI" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

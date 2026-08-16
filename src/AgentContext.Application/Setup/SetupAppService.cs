@@ -1,9 +1,11 @@
+using System.Net;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 
 namespace AgentContext.Application.Setup;
 
@@ -23,7 +25,7 @@ public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
 
         if (await db.Users.AnyAsync(cancellationToken))
         {
-            throw new SetupAlreadyConfiguredException();
+            throw new LocalizedException(HttpStatusCode.Conflict, ErrorCodes.Setup.AlreadyConfigured);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -65,17 +67,17 @@ public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
     {
         if (string.IsNullOrWhiteSpace(request.DisplayName))
         {
-            throw new ArgumentException("Display name is required.", nameof(request.DisplayName));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Setup.DisplayNameRequired);
         }
 
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
         {
-            throw new ArgumentException("A valid email is required.", nameof(request.Email));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Setup.EmailInvalid);
         }
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
         {
-            throw new ArgumentException("Password must be at least 8 characters.", nameof(request.Password));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Setup.PasswordTooShort);
         }
     }
 }

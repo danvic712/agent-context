@@ -1,0 +1,222 @@
+{
+  "ui": {
+    "common": {
+      "loading": "Loading…",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saved": "Saved ✓"
+    },
+    "appShell": {
+      "title": "Agent Context",
+      "checking": "checking…",
+      "healthy": "healthy",
+      "degraded": "degraded",
+      "tabs": {
+        "knowledge": "Knowledge",
+        "review": "Review",
+        "archived": "Archived",
+        "skills": "Skills",
+        "analytics": "Analytics",
+        "health": "Health",
+        "settings": "Settings"
+      }
+    },
+    "wizard": {
+      "welcome": "Welcome to Agent Context",
+      "stepAccountDescription": "A shared context layer for your AI agents. Start by creating your admin account and personal workspace.",
+      "stepLlmDescription": "Optional: point the Learning Engine at your LLM endpoint. You can configure this later in Settings.",
+      "stepLanguageTitle": "Choose the platform language",
+      "stepLanguageDescription": "The whole platform — UI, errors and extracted Knowledge — will use this language. You can change it later in Settings.",
+      "english": "English",
+      "chinese": "中文 (简体)",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Ada Lovelace",
+      "email": "Email",
+      "emailPlaceholder": "ada@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "setupFailed": "Setup failed",
+      "continue": "Continue",
+      "back": "Back",
+      "skip": "Skip",
+      "settingUp": "Setting up…",
+      "createWorkspace": "Create my workspace",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "sk-…",
+      "model": "Model",
+      "modelPlaceholder": "gpt-4o-mini",
+      "embeddingModel": "Embedding model (optional)",
+      "embeddingModelPlaceholder": "text-embedding-3-small",
+      "skipForNow": "Skip for now?",
+      "skipForNowDescription": "Without an LLM endpoint the Learning Engine stays idle and won't distill Knowledge until you configure one in Settings.",
+      "validationError": "Please fill in every field; the password needs at least 8 characters.",
+      "failedGeneric": "Setup failed. Please try again."
+    },
+    "knowledge": {
+      "reviewThresholdNote": "Items below the Confidence threshold ({{threshold}}) — candidates for review.",
+      "archivedNote": "Archived by hygiene — restore them back to Active or delete permanently.",
+      "emptyAll": "No knowledge yet. Report sessions through Craft Agents and the Learning Engine will distill them here.",
+      "emptyReview": "Nothing below the Confidence threshold — the knowledge base is healthy.",
+      "emptyArchived": "Nothing archived — hygiene has not moved any items yet.",
+      "noDomain": "no domain",
+      "fromTask": "from “{{task}}”",
+      "private": "private",
+      "restore": "Restore",
+      "unmarkPrivate": "Unmark private",
+      "markPrivate": "Mark private",
+      "deleteConfirm": "Delete \"{{title}}\"? This cannot be undone.",
+      "failedLoad": "Failed to load knowledge",
+      "failedUpdate": "Failed to update item",
+      "failedRestore": "Failed to restore item",
+      "failedDelete": "Failed to delete item",
+      "deleteAria": "Delete {{title}}"
+    },
+    "skills": {
+      "createTitle": "Create a Skill",
+      "publishTitle": "Publish a new version of “{{slug}}”",
+      "createDescription": "Markdown instructions managed centrally, versioned per domain.",
+      "publishDescription": "The current version stays as history; the edits land as the next version.",
+      "domain": "Domain",
+      "domainPlaceholder": "dev",
+      "slug": "Slug",
+      "slugPlaceholder": "coding-guide",
+      "name": "Name",
+      "namePlaceholder": "Coding Guide",
+      "description": "Description",
+      "descriptionPlaceholder": "Repo conventions",
+      "instructions": "Instructions (markdown)",
+      "instructionsPlaceholder": "# Guide\n\nFollow the standards…",
+      "publishNewVersion": "Publish new version",
+      "create": "Create",
+      "cancel": "Cancel",
+      "empty": "No skills yet. Create one above — agents can then load it with get_skill.",
+      "editAndPublish": "Edit & publish",
+      "deleteConfirm": "Delete \"{{slug}}\"? Every version will be removed.",
+      "failedLoad": "Failed to load skills",
+      "failedLoadOne": "Failed to load skill",
+      "failedSave": "Failed to save skill",
+      "failedDelete": "Failed to delete skill",
+      "deleteAria": "Delete {{slug}}",
+      "version": "v{{version}}"
+    },
+    "analytics": {
+      "overviewTitle": "Session overview",
+      "overviewDescription": "Sessions, tokens and cost across the platform — cost is computed from the maintained model pricing table.",
+      "domain": "Domain",
+      "domainPlaceholder": "all domains",
+      "agent": "Agent",
+      "agentPlaceholder": "all agents",
+      "sessions": "{{count}} sessions",
+      "tokens": "{{count}} tokens",
+      "byDomain": "By domain",
+      "byAgent": "By agent",
+      "noSessions": "No sessions.",
+      "pricingTitle": "Model pricing",
+      "pricingDescription": "Per-token USD rates used to compute Usage cost (US28). Models without a row cost 0.",
+      "model": "Model",
+      "modelPlaceholder": "gpt-4o",
+      "inputPerToken": "Input / token",
+      "outputPerToken": "Output / token",
+      "addOrUpdate": "Add / update",
+      "pricingEmpty": "No pricing rows yet — add one above to start pricing Usage.",
+      "inPerToken": "in ${{value}}",
+      "outPerToken": "out ${{value}}",
+      "deletePricingAria": "Delete pricing for {{model}}",
+      "failedLoad": "Failed to load analytics",
+      "failedSavePricing": "Failed to save pricing",
+      "failedDeletePricing": "Failed to delete pricing"
+    },
+    "engineHealth": {
+      "learningEngineTitle": "Learning Engine",
+      "learningEngineDescription": "Queue depth and retry visibility from the Postgres-as-queue sessions table (US29).",
+      "queued": "{{count}} queued",
+      "processing": "{{count}} processing",
+      "failed": "{{count}} failed",
+      "retryScheduled": "{{count}} retry scheduled",
+      "totalSessions": "{{count}} total sessions",
+      "hygieneTitle": "Knowledge hygiene",
+      "hygieneDescription": "Decays long-unused Knowledge and moves decayed items to Review, then Archives untouched Review items (US20). Runs on a timer — trigger it now.",
+      "runHygiene": "Run hygiene now",
+      "decayed": "{{count}} decayed",
+      "movedToReview": "{{count}} moved to review",
+      "archived": "{{count}} archived",
+      "failedLoad": "Failed to load engine health",
+      "failedRun": "Failed to run hygiene"
+    },
+    "settings": {
+      "llmTitle": "LLM endpoint",
+      "llmDescription": "The OpenAI-compatible endpoint the Learning Engine uses for extraction and embedding (ADR 0003). Changes apply immediately — no restart needed.",
+      "configured": "configured",
+      "notConfigured": "not configured — engine idles",
+      "keyMasked": "key {{masked}}",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "sk-…",
+      "apiKeyUnchangedPlaceholder": "•••••• (unchanged if left blank)",
+      "apiKeyKeepHint": "Leaving it blank keeps the existing key.",
+      "model": "Model",
+      "modelPlaceholder": "gpt-4o-mini",
+      "embeddingModel": "Embedding model (optional)",
+      "embeddingModelPlaceholder": "text-embedding-3-small",
+      "save": "Save",
+      "saved": "Saved ✓",
+      "saveFailed": "Save failed",
+      "language": "Platform language",
+      "languageDescription": "The platform-wide language (BCP-47). Applied to the UI, backend errors and new Knowledge extraction.",
+      "english": "English",
+      "chinese": "中文 (简体)",
+      "failedLoad": "Failed to load settings",
+      "failedSave": "Failed to save settings"
+    }
+  },
+  "errors": {
+    "internal": {
+      "error": "An unexpected error occurred."
+    },
+    "setup": {
+      "displayNameRequired": "Display name is required.",
+      "emailInvalid": "A valid email is required.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "alreadyConfigured": "The platform has already been configured."
+    },
+    "llm": {
+      "baseUrlRequired": "BaseUrl is required (e.g. https://api.openai.com/v1 or http://localhost:11434/v1).",
+      "baseUrlInvalid": "BaseUrl must be an absolute http(s) URL.",
+      "apiKeyRequired": "ApiKey is required.",
+      "modelRequired": "Model is required.",
+      "notConfigured": "The LLM endpoint is not configured. Save the LLM settings (BaseUrl/ApiKey/Model) first."
+    },
+    "skill": {
+      "slugExists": "A skill with slug \"{0}\" already exists in domain \"{1}\".",
+      "slugInvalid": "Slug must be lowercase alphanumeric words separated by single hyphens.",
+      "nameRequired": "Name is required.",
+      "notFound": "Skill {0} not found.",
+      "slugNotFound": "Skill \"{0}\" not found in domain \"{1}\"."
+    },
+    "pricing": {
+      "modelRequired": "Model name is required.",
+      "negativeCost": "Per-token costs cannot be negative."
+    },
+    "session": {
+      "fullContextRequired": "FullContext is required when Remembered is true.",
+      "notFound": "Session {0} not found."
+    },
+    "knowledge": {
+      "notFound": "Knowledge {0} not found.",
+      "notArchived": "Archived knowledge {0} not found."
+    },
+    "platform": {
+      "notConfigured": "The platform has not been configured yet. Run the first-run wizard first."
+    },
+    "settings": {
+      "unsupportedLanguage": "Unsupported language \"{0}\". Supported locales: en-US, zh-CN."
+    }
+  },
+  "prompts": {
+    "extraction": "You are the Learning Engine of a knowledge platform. Extract reusable Knowledge items (Problem / Solution / Pattern) from the agent session summary provided by the user.\n\nRules:\n- \"Problem\": a recurring problem described in the session.\n- \"Solution\": a concrete way to solve a problem, with enough context to be reusable.\n- \"Pattern\": a generalisable approach or convention that applies beyond this session.\n- title: short and self-contained (max ~80 chars). content: the reusable knowledge itself, 1-3 sentences.\n- selfAssessment: 0..1 — how confident you are that this item is correct and useful.\n- Output STRICT JSON only, exactly this shape:\n  {\"knowledgeItems\":[{\"type\":\"Problem\"|\"Solution\"|\"Pattern\",\"title\":\"...\",\"content\":\"...\",\"selfAssessment\":0.8}]}\n- Use an empty array when the summary contains nothing reusable. Do not invent knowledge absent from the summary."
+  }
+}

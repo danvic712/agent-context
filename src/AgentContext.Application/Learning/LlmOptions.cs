@@ -21,7 +21,11 @@ public sealed class LlmOptions
     /// <summary>Embedding model used in v1: the dedicated one when set, else the extraction model.</summary>
     public string EffectiveEmbeddingModel => string.IsNullOrWhiteSpace(EmbeddingModel) ? Model : EmbeddingModel!;
 
-    /// <summary>Returns the validation error messages; empty means the options are valid.</summary>
+    /// <summary>
+    /// Returns the validation error codes (T11 — see <see cref="Localization.ErrorCodes"/>);
+    /// empty means the options are valid. The surface renders the codes in the
+    /// configured language from the shared JSON store.
+    /// </summary>
     public static IReadOnlyList<string> Validate(LlmOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -30,22 +34,22 @@ public sealed class LlmOptions
 
         if (string.IsNullOrWhiteSpace(options.BaseUrl))
         {
-            errors.Add("BaseUrl is required (e.g. https://api.openai.com/v1 or http://localhost:11434/v1).");
+            errors.Add(Localization.ErrorCodes.Llm.BaseUrlRequired);
         }
         else if (!Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri)
                  || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            errors.Add("BaseUrl must be an absolute http(s) URL.");
+            errors.Add(Localization.ErrorCodes.Llm.BaseUrlInvalid);
         }
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
-            errors.Add("ApiKey is required.");
+            errors.Add(Localization.ErrorCodes.Llm.ApiKeyRequired);
         }
 
         if (string.IsNullOrWhiteSpace(options.Model))
         {
-            errors.Add("Model is required.");
+            errors.Add(Localization.ErrorCodes.Llm.ModelRequired);
         }
 
         return errors;

@@ -1,6 +1,8 @@
+using System.Net;
 using System.Text.RegularExpressions;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +33,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             cancellationToken);
         if (exists)
         {
-            throw new ArgumentException($"A skill with slug \"{request.Slug}\" already exists in domain \"{domain.Name}\".");
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugExists, request.Slug, domain.Name);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -94,7 +96,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             .Where(s => s.Id == id)
             .Select(s => new { s, DomainName = s.Domain != null ? s.Domain.Name : null })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new KeyNotFoundException($"Skill {id} not found.");
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
         return ToDetail(skill.s, skill.DomainName ?? "unknown");
     }
@@ -107,7 +109,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);
         if (workspaceId is null)
         {
-            throw new KeyNotFoundException($"Skill \"{slug}\" not found in domain \"{domainName}\".");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName);
         }
 
         var skill = await db.Skills.AsNoTracking()
@@ -119,7 +121,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             .FirstOrDefaultAsync(cancellationToken);
 
         return skill is null
-            ? throw new KeyNotFoundException($"Skill \"{slug}\" not found in domain \"{domainName}\".")
+            ? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName)
             : ToDetail(skill.s, skill.DomainName);
     }
 
@@ -130,7 +132,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         var current = await db.Skills
             .Include(s => s.Domain)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
-            ?? throw new KeyNotFoundException($"Skill {id} not found.");
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
         // The next version is current-max + 1; the existing row stays as history.
         var maxVersion = await db.Skills
@@ -165,7 +167,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             .Where(s => s.Id == id)
             .Select(s => new { s.WorkspaceId, s.DomainId, s.Slug })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new KeyNotFoundException($"Skill {id} not found.");
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
         // Deleting a skill removes every version of its (domain, slug): get_skill
         // must no longer resolve it, so all history rows go.
@@ -177,7 +179,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
 
         if (deleted == 0)
         {
-            throw new KeyNotFoundException($"Skill {id} not found.");
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
         }
     }
 
@@ -187,7 +189,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         var trimmed = name.Trim();
 
         var workspaceId = await FirstWorkspaceIdAsync(cancellationToken)
-            ?? throw new InvalidOperationException("The platform has not been configured yet. Run the first-run wizard first.");
+            ?? throw new LocalizedException(HttpStatusCode.InternalServerError, ErrorCodes.Platform.NotConfigured);
 
         var domain = await db.Domains.FirstOrDefaultAsync(
             d => d.WorkspaceId == workspaceId && d.Name == trimmed, cancellationToken);
@@ -212,8 +214,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         if (!SlugPattern.IsMatch(slug))
         {
-            throw new ArgumentException(
-                "Slug must be lowercase letters, digits and hyphens (e.g. \"coding-guide\").", nameof(slug));
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugInvalid);
         }
     }
 

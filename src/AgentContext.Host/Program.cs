@@ -1,4 +1,5 @@
 using AgentContext.Application;
+using AgentContext.Host;
 using AgentContext.Host.Mcp;
 using AgentContext.Host.Workers;
 using AgentContext.Infrastructure;
@@ -21,7 +22,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+        // T11: LocalizedException → { errorCode, message } in the configured language.
+        options.Filters.Add<LocalizedExceptionFilter>())
     // Enums travel as strings on the REST surface (matches the DB's string columns).
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));

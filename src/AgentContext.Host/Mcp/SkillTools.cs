@@ -10,10 +10,14 @@ namespace AgentContext.Host.Mcp;
 /// latest published version of a centrally-managed Skill by (domain, slug) —
 /// no local installation needed. Backed by the same ISkillAppService seam as the
 /// REST surface; the skill://{domain}/{slug} resource (SkillResources) resolves
-/// the same data for clients that prefer resources over tools.
+/// the same data for clients that prefer resources over tools. Errors are
+/// localized (T11) through the shared translation service.
 /// </summary>
 [McpServerToolType]
-public sealed class SkillTools(ISkillAppService skills)
+public sealed class SkillTools(
+    ISkillAppService skills,
+    ISettingsAppService settings,
+    ITranslationService translations)
 {
     [McpServerTool(Name = "get_skill")]
     [Description("Loads the latest version of a Skill by domain and slug. Skills are managed centrally by the platform instead of being installed per machine. Throws when the skill does not exist.")]
@@ -21,5 +25,6 @@ public sealed class SkillTools(ISkillAppService skills)
         [Description("Domain the skill lives in, e.g. \"dev\".")] string domain,
         [Description("Stable skill slug, e.g. \"coding-guide\".")] string slug,
         CancellationToken cancellationToken = default)
-        => await skills.GetBySlugAsync(domain, slug, cancellationToken);
+        => await McpErrorLocalizer.ExecuteAsync(settings, translations, () =>
+            skills.GetBySlugAsync(domain, slug, cancellationToken), cancellationToken);
 }

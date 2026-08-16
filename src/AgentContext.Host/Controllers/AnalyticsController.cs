@@ -36,16 +36,7 @@ public sealed class AnalyticsController(
     [HttpPut("pricing")]
     public async Task<ActionResult<ModelPricingDto>> SavePricing(
         [FromBody] SaveModelPricingRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Ok(await pricing.SaveAsync(request, cancellationToken));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => Ok(await pricing.SaveAsync(request, cancellationToken));
 
     /// <summary>Delete a model's pricing row; no-op when the model is unknown.</summary>
     [HttpDelete("pricing/{model}")]

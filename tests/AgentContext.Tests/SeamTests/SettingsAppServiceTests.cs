@@ -1,4 +1,5 @@
 using AgentContext.Application.Learning;
+using AgentContext.Application.Localization;
 using AgentContext.Application.Settings;
 using AgentContext.Infrastructure;
 using AgentContext.Tests.Testcontainers;
@@ -92,7 +93,8 @@ public sealed class SettingsAppServiceTests : PostgresTestBase
     {
         var (service, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() =>
             service.SaveLlmOptionsAsync(new LlmOptions { BaseUrl = "not a uri", ApiKey = "", Model = "" }));
+        Assert.Equal(ErrorCodes.Llm.BaseUrlInvalid, ex.ErrorCode);
     }
 }

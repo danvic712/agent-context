@@ -8,12 +8,15 @@ namespace AgentContext.Host.Mcp;
 /// <summary>
 /// The v1 toolset's knowledge tools (spec §6.1 / issues #5 + #6): retrieval
 /// (search_memory / find_similar_solution) shares one backend, and
-/// rate_knowledge drives the dynamic Confidence feedback loop.
+/// rate_knowledge drives the dynamic Confidence feedback loop. Errors are
+/// localized (T11) through the shared translation service.
 /// </summary>
 [McpServerToolType]
 public sealed class KnowledgeTools(
     IRetrievalAppService retrieval,
-    IKnowledgeAppService knowledge)
+    IKnowledgeAppService knowledge,
+    ISettingsAppService settings,
+    ITranslationService translations)
 {
     [McpServerTool(Name = "search_memory")]
     [Description("Searches the platform's Knowledge within a domain, ranked by semantic relevance to the query, excluding items below the Confidence threshold (default 0.5). Conflicting pairs are returned together so both sides are visible.")]
@@ -22,7 +25,8 @@ public sealed class KnowledgeTools(
         [Description("Natural-language query describing what to retrieve.")] string query,
         [Description("Minimum Confidence threshold (default 0.5).")] double? minConfidence = null,
         CancellationToken cancellationToken = default)
-        => await retrieval.SearchMemoryAsync(domain, query, minConfidence, cancellationToken);
+        => await McpErrorLocalizer.ExecuteAsync(settings, translations, () =>
+            retrieval.SearchMemoryAsync(domain, query, minConfidence, cancellationToken), cancellationToken);
 
     [McpServerTool(Name = "find_similar_solution")]
     [Description("Returns the best-matching historical Solution Knowledge for a problem description (with conflicting Solutions side by side), or null when none meets the Confidence threshold.")]
@@ -30,7 +34,8 @@ public sealed class KnowledgeTools(
         [Description("Domain to search, e.g. \"dev\" or \"home\".")] string domain,
         [Description("Problem description to match against recorded Solutions.")] string problem,
         CancellationToken cancellationToken = default)
-        => await retrieval.FindSimilarSolutionAsync(domain, problem, cancellationToken);
+        => await McpErrorLocalizer.ExecuteAsync(settings, translations, () =>
+            retrieval.FindSimilarSolutionAsync(domain, problem, cancellationToken), cancellationToken);
 
     [McpServerTool(Name = "rate_knowledge")]
     [Description("Rates a Knowledge item to adjust its Confidence: useful confirms it (+0.1, capped at 1.0); not useful clears it (Confidence 0, item moves to the review list).")]
@@ -38,5 +43,6 @@ public sealed class KnowledgeTools(
         [Description("Id of the Knowledge item to rate.")] Guid id,
         [Description("true = useful / confirm, false = not useful / clear.")] bool useful,
         CancellationToken cancellationToken = default)
-        => await knowledge.RateAsync(id, useful, cancellationToken);
+        => await McpErrorLocalizer.ExecuteAsync(settings, translations, () =>
+            knowledge.RateAsync(id, useful, cancellationToken), cancellationToken);
 }

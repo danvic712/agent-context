@@ -1,6 +1,7 @@
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Retrieval;
+using AgentContext.Application.Localization;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Infrastructure;
@@ -118,7 +119,7 @@ public sealed class KnowledgeManagementTests : PostgresTestBase
     {
         var (db, _, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).UpdateVisibilityAsync(Guid.NewGuid(), true));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).UpdateVisibilityAsync(Guid.NewGuid(), true));
     }
 
     [Fact]
@@ -143,7 +144,7 @@ public sealed class KnowledgeManagementTests : PostgresTestBase
     {
         var (db, _, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).DeleteAsync(Guid.NewGuid()));
     }
 
     [Fact]
@@ -178,7 +179,7 @@ public sealed class KnowledgeManagementTests : PostgresTestBase
     {
         var (db, _, _, _) = await SeededAsync();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => Service(db).RateAsync(Guid.NewGuid(), useful: true));
+        await Assert.ThrowsAsync<LocalizedException>(() => Service(db).RateAsync(Guid.NewGuid(), useful: true));
     }
 
     private sealed class FakeLlmClientShim : AgentContext.Application.Contracts.ILlmClient

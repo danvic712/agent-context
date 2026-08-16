@@ -53,6 +53,20 @@ export async function saveLlmOptions(input: LlmOptionsInput): Promise<LlmOptions
   return data
 }
 
+export interface LanguageDto {
+  language: string
+}
+
+export async function getLanguage(): Promise<LanguageDto> {
+  const { data } = await http.get<LanguageDto>('/settings/language')
+  return data
+}
+
+export async function saveLanguage(language: string): Promise<LanguageDto> {
+  const { data } = await http.put<LanguageDto>('/settings/language', { language })
+  return data
+}
+
 export type KnowledgeType = 'Problem' | 'Solution' | 'Pattern'
 
 export interface KnowledgeItem {
