@@ -19,16 +19,33 @@ public static class McpProcess
         }
     }
 
-    /// <summary>Creates an SDK MCP client over stdio, pointed at the test database.</summary>
-    public static Task<McpClient> CreateClientAsync(string connectionString)
-        => McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions
+    /// <summary>
+    /// Creates an SDK MCP client over stdio, pointed at the test database.
+    /// Optional extra environment variables pass through to the child process
+    /// (e.g. <c>Skills__Directory</c> for the T12 package store).
+    /// </summary>
+    public static Task<McpClient> CreateClientAsync(
+        string connectionString,
+        IReadOnlyDictionary<string, string>? extraEnv = null)
+    {
+        var environment = new Dictionary<string, string>
+        {
+            ["ConnectionStrings__Default"] = connectionString,
+        };
+        if (extraEnv is not null)
+        {
+            foreach (var (key, value) in extraEnv)
+            {
+                environment[key] = value;
+            }
+        }
+
+        return McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions
         {
             Name = "agent-context-tests",
             Command = AppBinaryPath,
             Arguments = ["--mcp-stdio"],
-            EnvironmentVariables = new Dictionary<string, string>
-            {
-                ["ConnectionStrings__Default"] = connectionString,
-            },
+            EnvironmentVariables = environment,
         }));
+    }
 }

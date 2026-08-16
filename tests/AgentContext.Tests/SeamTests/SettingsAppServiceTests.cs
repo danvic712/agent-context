@@ -97,4 +97,29 @@ public sealed class SettingsAppServiceTests : PostgresTestBase
             service.SaveLlmOptionsAsync(new LlmOptions { BaseUrl = "not a uri", ApiKey = "", Model = "" }));
         Assert.Equal(ErrorCodes.Llm.BaseUrlInvalid, ex.ErrorCode);
     }
+
+    [Fact]
+    public async Task Theme_falls_back_to_system_and_round_trips_normalized()
+    {
+        var (service, db) = await SeededAsync();
+
+        Assert.Equal(ThemeDefaults.System, await service.GetThemeAsync());
+
+        await service.SaveThemeAsync("DARK");
+        Assert.Equal(ThemeDefaults.Dark, await service.GetThemeAsync());
+        Assert.Equal(ThemeDefaults.Dark, (await db.AppSettings.AsNoTracking()
+            .SingleAsync(s => s.Key == SettingKeys.Theme)).Value);
+
+        await service.SaveThemeAsync("light");
+        Assert.Equal(ThemeDefaults.Light, await service.GetThemeAsync());
+    }
+
+    [Fact]
+    public async Task Theme_rejects_unsupported_values()
+    {
+        var (service, _) = await SeededAsync();
+
+        var ex = await Assert.ThrowsAsync<LocalizedException>(() => service.SaveThemeAsync("blue"));
+        Assert.Equal(ErrorCodes.Settings.UnsupportedTheme, ex.ErrorCode);
+    }
 }

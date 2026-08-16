@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   deletePricing,
   getOverview,
@@ -140,7 +141,7 @@ export function AnalyticsOverview() {
             </Field>
           </div>
 
-          {overview && (
+          {overview ? (
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="default">
                 {t('analytics.sessions', { count: overview.totalSessions })}
@@ -152,6 +153,12 @@ export function AnalyticsOverview() {
                 <CoinsIcon data-icon="inline-start" className="size-3" />
                 {money(overview.totalCost)}
               </Badge>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3" aria-busy="true">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-28" />
+              <Skeleton className="h-6 w-20" />
             </div>
           )}
         </CardContent>

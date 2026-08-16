@@ -1,13 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
 
-@custom-variant dark (&:is(.dark *));
+/* Direction D (T12): the theme is selected by [data-theme="light"|"dark"] on
+   <html> — driven by the platform theme setting (settings.theme) and applied by
+   the ThemeProvider. System mode resolves to one of the two via matchMedia. */
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 @theme inline {
+    --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +44,11 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-warn: var(--warn);
+    --color-ok: var(--ok);
+    --color-panel: var(--panel);
+    --color-panel2: var(--panel2);
+    --color-line: var(--line);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -48,83 +58,258 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+/* ---- Direction D palette (docs/design/ui-direction-d.html) ---- */
+:root,
+[data-theme="light"] {
+    --accent: #5e6ad2;
+    --accent-soft: rgba(94, 106, 210, 0.14);
+    --ok: #22a06b;
+    --warn: #d97706;
+
+    --background: #f6f6f4;
+    --foreground: #1a1b1f;
+    --card: #ffffff;
+    --card-foreground: #1a1b1f;
+    --popover: #ffffff;
+    --popover-foreground: #1a1b1f;
+    --primary: #1a1b1f;
+    --primary-foreground: #ffffff;
+    --secondary: #fbfbf9;
+    --secondary-foreground: #1a1b1f;
+    --muted: #f3f3f1;
+    --muted-foreground: #5f6670;
+    --accent-foreground: #5e6ad2;
+    --destructive: #d64545;
+    --border: rgba(16, 17, 20, 0.09);
+    --input: rgba(16, 17, 20, 0.16);
+    --ring: #5e6ad2;
+    --chart-1: #5e6ad2;
+    --chart-2: #22a06b;
+    --chart-3: #d97706;
+    --chart-4: #a855f7;
+    --chart-5: #0ea5e9;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar: #f6f6f4;
+    --sidebar-foreground: #1a1b1f;
+    --sidebar-primary: #5e6ad2;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(94, 106, 210, 0.14);
+    --sidebar-accent-foreground: #1a1b1f;
+    --sidebar-border: rgba(16, 17, 20, 0.09);
+    --sidebar-ring: #5e6ad2;
+
+    /* Direction D primitives for custom components */
+    --panel: #ffffff;
+    --panel2: #fbfbf9;
+    --line: rgba(16, 17, 20, 0.09);
+    --line2: rgba(16, 17, 20, 0.16);
+    --txt: #1a1b1f;
+    --mut: #5f6670;
+    --dim: #9aa1ab;
+    --code-bg: #fafaf8;
+    --shadow-card: 0 1px 2px rgba(16, 17, 20, 0.05), 0 8px 24px rgba(16, 17, 20, 0.07);
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+[data-theme="dark"] {
+    --accent: #5e6ad2;
+    --accent-soft: rgba(94, 106, 210, 0.14);
+    --ok: #22a06b;
+    --warn: #d97706;
+
+    --background: #0b0c0e;
+    --foreground: #e7e9ec;
+    --card: #111316;
+    --card-foreground: #e7e9ec;
+    --popover: #111316;
+    --popover-foreground: #e7e9ec;
+    --primary: #e7e9ec;
+    --primary-foreground: #0b0c0e;
+    --secondary: #17191d;
+    --secondary-foreground: #e7e9ec;
+    --muted: #17191d;
+    --muted-foreground: #8f97a3;
+    --accent-foreground: #8b96e8;
+    --destructive: #e56565;
+    --border: rgba(255, 255, 255, 0.07);
+    --input: rgba(255, 255, 255, 0.12);
+    --ring: #5e6ad2;
+    --chart-1: #5e6ad2;
+    --chart-2: #22a06b;
+    --chart-3: #d97706;
+    --chart-4: #a855f7;
+    --chart-5: #0ea5e9;
+    --radius: 0.625rem;
+    --sidebar: #111316;
+    --sidebar-foreground: #e7e9ec;
+    --sidebar-primary: #5e6ad2;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(94, 106, 210, 0.14);
+    --sidebar-accent-foreground: #e7e9ec;
+    --sidebar-border: rgba(255, 255, 255, 0.07);
+    --sidebar-ring: #5e6ad2;
+
+    --panel: #111316;
+    --panel2: #17191d;
+    --line: rgba(255, 255, 255, 0.07);
+    --line2: rgba(255, 255, 255, 0.12);
+    --txt: #e7e9ec;
+    --mut: #8f97a3;
+    --dim: #5c6470;
+    --code-bg: #0d0f12;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+html {
+    @apply font-sans;
+}
+
+/* Smooth theme transitions (Direction D). */
+html,
+html *,
+html *::before,
+html *::after {
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease,
+        color 0.25s ease;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: "cv11", "ss01";
+        -webkit-font-smoothing: antialiased;
     }
-  html {
-    @apply font-sans;
-    }
+}
+
+/* Markdown rendering (Skill SKILL.md, T12) — scoped to .md-view. */
+.md-view {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--txt);
+}
+.md-view h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+.md-view h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 16px 0 6px;
+}
+.md-view h3,
+.md-view h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+}
+.md-view p {
+    margin: 6px 0;
+    color: var(--mut);
+}
+.md-view ul,
+.md-view ol {
+    margin: 6px 0;
+    padding-left: 20px;
+    color: var(--mut);
+}
+.md-view li {
+    margin: 3px 0;
+}
+.md-view a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.md-view blockquote {
+    margin: 10px 0;
+    padding: 4px 12px;
+    border-left: 3px solid var(--accent);
+    color: var(--mut);
+    background: var(--panel2);
+    border-radius: 0 8px 8px 0;
+}
+.md-view code:not(pre code) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 5px;
+    color: var(--txt);
+}
+.md-view pre {
+    margin: 10px 0;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--code-bg);
+}
+.md-view pre code {
+    display: block;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    overflow-x: auto;
+    color: #cbd2dc;
+}
+/* Shiki dual-theme highlighting (T12): colors come from CSS variables that
+   follow [data-theme]; the container background stays the Direction D code bg. */
+.md-view .md-shiki pre,
+.md-view .shiki {
+    margin: 10px 0;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow-x: auto;
+    background: var(--code-bg) !important;
+    padding: 12px 14px;
+}
+.md-view .md-shiki pre code,
+.md-view .shiki code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--shiki-light);
+}
+[data-theme="dark"] .md-view .shiki code {
+    color: var(--shiki-dark);
+}
+.md-view .md-plain {
+    margin: 10px 0;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--code-bg);
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #cbd2dc;
+}
+.md-view hr {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 14px 0;
+}
+.md-view table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12.5px;
+}
+.md-view th,
+.md-view td {
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    text-align: left;
+}
+.md-view th {
+    background: var(--panel2);
+    font-weight: 600;
 }

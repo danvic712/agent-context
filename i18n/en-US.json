@@ -100,7 +100,32 @@
       "failedSave": "Failed to save skill",
       "failedDelete": "Failed to delete skill",
       "deleteAria": "Delete {{slug}}",
-      "version": "v{{version}}"
+      "version": "v{{version}}",
+      "selectHint": "Select a skill on the left to inspect its package.",
+      "noSkillsHint": "No skills yet — create one to get started.",
+      "newSkill": "New skill",
+      "importPackage": "Import package",
+      "uploadFiles": "Upload files",
+      "publishVersion": "Publish version",
+      "dragHint": "Drop files here or click to browse",
+      "uploading": "Uploading…",
+      "uploadedFiles": "Uploaded {{count}} file(s).",
+      "uploadFailed": "Upload failed.",
+      "importFailed": "Import failed.",
+      "deleteFileConfirm": "Delete \"{{name}}\" from the package?",
+      "fileSaved": "Saved ✓",
+      "fileSaveFailed": "Failed to save file.",
+      "fileLoadFailed": "Failed to load file.",
+      "binaryFileNote": "Binary file — not editable in the browser.",
+      "downloadFile": "Download",
+      "emptyPackage": "This package has no files yet — upload or import to add files.",
+      "createSkillDescription": "New skills start with a SKILL.md main file.",
+      "mainFile": "Main file",
+      "allFiles": "All files",
+      "package": "package",
+      "files": "files",
+      "edit": "Edit",
+      "preview": "Preview"
     },
     "analytics": {
       "overviewTitle": "Session overview",
@@ -169,6 +194,13 @@
       "languageDescription": "The platform-wide language (BCP-47). Applied to the UI, backend errors and new Knowledge extraction.",
       "english": "English",
       "chinese": "中文 (简体)",
+      "theme": "Theme",
+      "themeDescription": "Platform-wide appearance — Light, Dark, or follow the system. Saved for every browser.",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "themeToggleDark": "Switch to dark theme",
+      "themeToggleLight": "Switch to light theme",
       "failedLoad": "Failed to load settings",
       "failedSave": "Failed to save settings"
     }
@@ -195,7 +227,12 @@
       "slugInvalid": "Slug must be lowercase alphanumeric words separated by single hyphens.",
       "nameRequired": "Name is required.",
       "notFound": "Skill {0} not found.",
-      "slugNotFound": "Skill \"{0}\" not found in domain \"{1}\"."
+      "slugNotFound": "Skill \"{0}\" not found in domain \"{1}\".",
+      "packageExists": "A package for \"{1}/{0}\" version {2} already exists.",
+      "filePathInvalid": "The file path is invalid. Use a relative path inside the package, e.g. \"examples/tool.ts\".",
+      "fileNotFound": "File \"{0}\" not found in the skill package.",
+      "fileTooLarge": "File \"{0}\" exceeds the 10 MB limit.",
+      "importInvalid": "The uploaded archive is invalid or contains an unsafe path."
     },
     "pricing": {
       "modelRequired": "Model name is required.",
@@ -213,7 +250,8 @@
       "notConfigured": "The platform has not been configured yet. Run the first-run wizard first."
     },
     "settings": {
-      "unsupportedLanguage": "Unsupported language \"{0}\". Supported locales: en-US, zh-CN."
+      "unsupportedLanguage": "Unsupported language \"{0}\". Supported locales: en-US, zh-CN.",
+      "unsupportedTheme": "Unsupported theme \"{0}\". Supported values: light, dark, system."
     }
   },
   "prompts": {

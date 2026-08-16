@@ -1,12 +1,16 @@
+using System.Net;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Localization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentContext.Host.Controllers;
 
 /// <summary>
-/// Skill surface (T6, issue #7): CRUD over the latest version, publish-new-version,
-/// and get_skill over REST (spec US21–23). Thin adapters over the application seam.
+/// Skill surface (T6, issue #7 + T12 package model): CRUD over the latest
+/// version, publish-new-version, get_skill over REST, plus per-file operations
+/// (read / write / delete / bulk upload / zip import) against the filesystem
+/// package. Thin adapters over the application seam.
 /// </summary>
 [ApiController]
 [Route("api/skills")]
@@ -56,5 +60,97 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
     {
         await skills.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Read one package file (T12): raw bytes with a mime type derived from the
+    /// file extension (binary assets included).
+    /// </summary>
+    [HttpGet("{id:guid}/file")]
+    public async Task<IActionResult> ReadFile(Guid id, [FromQuery] string path, CancellationToken cancellationToken)
+    {
+        var content = await skills.ReadFileAsync(id, path, cancellationToken);
+        return File(content, ContentType(path));
+    }
+
+    /// <summary>
+    /// Write (create or overwrite) one package file (T12). The request body is the
+    /// raw file content — text or binary.
+    /// </summary>
+    [HttpPut("{id:guid}/file")]
+    public async Task<ActionResult<SkillDetail>> WriteFile(Guid id, [FromQuery] string path, CancellationToken cancellationToken)
+    {
+        using var buffer = new MemoryStream();
+        await Request.Body.CopyToAsync(buffer, cancellationToken);
+        return Ok(await skills.WriteFileAsync(id, path, buffer.ToArray(), cancellationToken));
+    }
+
+    /// <summary>Delete one package file (T12); empty parent directories are pruned.</summary>
+    [HttpDelete("{id:guid}/file")]
+    public async Task<ActionResult<SkillDetail>> DeleteFile(Guid id, [FromQuery] string path, CancellationToken cancellationToken)
+        => Ok(await skills.DeleteFileAsync(id, path, cancellationToken));
+
+    /// <summary>
+    /// Bulk upload into the package (T12, drag-and-drop in the UI): each uploaded
+    /// file lands at its relative name. Binary assets are supported.
+    /// </summary>
+    [HttpPost("{id:guid}/files")]
+    public async Task<ActionResult<SkillDetail>> UploadFiles(Guid id, CancellationToken cancellationToken)
+    {
+        if (Request.Form.Files.Count == 0)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+
+        SkillDetail detail = await skills.GetAsync(id, cancellationToken);
+        foreach (var file in Request.Form.Files)
+        {
+            using var stream = file.OpenReadStream();
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, cancellationToken);
+            detail = await skills.WriteFileAsync(id, file.FileName, buffer.ToArray(), cancellationToken);
+        }
+
+        return Ok(detail);
+    }
+
+    /// <summary>
+    /// Import a package from a zip archive (T12): entries are extracted into the
+    /// package; SKILL.md is created when the zip omits it.
+    /// </summary>
+    [HttpPost("{id:guid}/import")]
+    public async Task<ActionResult<SkillDetail>> Import(Guid id, CancellationToken cancellationToken)
+    {
+        if (Request.Form.Files.Count == 0)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+
+        using var stream = Request.Form.Files[0].OpenReadStream();
+        return Ok(await skills.ImportZipAsync(id, stream, cancellationToken));
+    }
+
+    private static string ContentType(string path)
+    {
+        return Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".md" or ".markdown" => "text/markdown; charset=utf-8",
+            ".txt" => "text/plain; charset=utf-8",
+            ".json" => "application/json",
+            ".ts" or ".tsx" => "text/typescript",
+            ".js" or ".mjs" => "text/javascript",
+            ".css" => "text/css",
+            ".html" or ".htm" => "text/html",
+            ".sql" => "text/sql",
+            ".sh" or ".bash" => "text/x-shellscript",
+            ".svg" => "image/svg+xml",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".pdf" => "application/pdf",
+            ".zip" => "application/zip",
+            _ => "application/octet-stream",
+        };
     }
 }

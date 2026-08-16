@@ -136,4 +136,33 @@ public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppS
 
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<string> GetThemeAsync(CancellationToken cancellationToken = default)
+    {
+        var stored = await db.AppSettings.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Key == SettingKeys.Theme, cancellationToken);
+
+        return ThemeDefaults.Normalize(stored?.Value);
+    }
+
+    public async Task SaveThemeAsync(string theme, CancellationToken cancellationToken = default)
+    {
+        if (!ThemeDefaults.TryNormalize(theme, out var normalized))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Settings.UnsupportedTheme, theme ?? string.Empty);
+        }
+
+        var existing = await db.AppSettings
+            .FirstOrDefaultAsync(e => e.Key == SettingKeys.Theme, cancellationToken);
+        if (existing is null)
+        {
+            db.AppSettings.Add(new AppSetting { Key = SettingKeys.Theme, Value = normalized });
+        }
+        else
+        {
+            existing.Value = normalized;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
 }

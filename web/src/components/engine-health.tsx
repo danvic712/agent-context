@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getEngineHealth, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
 
 export function EngineHealthView() {
@@ -53,7 +54,7 @@ export function EngineHealthView() {
           <CardDescription>{t('engineHealth.learningEngineDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {health && (
+          {health ? (
             <div className="flex flex-wrap items-center gap-3">
               <Badge variant="default">
                 {t('engineHealth.queued', { count: health.queuedSessions })}
@@ -70,6 +71,14 @@ export function EngineHealthView() {
               <Badge variant="outline">
                 {t('engineHealth.totalSessions', { count: health.totalSessions })}
               </Badge>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3" aria-busy="true">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-28" />
+              <Skeleton className="h-6 w-24" />
             </div>
           )}
         </CardContent>

@@ -49,7 +49,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRetrievalAppService, RetrievalAppService>();
         services.AddScoped<IKnowledgeAppService, KnowledgeAppService>();
 
-        // Skill management (T6, issue #7): CRUD + versions + get_skill
+        // Skill management (T6, issue #7): CRUD + versions + get_skill.
+        // T12: the skill package (files) lives on the filesystem under Skills:Directory
+        // (default ./skills), while the DB keeps metadata. Singletons are stateless
+        // over the resolved root directory.
+        services.AddSingleton<ISkillPackageStore>(_ => new SkillPackageStore(
+            configuration["Skills:Directory"] ?? "skills"));
         services.AddScoped<ISkillAppService, SkillAppService>();
 
         // Session overview analytics + model pricing (T7, issue #8)

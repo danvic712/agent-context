@@ -12,12 +12,12 @@ namespace AgentContext.Application.Skills;
 
 /// <inheritdoc cref="ISkillAppService"/>
 /// <summary>
-/// Thin Skill management (T6 / spec US21–23): one row per published version so
-/// history is retained; get_skill resolves the latest. Domain resolution follows
-/// the single-user MVP convention (first Workspace, resolve-or-create by name),
-/// consistent with save_session and retrieval.
+/// Skill management (T6 / US21–23 + T12 package model): one DB row per published
+/// version (history retained) whose files live in a filesystem package
+/// (<see cref="ISkillPackageStore"/>). Domain resolution follows the single-user
+/// MVP convention (first Workspace, resolve-or-create by name).
 /// </summary>
-public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
+public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore packages) : ISkillAppService
 {
     private static readonly Regex SlugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
@@ -44,7 +44,6 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             Slug = request.Slug,
             Name = request.Name.Trim(),
             Description = request.Description.Trim(),
-            Instructions = request.Instructions.Trim(),
             Version = 1,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
@@ -52,7 +51,11 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         db.Skills.Add(skill);
         await db.SaveChangesAsync(cancellationToken);
 
-        return ToDetail(skill, domain.Name);
+        // The package is the source of truth for content: seed SKILL.md from the
+        // request's Instructions (legacy shape), then return the manifest.
+        packages.CreatePackage(domain.Name, skill.Slug, skill.Version, request.Instructions.Trim());
+
+        return await ToDetailAsync(skill, domain.Name, cancellationToken);
     }
 
     public async Task<IReadOnlyList<SkillListItem>> ListAsync(CancellationToken cancellationToken = default)
@@ -98,7 +101,7 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
-        return ToDetail(skill.s, skill.DomainName ?? "unknown");
+        return await ToDetailAsync(skill.s, skill.DomainName ?? "unknown", cancellationToken);
     }
 
     public async Task<SkillDetail> GetBySlugAsync(string domainName, string slug, CancellationToken cancellationToken = default)
@@ -106,23 +109,10 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
 
-        var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);
-        if (workspaceId is null)
-        {
-            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName);
-        }
+        var skill = await FindLatestAsync(domainName, slug, cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName);
 
-        var skill = await db.Skills.AsNoTracking()
-            .Where(s => s.WorkspaceId == workspaceId
-                && s.Slug == slug
-                && s.Domain != null && s.Domain.Name == domainName)
-            .OrderByDescending(s => s.Version)
-            .Select(s => new { s, DomainName = s.Domain!.Name })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return skill is null
-            ? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName)
-            : ToDetail(skill.s, skill.DomainName);
+        return await ToDetailAsync(skill, domainName, cancellationToken);
     }
 
     public async Task<SkillDetail> PublishAsync(Guid id, PublishSkillRequest request, CancellationToken cancellationToken = default)
@@ -149,7 +139,6 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             Slug = current.Slug,
             Name = request.Name.Trim(),
             Description = request.Description.Trim(),
-            Instructions = request.Instructions.Trim(),
             Version = maxVersion + 1,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
@@ -157,7 +146,14 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         db.Skills.Add(next);
         await db.SaveChangesAsync(cancellationToken);
 
-        return ToDetail(next, current.Domain.Name);
+        // The new version inherits the whole package (all files), with SKILL.md
+        // overridden by the edited instructions.
+        packages.CopyPackage(
+            current.Domain.Name, current.Slug, current.Version,
+            current.Domain.Name, next.Slug, next.Version,
+            request.Instructions.Trim());
+
+        return await ToDetailAsync(next, current.Domain.Name, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -170,7 +166,15 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
         // Deleting a skill removes every version of its (domain, slug): get_skill
-        // must no longer resolve it, so all history rows go.
+        // must no longer resolve it, so all history rows and their packages go.
+        var versions = await db.Skills
+            .AsNoTracking()
+            .Where(s => s.WorkspaceId == target.WorkspaceId
+                && s.DomainId == target.DomainId
+                && s.Slug == target.Slug)
+            .Select(s => s.Version)
+            .ToListAsync(cancellationToken);
+
         var deleted = await db.Skills
             .Where(s => s.WorkspaceId == target.WorkspaceId
                 && s.DomainId == target.DomainId
@@ -181,6 +185,112 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
         {
             throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
         }
+
+        var domainName = await db.Domains.AsNoTracking()
+            .Where(d => d.Id == target.DomainId)
+            .Select(d => d.Name)
+            .FirstOrDefaultAsync(cancellationToken) ?? "unknown";
+
+        foreach (var version in versions)
+        {
+            packages.DeletePackage(domainName, target.Slug, version);
+        }
+    }
+
+    public async Task<SkillPackage> GetPackageAsync(string domain, string slug, CancellationToken cancellationToken = default)
+    {
+        var skill = await FindLatestAsync(domain, slug, cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domain);
+
+        packages.EnsurePackage(domain, skill.Slug, skill.Version, skill.Instructions);
+
+        var manifest = packages.ListFiles(domain, skill.Slug, skill.Version);
+        var files = manifest
+            .Select(info =>
+            {
+                var bytes = packages.ReadFile(domain, skill.Slug, skill.Version, info.Path);
+                return new SkillFileContent(
+                    info.Path,
+                    info.Binary ? Convert.ToBase64String(bytes) : System.Text.Encoding.UTF8.GetString(bytes),
+                    info.Binary);
+            })
+            .ToList();
+
+        return new SkillPackage(
+            skill.Id, domain, skill.Slug, skill.Name, skill.Description, skill.Version,
+            skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, files);
+    }
+
+    public async Task<byte[]> ReadFileAsync(Guid id, string path, CancellationToken cancellationToken = default)
+    {
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        return packages.ReadFile(domainName, slug, version, path);
+    }
+
+    public async Task<SkillDetail> WriteFileAsync(Guid id, string path, byte[] content, CancellationToken cancellationToken = default)
+    {
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        packages.WriteFile(domainName, slug, version, path, content);
+        return await GetAsync(id, cancellationToken);
+    }
+
+    public async Task<SkillDetail> DeleteFileAsync(Guid id, string path, CancellationToken cancellationToken = default)
+    {
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        packages.DeleteFile(domainName, slug, version, path);
+        return await GetAsync(id, cancellationToken);
+    }
+
+    public async Task<SkillDetail> ImportZipAsync(Guid id, Stream zipStream, CancellationToken cancellationToken = default)
+    {
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        packages.ImportZip(domainName, slug, version, zipStream);
+        return await GetAsync(id, cancellationToken);
+    }
+
+    private async Task<Skill?> FindLatestAsync(string domainName, string slug, CancellationToken cancellationToken)
+    {
+        var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);
+        if (workspaceId is null)
+        {
+            return null;
+        }
+
+        return await db.Skills.AsNoTracking()
+            .Where(s => s.WorkspaceId == workspaceId
+                && s.Slug == slug
+                && s.Domain != null && s.Domain.Name == domainName)
+            .OrderByDescending(s => s.Version)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<(string DomainName, string Slug, int Version)> ResolvePackageLocationAsync(
+        Guid id, CancellationToken cancellationToken)
+    {
+        var skill = await db.Skills.AsNoTracking()
+            .Where(s => s.Id == id)
+            .Select(s => new { s.Slug, s.Version, DomainName = s.Domain != null ? s.Domain.Name : null })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+
+        if (string.IsNullOrEmpty(skill.DomainName))
+        {
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+        }
+
+        return (skill.DomainName, skill.Slug, skill.Version);
+    }
+
+    private async Task<SkillDetail> ToDetailAsync(Skill skill, string domainName, CancellationToken cancellationToken)
+    {
+        // Lazy migration (T12 AC5): a package missing its directory is seeded from
+        // the legacy Instructions column — idempotent, so nothing is lost.
+        packages.EnsurePackage(domainName, skill.Slug, skill.Version, skill.Instructions);
+        var manifest = packages.ListFiles(domainName, skill.Slug, skill.Version);
+
+        return new SkillDetail(
+            skill.Id, domainName, skill.Slug, skill.Name, skill.Description,
+            skill.Version, skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest);
     }
 
     private async Task<DomainEntity> ResolveDomainAsync(string name, CancellationToken cancellationToken)
@@ -217,15 +327,4 @@ public sealed class SkillAppService(AgentContextDbContext db) : ISkillAppService
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugInvalid);
         }
     }
-
-    private static SkillDetail ToDetail(Skill skill, string domainName) => new(
-        skill.Id,
-        domainName,
-        skill.Slug,
-        skill.Name,
-        skill.Description,
-        skill.Instructions,
-        skill.Version,
-        skill.CreatedAtUtc,
-        skill.UpdatedAtUtc);
 }

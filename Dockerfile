@@ -14,6 +14,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY AgentContext.slnx ./
 COPY Directory.Packages.props ./
+# The localization store (ADR 0008): embedded by the Application project.
+COPY i18n/ ./i18n/
 COPY src/AgentContext.Domain/AgentContext.Domain.csproj src/AgentContext.Domain/
 COPY src/AgentContext.Infrastructure/AgentContext.Infrastructure.csproj src/AgentContext.Infrastructure/
 COPY src/AgentContext.Application/AgentContext.Application.csproj src/AgentContext.Application/
