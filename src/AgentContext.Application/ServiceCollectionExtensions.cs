@@ -4,6 +4,7 @@ using AgentContext.Application.Learning;
 using AgentContext.Application.Retrieval;
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Settings;
+using AgentContext.Application.Skills;
 using AgentContext.Application.Setup;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();
         services.AddScoped<IRetrievalAppService, RetrievalAppService>();
         services.AddScoped<IKnowledgeAppService, KnowledgeAppService>();
+
+        // Skill management (T6, issue #7): CRUD + versions + get_skill
+        services.AddScoped<ISkillAppService, SkillAppService>();
 
         return services;
     }
