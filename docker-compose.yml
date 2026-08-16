@@ -31,9 +31,11 @@ services:
       ConnectionStrings__Default: Host=Database;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
       # (settings REST/UI is a later ticket) — no env surface for it in v1.
-      ASPNETCORE_URLS: http://+:8080
+      # Listen on 80 (HTTP default) so the OrbStack domain needs no port:
+      # http://Host.agent-context.orb.local (or http://agent-context.orb.local).
+      ASPNETCORE_URLS: http://+:80
     ports:
-      - "8080:8080"
+      - "8080:80"
     depends_on:
       Database:
         condition: service_healthy

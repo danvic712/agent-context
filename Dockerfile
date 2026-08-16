@@ -27,7 +27,9 @@ RUN dotnet publish src/AgentContext.Host/AgentContext.Host.csproj -c Release -o 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://+:8080
+# Listen on 80 (HTTP default) so OrbStack domains like
+# http://Host.agent-context.orb.local work without a port.
+ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT ["dotnet", "AgentContext.Host.dll", "--web"]
