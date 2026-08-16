@@ -62,6 +62,8 @@ public sealed class SkillManagementTests : PostgresTestBase
         Assert.Equal(domainId, row.DomainId);
         Assert.Equal(1, row.Version);
         Assert.Equal("Coding Guide", row.Name);
+        // The legacy Instructions column is kept in sync as the migration buffer.
+        Assert.Equal("# Guide\n\nFollow the standards.", row.Instructions);
     }
 
     [Fact]
