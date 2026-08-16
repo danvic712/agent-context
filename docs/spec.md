@@ -1,6 +1,6 @@
 # Agent Context — Platform Spec
 
-> **Current state (2026-08-16)**: T1–T10 delivered and closed (#2–#11); T11–T13 planned (#12–#14). Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0008` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Research: `docs/research/competitive-landscape.md`.
+> **Current state (2026-08-16)**: T1–T13 delivered and closed (#2–#14), including the T13 follow-ups (AppHost mode + UI dashboard menu + CI/CD). Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0008` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
 
 ## 1. Positioning & Scope
 
@@ -8,13 +8,13 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 - **Users**: personal & family first (a technically capable person does the initial setup), small teams next. Domain-agnostic — dev, home, business, any domain.
 - **Four value axes**: Shared AI Context (foundation) · Continuous Learning (foundation, table stakes) · AI Capability Management (core) · AI Usage Intelligence (**differentiator**).
-- **Deployment**: self-hosted Docker Compose first (ADR 0002); SaaS later. One .NET binary, dual-mode (ADR 0006).
+- **Deployment**: self-hosted Docker Compose first (ADR 0002); SaaS later. One .NET binary, three-mode (ADR 0006).
 
-## 2. Delivered Capabilities (T1–T10)
+## 2. Delivered Capabilities (T1–T13)
 
 ### 2.1 Integration — MCP gateway (T2, T6, T9)
-- One project, dual-mode: `--web` = REST API + React UI + MCP-over-HTTP; `--mcp-stdio` = MCP server for Craft Agents (ADR 0006).
-- Five tools: `save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`. Resources: `skill://{domain}/{slug}`, `knowledge://{id}`.
+- One project, three-mode: `--web` = REST API + React UI; `--mcp-stdio` = MCP server for Craft Agents over stdio; `--apphost` = Aspire DistributedApplication (T13 follow-up, ADR 0006). MCP surface is stdio-only — no HTTP transport.
+- Five tools: `save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`. Resources: `skill://{domain}/{slug}/{file}` (T12), `knowledge://{id}`.
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
 ### 2.2 Sessions & Usage (T2)
@@ -25,6 +25,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - BackgroundService polls pending Sessions → pipeline: dedup → LLM extraction (OpenAI-compatible endpoint from the settings table, ADR 0003) → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding (`vector(1536)`) → pgvector.
 - Confidence (initial): 0.4×self-assessment + 0.2×field-completeness, cap 0.6. Conflict detection: similarity ≥0.9 corroborates, [0.6,0.9) forms/shared conflict groups; retrieval shows both sides.
 - Retries: `NextAttemptAtUtc = now + 30s×2^n` (cap 1h, budget 5); exhausted budget stays `Failed`, visible, never deleted. **Pipeline idles (never fails Sessions) while the LLM endpoint is unconfigured.**
+- Extraction output follows the **configured platform language** (T11), preserving identifiers / technical terms / original snippets.
 
 ### 2.4 Retrieval (T4)
 - `search_memory(domain, query)` / `find_similar_solution(domain, problem)` — domain-scoped, cosine-ranked, Confidence ≥ 0.5 threshold, Top 10, conflict-group partners appended side by side. REST + MCP.
@@ -33,8 +34,9 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - List with Confidence + source Session; review list with threshold; archive; private marker; delete; `rate_knowledge` (useful → +0.1 cap 1.0; not-useful → cleared to review).
 - Hygiene: temporal decay for stale items; low-confidence / long-unused → Review → Archived; restore from archive; scheduled cleanup + manual trigger; engine health view (queued/processing/failed/retry-scheduled).
 
-### 2.6 Skills (T6)
-- Versioned per `(domain, slug)`; publish bumps version, history retained; `get_skill` returns the latest; `skill://{domain}/{slug}` resource. CRUD + UI.
+### 2.6 Skills (T6, T12)
+- Versioned per `(domain, slug)`; publish bumps version, history retained; `get_skill` returns the latest; `skill://{domain}/{slug}/{file}` resource. CRUD + UI.
+- **Skill package model (T12)**: each skill is a filesystem package (manifest + `SKILL.md` + assets/scripts), stored under `Skills__Directory` (data volume in compose); in-browser file tree / markdown rendering (react-markdown + shiki) / code editing / drag-drop uploads / zip import; legacy `Instructions` column lazily migrated to `SKILL.md`.
 
 ### 2.7 Analytics (T7)
 - Session overview: sessions / tokens / cost by workspace / domain / agent; maintained model pricing table; report page.
@@ -42,53 +44,80 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 ### 2.8 LLM endpoint configuration (T10)
 - Settings stored in the `settings` table (DB, per-call resolution — no restart). `GET/PUT /api/settings/llm-options` (API key masked); first-run wizard step (skippable, Learning Engine idles until configured); settings page.
 
-### 2.9 Ops
-- Auto-creates the database + applies migrations at startup; Docker Compose = portal + postgres(pgvector); 140/140 tests green (seam + adapter suites).
+### 2.9 Localization (T11)
+- Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **single JSON resource store** shared by frontend and backend (`i18n/{locale}.json`, namespaces `ui` + `errors`, ADR 0008 — no .resx, one file per locale).
+- react-i18next across all components; first-run wizard language step + settings dropdown; backend coded errors → localized `message` + stable `errorCode` (`LocalizedExceptionFilter`, REST + MCP); existing Knowledge untouched.
 
-## 3. Planned (T11–T13)
+### 2.10 Product-grade UI + theme (T12)
+- Botanical blue theme (day = mist-blue × amber, night = night-sky blue), top navigation, Instrument Sans / Newsreader / JetBrains Mono, CSS variables + `[data-theme]` (design exploration: `docs/design/`).
+- Color theme selector (`light` / `dark` / `system`, persisted in `settings.theme`); anti-FOUC inline script; settings page.
 
-- **T11 — Platform localization (#12)**: platform-level language `en-US`/`zh-CN` stored in the settings table; single JSON resource store shared by frontend and backend (`i18n/{locale}.json`, namespaces `ui` + `errors`, ADR 0008 — no .resx, one file per locale); react-i18next across all components; first-run wizard language step + settings dropdown; backend coded errors → localized `message` + stable `errorCode` (REST + MCP); extraction prompt outputs the configured language while preserving identifiers/technical terms/original snippets; existing Knowledge untouched.
-- **T12 — Product-grade UI + theme + Skill package (#13)**: Direction D product UI (ref. `docs/design/ui-direction-d.html` — near-black + indigo, Instrument Sans + JetBrains Mono, dark/light); color theme selector (Light/Dark/System, persisted); Skill evolves from single markdown to a **filesystem-backed package** (file manifest + `SKILL.md` + code/assets), UI file tree / rendered markdown (react-markdown + shiki) / code editing / uploads; `get_skill` returns the manifest, resources extend to `skill://{domain}/{slug}/{file}`; existing Skills migrate `Instructions` → `SKILL.md`. Components adopt `t('key')` seams from the start (coordinates with T11).
-- **T13 — OpenTelemetry + Aspire dashboard (#14)**: backend exports logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics, **enabled by default**; OTLP endpoint from `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://aspire-dashboard:4317` (compose) / `localhost:4317` (standalone); new compose service `aspire-dashboard` (UI 18888, OTLP 4317/4318); `service.name=agent-context`; `OTEL_SDK_DISABLED` as escape hatch.
+### 2.11 Observability — OpenTelemetry + Aspire dashboard (T13)
+- Logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics, **enabled by default**; `service.name=agent-context`; resource attributes from `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
+- OTLP endpoint from `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://aspire-dashboard:18889` (compose in-network) / `localhost:4317` (standalone); `OTEL_SDK_DISABLED` as escape hatch; pipeline spans instrumented (`learning-pipeline.process`).
+- New compose service `aspire-dashboard` (UI 18888, OTLP/gRPC 4317, OTLP/HTTP 4318).
+
+### 2.12 AppHost mode + dashboard menu + CI/CD (T13 follow-ups)
+- `--apphost`: the same binary runs as an Aspire DistributedApplication (postgres + portal resources) so the dashboard gains the **Resources** view (`docs/guides/apphost-mode.md`).
+- UI topbar "Dashboard" entry opens the Aspire dashboard (`GET /api/health/dashboard`, `DASHBOARD_URL` env).
+- **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
+
+### 2.13 Ops
+- Auto-creates the database + applies migrations at startup; Docker Compose = portal + postgres(pgvector) + aspire-dashboard; 191/191 tests green (seam + adapter suites).
+
+## 3. Post-MVP Delivery Log
+
+| Ticket | Scope | Delivered |
+|---|---|---|
+| T9 (#10) | Craft Agents integration + guide skill + full-loop validation | 2026-08-16 |
+| T10 (#11) | LLM endpoint configuration | 2026-08-16 |
+| T11 (#12) | Platform localization (en-US/zh-CN, single JSON store) | 2026-08-16 |
+| T12 (#13) | Product-grade UI + DB theme + Skill package model | 2026-08-16 |
+| T13 (#14) | OpenTelemetry + Aspire dashboard | 2026-08-16 |
+| T13 follow-ups | AppHost mode · dashboard menu · CI/CD (GHCR + Actions) | 2026-08-16 |
+
+All validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs/validation/t12-ui-skill-package.md`, `docs/validation/t12-redesign-ui.md`, `docs/validation/t13-otel.md`.
 
 ## 4. Architecture
 
 ```
-               Users (React UI, Direction D, dark/light themes)
+               Users (React UI, botanical theme, light/dark/system)
                             |
         ┌───────────────────┴───────────────────┐
         │   AgentContext (single .NET project)  │
-        │   --web: REST API + UI + MCP-over-HTTP│
+        │   --web: REST API + UI                │
         │   --mcp-stdio: MCP for Craft Agents   │
+        │   --apphost: Aspire DistributedApp    │
         │   shared: EF Core / retrieval /       │
         │   learning / BackgroundService        │
-        │   OTel exporter (T13) → aspire-dash   │
-        └───────────────────┬───────────────────┘
-                            |
-      PostgreSQL (+ pgvector)   ·   Aspire dashboard (T13)
+        │   OTel exporter → aspire-dashboard    │
+        └───────────────┬──────────┬────────────┘
+                        │          │
+      PostgreSQL (+ pgvector)  Aspire dashboard
               (no Redis, no Hangfire)
 ```
 
-- Single project, dual-mode entrypoint (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
+- Single project, three-mode entrypoint (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
 - Background processing: `BackgroundService` + Postgres-as-queue (ADR 0005); hygiene on `PeriodicTimer`.
 - Platform settings live in the `settings` table (ADR 0003); localization resources in one JSON store (ADR 0008).
 
 ## 5. Tech Stack
 
-- **Backend**: .NET 10, ASP.NET Core, EF Core, Serilog, Microsoft Agent Framework (chat + embeddings), OpenTelemetry (T13).
-- **Frontend**: React + TypeScript + shadcn/ui (Direction D refactor), react-i18next (T11), react-markdown + shiki (T12).
+- **Backend**: .NET 10, ASP.NET Core, EF Core, Serilog, Microsoft Agent Framework (chat + embeddings), OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink), Aspire (AppHost mode).
+- **Frontend**: React + TypeScript + shadcn/ui (botanical theme, Tailwind v4), react-i18next (T11), react-markdown + shiki (T12).
 - **Data**: PostgreSQL + pgvector; Redis deferred (ADR 0007); Hangfire deferred (ADR 0005).
+- **CI/CD**: GitHub Actions (build + test · GHCR multi-arch image + GitHub Release on tags).
 
 ## 6. Data Model
 
 ```
 Workspace ──┬── Domain ──┬── Knowledge (Type/Content/Confidence/Embedding/ConflictGroupId/Status/IsPrivate)
-            │            └── Skill (versioned; package files on filesystem in T12)
+            │            └── Skill (versioned; package files on filesystem)
             ├── Membership ── User
             └── Session ──┬── Agent
                           ├── Usage (tokens/cost by model)
                           └── ⟶ Knowledge (distilled into)
-AppSetting (platform settings: LLM endpoint, language) · ModelPricing (cost table)
+AppSetting (platform settings: LLM endpoint, language, theme) · ModelPricing (cost table)
 ```
 
 ## 7. Workspace & Visibility
@@ -105,23 +134,24 @@ AppSetting (platform settings: LLM endpoint, language) · ModelPricing (cost tab
 | 0003 | Platform LLM via configurable OpenAI-compatible endpoint (settings table) |
 | 0004 | MVP scope = learning loop + thin skills + session overview; explicit no-list |
 | 0005 | BackgroundService + Postgres-as-queue; Hangfire deferred |
-| 0006 | One project, dual-mode entrypoint |
+| 0006 | One project, three-mode entrypoint (`--web` / `--mcp-stdio` / `--apphost`) |
 | 0007 | Redis deferred from MVP stack |
 | 0008 | Localization resources in one JSON file per locale, shared frontend/backend |
 
 ## 9. Testing
 
 - **Primary seam**: application services against Testcontainers pgvector (real DB; LLM faked via `FakeLlmClient`/`FakeSettingsAppService`).
-- **Adapter seam**: thin REST (`WebApplicationFactory`, run setup first) + MCP (real stdio process, in-process client) contract tests.
-- Baseline 140/140 green, zero functional regressions; OTel stays green (T13 acceptance).
+- **Adapter seam**: thin REST (`WebApplicationFactory`, run setup first) + MCP (real stdio process, in-process client) contract tests; plus OTel and web-host smoke tests.
+- Baseline 191/191 green, zero functional regressions; OTel stays green by default (T13 acceptance). CI runs the full suite on every push/PR (`build.yml`), retrying once on Testcontainers flakiness.
 
 ## 10. Out of Scope (no-list)
 
-Skill marketplace · enterprise SSO/audit · auto memory injection · git-synced skills · per-item ACL · built-in chat UI · traffic proxy · SaaS hosting · Redis · Hangfire · `npx install`-style remote skill install (post-T12) · knowledge translation migration (post-T11).
+Skill marketplace · enterprise SSO/audit · auto memory injection · git-synced skills · per-item ACL · built-in chat UI · traffic proxy · SaaS hosting · Redis · Hangfire · `npx install`-style remote skill install · knowledge translation migration.
 
 ## 11. References
 
 - `docs/handoffs/t1-t10-delivered.md` (context bridge for implementers)
-- `docs/design/ui-direction-d.html` (T12 design baseline)
-- `docs/guides/craft-agents-source.md` · `docs/skills/craft-agents-guide.md` · `docs/validation/t9-full-loop.md`
+- `docs/design/` (UI design exploration — botanical theme lineage)
+- `docs/guides/craft-agents-source.md` · `docs/guides/apphost-mode.md` · `docs/skills/craft-agents-guide.md`
+- `docs/validation/t9-full-loop.md` · `t11-localization-ui.md` · `t12-ui-skill-package.md` · `t12-redesign-ui.md` · `t13-otel.md`
 - `docs/research/competitive-landscape.md` (positioning evidence)
