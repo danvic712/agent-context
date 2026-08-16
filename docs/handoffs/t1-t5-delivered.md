@@ -8,7 +8,8 @@
 ## Status at handoff
 
 - `main` contains T1–T5 — **84/84 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.
-- Closed: #2, #3, #4 (T3), #5 (T4), #6 (T5). Open: #7 (T6), #8 (T7), #9 (T8), #10 (T9), #11 (T10).
+- **Since this handoff was written, T6–T10 also shipped and closed** (#7–#11: skills, analytics, hygiene/health, Craft Agents integration, LLM endpoint config). The only open ticket is **#12 (T11) — platform localization (en-US/zh-CN)**.
+- Closed: #2, #3, #4 (T3), #5 (T4), #6 (T5). Open: #12 (T11).
 
 ## Repo conventions (must follow — see CODING_STANDARDS.md)
 
