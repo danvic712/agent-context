@@ -14,8 +14,9 @@ function HighlightedCode({ language, code }: { language: string; code: string })
     let cancelled = false
     codeToHtml(code, {
       lang: language || 'text',
-      themes: { light: 'github-light', dark: 'github-dark' },
-      defaultColor: false,
+      // The code block surface is always the dark --code-bg panel, so the
+      // highlight tokens stay light in both day and night themes (readability).
+      theme: 'github-dark',
     })
       .then((result) => {
         if (!cancelled) setHtml(result)
