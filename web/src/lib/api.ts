@@ -28,6 +28,31 @@ export interface HealthStatus {
   database: string
 }
 
+export interface LlmOptionsDto {
+  configured: boolean
+  baseUrl: string | null
+  maskedApiKey: string | null
+  model: string | null
+  embeddingModel: string | null
+}
+
+export interface LlmOptionsInput {
+  baseUrl: string
+  apiKey: string
+  model: string
+  embeddingModel?: string | null
+}
+
+export async function getLlmOptions(): Promise<LlmOptionsDto> {
+  const { data } = await http.get<LlmOptionsDto>('/settings/llm-options')
+  return data
+}
+
+export async function saveLlmOptions(input: LlmOptionsInput): Promise<LlmOptionsDto> {
+  const { data } = await http.put<LlmOptionsDto>('/settings/llm-options', input)
+  return data
+}
+
 export type KnowledgeType = 'Problem' | 'Solution' | 'Pattern'
 
 export interface KnowledgeItem {
