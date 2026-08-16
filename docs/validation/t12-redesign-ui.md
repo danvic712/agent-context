@@ -22,6 +22,28 @@ down to mobile.
 | 8 | Markdown + shiki highlighting still render under the new system | ✓ |
 | 9 | i18n en/zh keys for tree actions (newFile/newFolder/rename/packageTree/invalidPath…) resolve | ✓ |
 
+## Follow-up: botanical theme (798e087 → 13cfd56)
+
+User design review replaced Field Notes with the **柔和植物 (Botanical)** direction:
+
+- **Top navigation** replaces the left sidebar: brand mark + pill tabs + engine
+  status + theme toggle; nav scrolls horizontally on small screens (verified at
+  800/700px).
+- **Palette**: day = mist-blue × amber (`#eef2f6` paper, `#2f6fc8` primary,
+  `#d98e4a` accent) and night = night-sky blue (`#15202b` paper, `#84c3ec`
+  primary) — variables only, both themes same-level. Newsreader display font.
+- Settings page fills the viewport (theme/language side by side on lg, LLM form
+  full-width); code blocks stay readable in both themes (light shiki tokens on
+  the always-dark code panel).
+- **Code review fixes** (13cfd56): folder rename (recursive, byte-exact via
+  Blob), new-file-inside-folder (pre-filled path), shared path validation
+  (rejects traversal + `.gitkeep` names), tree a11y (role=tree/treeitem,
+  keyboard), dead `.scribe` class removed.
+
+Verified in-browser: folder rename `scripts → scripts-v2` migrated every child
+(`.gitkeep`, `helper.sh`); new file `scripts-v2/backup.sh`; `.gitkeep` name
+rejected with the friendly inline error. Backend 173/173 tests green.
+
 ## Notes
 
 - Browser automation: `fill` does not reliably trigger React onChange on the
