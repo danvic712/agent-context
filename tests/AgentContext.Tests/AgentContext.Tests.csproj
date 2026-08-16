@@ -24,13 +24,22 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AgentContext.Host\AgentContext.Host.csproj" />
-    <!--
-      Copy the built app (dual-mode binary + deps) into the test output so the
-      mcp-stdio smoke test can launch the real process without guessing paths.
-    -->
-    <None Include="..\..\src\AgentContext.Host\bin\$(Configuration)\net10.0\**"
-          CopyToOutputDirectory="PreserveNewest"
-          Link="AppBin\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+
+  <!--
+    Copy the built app (dual-mode binary + deps) into the test output so the
+    mcp-stdio smoke test can launch the real process without guessing paths.
+    A plain item glob here is evaluated when the test project loads — before the
+    referenced Host has built — so first-time (CI) builds copied nothing.
+    Running in a target after Build guarantees the Host output exists.
+  -->
+  <Target Name="CopyAppBinToTestOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_AppBinFiles Include="$(MSBuildProjectDirectory)\..\..\src\AgentContext.Host\bin\$(Configuration)\net10.0\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AppBinFiles)"
+          DestinationFiles="@(_AppBinFiles->'$(OutputPath)AppBin\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
