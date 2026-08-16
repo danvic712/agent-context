@@ -37,7 +37,8 @@ public static class McpStdioHost
             })
             .WithStdioServerTransport()
             .WithTools<SkeletonTools>()
-            .WithTools<SessionTools>();
+            .WithTools<SessionTools>()
+            .WithTools<KnowledgeTools>();
 
         await builder.Build().RunAsync();
         return 0;

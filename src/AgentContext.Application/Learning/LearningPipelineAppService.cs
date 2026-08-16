@@ -90,10 +90,10 @@ public sealed class LearningPipelineAppService(
             var created = 0;
             var corroborated = 0;
             // Rows created in this batch live only in the change tracker until the single
-            // SaveChangesAsync below — so batch-internal duplicates must be deduped in memory
-            // (against embeddings) before consulting the database, or they would all see "no
-            // nearest neighbour" and each insert a copy (AC3 escape hatch).
-            var batchEmbeddings = new List<float[]>();
+            // SaveChangesAsync below — so batch-internal matches must be evaluated in memory
+            // (against embeddings) too, or they would all see "no nearest neighbour" in the
+            // database and each insert a copy (AC3 escape hatch).
+            var batchItems = new List<(float[] Embedding, Knowledge Knowledge)>();
 
             foreach (var item in extractions)
             {
@@ -104,18 +104,42 @@ public sealed class LearningPipelineAppService(
                 }
 
                 var embedding = await llm.EmbedAsync($"{item.Title}\n{item.Content}", cancellationToken);
+                var dbNearest = await FindNearestAsync(session, embedding, cancellationToken);
+                var batchNearest = FindRelatedInBatch(batchItems, embedding);
 
-                var duplicateInBatch = batchEmbeddings.Any(existing =>
-                    CosineSimilarity(existing, embedding) >= LearningPipelineDefaults.DedupCosineThreshold);
-
-                if (duplicateInBatch || await TryCorroborateAsync(session, embedding, now, cancellationToken))
+                // Dedup (AC3): identical content corroborates the existing row — no new row.
+                if (dbNearest is { Sim: >= LearningPipelineDefaults.DedupCosineThreshold } dbDuplicate)
                 {
+                    Corroborate(dbDuplicate.Knowledge, now);
+                    // Register it so further identical items in this batch don't double-bump.
+                    batchItems.Add((embedding, dbDuplicate.Knowledge));
                     corroborated++;
                     continue;
                 }
 
-                batchEmbeddings.Add(embedding);
-                db.Knowledge.Add(new Knowledge
+                if (batchNearest is { Sim: >= LearningPipelineDefaults.DedupCosineThreshold })
+                {
+                    // Duplicate WITHIN this session's extraction — counted, but not a
+                    // cross-session corroboration, so no Confidence bump.
+                    corroborated++;
+                    continue;
+                }
+
+                // Conflict (T4): related-but-distinct content is kept as a real row and
+                // paired via a shared ConflictGroupId so retrieval can show both sides.
+                var mostSimilar = PickMostSimilar(dbNearest, batchNearest);
+                string? conflictGroupId = null;
+                if (mostSimilar is { Sim: >= LearningPipelineDefaults.ConflictMinSimilarity } conflict)
+                {
+                    conflictGroupId = conflict.Knowledge.ConflictGroupId;
+                    if (conflictGroupId is null)
+                    {
+                        conflictGroupId = Guid.CreateVersion7().ToString();
+                        conflict.Knowledge.ConflictGroupId = conflictGroupId;
+                    }
+                }
+
+                var knowledge = new Knowledge
                 {
                     WorkspaceId = session.WorkspaceId,
                     DomainId = session.DomainId.Value,
@@ -126,9 +150,12 @@ public sealed class LearningPipelineAppService(
                     Embedding = new Vector(embedding),
                     SourceSessionId = session.Id,
                     Status = KnowledgeStatus.Active,
+                    ConflictGroupId = conflictGroupId,
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now,
-                });
+                };
+                db.Knowledge.Add(knowledge);
+                batchItems.Add((embedding, knowledge));
                 created++;
             }
 
@@ -148,46 +175,68 @@ public sealed class LearningPipelineAppService(
     }
 
     /// <summary>
-    /// Dedup (AC3): if the new item's embedding is within the cosine threshold of
-    /// an existing Active Knowledge in the same Domain, corroborate it — bump its
-    /// Confidence (capped) and refresh UpdatedAtUtc — instead of creating a
-    /// duplicate row. The bump is the T3 simplification (handoff TDD slice 4:
-    /// "bump its corroboration/confidence"); the full 20% cross-session
-    /// corroboration weight arrives with the T4/T5 retrieval-feedback hooks.
-    /// The matching strategy is vector similarity; an LLM-judged alternative
-    /// stays behind the ILlmClient abstraction for later.
+    /// Dedup (AC3): identical content corroborates the existing Knowledge — bump its
+    /// Confidence (capped) and refresh UpdatedAtUtc — instead of creating a duplicate
+    /// row. The bump is the T3 simplification (handoff TDD slice 4); the full 20%
+    /// cross-session corroboration weight arrives with the T5 retrieval-feedback hooks.
+    /// The matching strategy is vector similarity; an LLM-judged alternative stays
+    /// behind the ILlmClient abstraction for later.
     /// </summary>
-    private async Task<bool> TryCorroborateAsync(
-        Session session, float[] embedding, DateTimeOffset now,
-        CancellationToken cancellationToken)
+    private void Corroborate(Knowledge existing, DateTimeOffset now)
     {
-        var vector = new Vector(embedding);
-
-        var nearest = await db.Knowledge.AsNoTracking()
-            .Where(k => k.DomainId == session.DomainId
-                && k.Status == KnowledgeStatus.Active
-                && k.Embedding != null)
-            .OrderBy(k => k.Embedding!.CosineDistance(vector))
-            .Select(k => new { k.Id, Distance = k.Embedding!.CosineDistance(vector) })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (nearest is null || 1 - nearest.Distance < LearningPipelineDefaults.DedupCosineThreshold)
-        {
-            return false;
-        }
-
-        var existing = await db.Knowledge.FindAsync([nearest.Id], cancellationToken);
-        existing!.Confidence = Math.Min(
+        existing.Confidence = Math.Min(
             LearningPipelineDefaults.MaxT3Confidence,
             existing.Confidence + LearningPipelineDefaults.CorroborationBump);
         existing.UpdatedAtUtc = now;
 
-        logger.LogInformation(
-            "Session {SessionId} corroborated existing Knowledge {KnowledgeId} (distance {Distance:F3}).",
-            session.Id, existing.Id, nearest.Distance);
-
-        return true;
+        logger.LogInformation("Corroborated existing Knowledge {KnowledgeId}.", existing.Id);
     }
+
+    /// <summary>
+    /// Nearest Active Knowledge in the same Domain, tracked (not AsNoTracking) so
+    /// callers can mutate it — bump confidence or attach a ConflictGroupId.
+    /// </summary>
+    private async Task<Candidate?> FindNearestAsync(
+        Session session, float[] embedding, CancellationToken cancellationToken)
+    {
+        var vector = new Vector(embedding);
+
+        var nearest = await db.Knowledge
+            .Where(k => k.DomainId == session.DomainId
+                && k.Status == KnowledgeStatus.Active
+                && k.Embedding != null)
+            .OrderBy(k => k.Embedding!.CosineDistance(vector))
+            .Select(k => new { k, Distance = k.Embedding!.CosineDistance(vector) })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return nearest is null ? null : new Candidate(1 - nearest.Distance, nearest.k);
+    }
+
+    /// <summary>
+    /// Most similar item created earlier in this batch (change-tracker rows, not yet
+    /// saved); only candidates at or above the conflict band are considered — below
+    /// that, the item is unrelated to anything in the batch.
+    /// </summary>
+    private static Candidate? FindRelatedInBatch(List<(float[] Embedding, Knowledge Knowledge)> batch, float[] embedding)
+    {
+        Candidate? best = null;
+        foreach (var (existing, knowledge) in batch)
+        {
+            var similarity = CosineSimilarity(existing, embedding);
+            if (similarity >= LearningPipelineDefaults.ConflictMinSimilarity
+                && (best is null || similarity > best.Sim))
+            {
+                best = new Candidate(similarity, knowledge);
+            }
+        }
+
+        return best;
+    }
+
+    private static Candidate? PickMostSimilar(Candidate? a, Candidate? b)
+        => a is null ? b : b is null ? a : a.Sim >= b.Sim ? a : b;
+
+    private sealed record Candidate(double Sim, Knowledge Knowledge);
 
     private async Task<LearningPipelineResult> CompleteAsync(
         Guid sessionId, DateTimeOffset now, int created, int corroborated, CancellationToken cancellationToken)

@@ -19,7 +19,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums travel as strings on the REST surface (matches the DB's string columns).
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddApplicationServices(builder.Configuration);
 
 // Postgres-as-queue scheduler (ADR 0005): marks pending Sessions processed.
@@ -42,7 +45,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
 
-app.Run();
+await app.RunAsync();
 return 0;
 
 /// <summary>Exposed so WebApplicationFactory integration tests can boot the web mode.</summary>
