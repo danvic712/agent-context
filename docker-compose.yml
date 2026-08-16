@@ -14,6 +14,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   Host:
     image: danvic712/agent-context
@@ -30,6 +31,7 @@ services:
     depends_on:
       Database:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:
