@@ -10,7 +10,7 @@ using AgentContext.Application.Dtos;
 namespace AgentContext.Application.Sessions;
 
 /// <inheritdoc cref="ISaveSessionAppService"/>
-public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessionAppService
+public sealed class SaveSessionAppService(AgentContextDbContext db, IPricingAppService pricing) : ISaveSessionAppService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -67,19 +67,21 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
 
         // Usage is attached whenever tokens/cost were reported (AC6: overview data
         // must be queryable from Usage); a missing model falls back to "unknown"
-        // so the row is never silently dropped. Cost is the client-reported value
-        // for now — the maintained pricing table lands in T7.
+        // so the row is never silently dropped. Cost is computed by the platform
+        // from the maintained pricing table (spec US28); models without a pricing
+        // row fall back to the client-reported value (or 0).
         if (!string.IsNullOrWhiteSpace(request.Model)
             || request.TokensIn != 0
             || request.TokensOut != 0
             || request.Cost.HasValue)
         {
+            var model = string.IsNullOrWhiteSpace(request.Model) ? "unknown" : request.Model;
             session.Usage.Add(new Usage
             {
-                Model = string.IsNullOrWhiteSpace(request.Model) ? "unknown" : request.Model,
+                Model = model,
                 TokensIn = request.TokensIn,
                 TokensOut = request.TokensOut,
-                Cost = request.Cost ?? 0,
+                Cost = await ComputeCostAsync(model, request.TokensIn, request.TokensOut, request.Cost, cancellationToken),
                 CreatedAtUtc = now,
             });
         }
@@ -114,6 +116,24 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
             s.CreatedAtUtc,
             s.Usage.Sum(u => u.TokensIn + u.TokensOut),
             s.Usage.Sum(u => u.Cost))).ToList();
+    }
+
+    /// <summary>
+    /// Computes cost from the maintained pricing table (US28). When the model has
+    /// a pricing row: tokens × per-token rate. Otherwise the client-reported cost
+    /// is kept as a fallback so existing reports still make sense.
+    /// </summary>
+    private async Task<decimal> ComputeCostAsync(
+        string model, int tokensIn, int tokensOut, decimal? clientCost, CancellationToken cancellationToken)
+    {
+        var rows = await pricing.ListAsync(cancellationToken);
+        var rate = rows.FirstOrDefault(p => string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
+        if (rate is null)
+        {
+            return clientCost ?? 0;
+        }
+
+        return tokensIn * rate.InputCostPerToken + tokensOut * rate.OutputCostPerToken;
     }
 
     private static IQueryable<Session> WithOverviewIncludes(IQueryable<Session> query)

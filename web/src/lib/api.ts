@@ -132,3 +132,56 @@ export async function deleteSkill(id: string): Promise<void> {
   await http.delete(`/skills/${id}`)
 }
 
+export interface AnalyticsGroupItem {
+  name: string
+  sessions: number
+  tokensIn: number
+  tokensOut: number
+  cost: number
+}
+
+export interface AnalyticsOverview {
+  totalSessions: number
+  totalTokensIn: number
+  totalTokensOut: number
+  totalCost: number
+  byDomain: AnalyticsGroupItem[]
+  byAgent: AnalyticsGroupItem[]
+}
+
+export interface ModelPricing {
+  id: string
+  model: string
+  inputCostPerToken: number
+  outputCostPerToken: number
+  updatedAtUtc: string
+}
+
+export interface OverviewFilters {
+  domain?: string
+  agent?: string
+}
+
+export async function getOverview(filters: OverviewFilters = {}): Promise<AnalyticsOverview> {
+  const { data } = await http.get<AnalyticsOverview>('/analytics/overview', { params: filters })
+  return data
+}
+
+export async function listPricing(): Promise<ModelPricing[]> {
+  const { data } = await http.get<ModelPricing[]>('/analytics/pricing')
+  return data
+}
+
+export async function savePricing(model: string, inputCostPerToken: number, outputCostPerToken: number): Promise<ModelPricing> {
+  const { data } = await http.put<ModelPricing>('/analytics/pricing', {
+    model,
+    inputCostPerToken,
+    outputCostPerToken,
+  })
+  return data
+}
+
+export async function deletePricing(model: string): Promise<void> {
+  await http.delete(`/analytics/pricing/${encodeURIComponent(model)}`)
+}
+

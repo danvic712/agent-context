@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { CircleCheckIcon, DatabaseIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { AnalyticsOverview } from '@/components/analytics-overview'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SkillManager } from '@/components/skill-manager'
 import { getHealth } from '@/lib/api'
 
-type Tab = 'knowledge' | 'review' | 'skills'
+type Tab = 'knowledge' | 'review' | 'skills' | 'analytics'
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>('knowledge')
@@ -67,9 +68,18 @@ export function AppShell() {
           >
             Skills
           </Button>
+          <Button
+            variant={tab === 'analytics' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab('analytics')}
+          >
+            Analytics
+          </Button>
         </nav>
         {tab === 'skills' ? (
           <SkillManager />
+        ) : tab === 'analytics' ? (
+          <AnalyticsOverview />
         ) : (
           <KnowledgeManager mode={tab === 'review' ? 'review' : 'all'} />
         )}

@@ -1,5 +1,6 @@
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Pricing;
 using AgentContext.Application.Dtos;
 using AgentContext.Domain;
 using DomainEntity = AgentContext.Domain.Entities.Domain;
@@ -28,7 +29,7 @@ public sealed class SaveSessionTests : PostgresTestBase
         db.Domains.Add(new DomainEntity { WorkspaceId = workspace.Id, Name = "dev", IsShared = false });
         await db.SaveChangesAsync();
 
-        return (db, new SaveSessionAppService(db));
+        return (db, new SaveSessionAppService(db, new PricingAppService(db)));
     }
 
     [Fact]
@@ -148,11 +149,42 @@ public sealed class SaveSessionTests : PostgresTestBase
     }
 
     [Fact]
+    public async Task Save_computes_cost_from_pricing_table_when_configured()
+    {
+        var (db, service) = await SeededAsync();
+        await new PricingAppService(db).SaveAsync(new SaveModelPricingRequest("gpt-4o", 0.0000025m, 0.00001m));
+
+        await service.SaveAsync(new SaveSessionRequest(
+            Domain: "dev", Task: "t", Conclusion: "c",
+            Model: "gpt-4o", TokensIn: 1000, TokensOut: 200,
+            Cost: 99m)); // client-reported cost must be ignored when priced
+
+        var usage = await db.Usage.SingleAsync();
+        // 1000×0.0000025 + 200×0.00001 = 0.0025 + 0.002 = 0.0045
+        Assert.Equal(0.0045m, usage.Cost, 10);
+    }
+
+    [Fact]
+    public async Task Save_falls_back_to_client_cost_when_model_unpriced()
+    {
+        var (db, service) = await SeededAsync();
+        await new PricingAppService(db).SaveAsync(new SaveModelPricingRequest("gpt-4o", 0.0000025m, 0.00001m));
+
+        await service.SaveAsync(new SaveSessionRequest(
+            Domain: "dev", Task: "t", Conclusion: "c",
+            Model: "claude-3.5", TokensIn: 1000, TokensOut: 200,
+            Cost: 0.42m));
+
+        var usage = await db.Usage.SingleAsync();
+        Assert.Equal(0.42m, usage.Cost);
+    }
+
+    [Fact]
     public async Task Save_throws_when_platform_not_configured()
     {
         await using var db = Fixture.CreateDbContext();
         await db.Database.MigrateAsync(); // no workspace seeded
-        var service = new SaveSessionAppService(db);
+        var service = new SaveSessionAppService(db, new PricingAppService(db));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.SaveAsync(new SaveSessionRequest(Domain: "dev", Task: "t", Conclusion: "c")));

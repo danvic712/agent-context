@@ -23,7 +23,7 @@ public sealed class SchemaBootTests : PostgresTestBase
             .ToListAsync();
 
         Assert.Equal(
-            ["domains", "knowledge", "memberships", "sessions", "settings", "skills", "usage", "users", "workspaces"],
+            ["domains", "knowledge", "memberships", "model_pricing", "sessions", "settings", "skills", "usage", "users", "workspaces"],
             tables);
 
         var extension = await db.Database

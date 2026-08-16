@@ -22,6 +22,7 @@ public sealed class AgentContextDbContext(DbContextOptions<AgentContextDbContext
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Usage> Usage => Set<Usage>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
