@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { CircleCheckIcon, DatabaseIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { KnowledgeManager } from '@/components/knowledge-manager'
+import { SkillManager } from '@/components/skill-manager'
 import { getHealth } from '@/lib/api'
 
+type Tab = 'knowledge' | 'skills'
+
 export function AppShell() {
+  const [tab, setTab] = useState<Tab>('knowledge')
   const [healthy, setHealthy] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -40,7 +45,23 @@ export function AppShell() {
         )}
       </header>
       <main className="flex flex-1 flex-col gap-6 p-6">
-        <KnowledgeManager />
+        <nav className="flex items-center gap-2">
+          <Button
+            variant={tab === 'knowledge' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab('knowledge')}
+          >
+            Knowledge
+          </Button>
+          <Button
+            variant={tab === 'skills' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab('skills')}
+          >
+            Skills
+          </Button>
+        </nav>
+        {tab === 'knowledge' ? <KnowledgeManager /> : <SkillManager />}
       </main>
     </div>
   )

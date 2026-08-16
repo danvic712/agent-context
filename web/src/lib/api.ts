@@ -85,3 +85,50 @@ export async function deleteKnowledge(id: string): Promise<void> {
   await http.delete(`/knowledge/${id}`)
 }
 
+export interface SkillItem {
+  id: string
+  domainName: string
+  slug: string
+  name: string
+  description: string
+  version: number
+  createdAtUtc: string
+  updatedAtUtc: string
+}
+
+export interface SkillDetail extends SkillItem {
+  instructions: string
+}
+
+export interface SkillInput {
+  domain: string
+  slug: string
+  name: string
+  description: string
+  instructions: string
+}
+
+export async function listSkills(): Promise<SkillItem[]> {
+  const { data } = await http.get<SkillItem[]>('/skills')
+  return data
+}
+
+export async function createSkill(input: SkillInput): Promise<SkillDetail> {
+  const { data } = await http.post<SkillDetail>('/skills', input)
+  return data
+}
+
+export async function getSkill(domain: string, slug: string): Promise<SkillDetail> {
+  const { data } = await http.get<SkillDetail>('/skills/by-slug', { params: { domain, slug } })
+  return data
+}
+
+export async function publishSkill(id: string, input: Omit<SkillInput, 'domain' | 'slug'>): Promise<SkillDetail> {
+  const { data } = await http.post<SkillDetail>(`/skills/${id}/publish`, input)
+  return data
+}
+
+export async function deleteSkill(id: string): Promise<void> {
+  await http.delete(`/skills/${id}`)
+}
+
