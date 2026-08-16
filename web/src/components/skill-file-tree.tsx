@@ -52,7 +52,7 @@ const extColor = (ext: string): string => {
     case 'jpg':
     case 'gif':
     case 'webp':
-      return 'var(--indigo, #5b6ea0)'
+      return 'var(--chart-4, #7a8fc9)'
     default:
       return 'var(--dim)'
   }
@@ -112,6 +112,33 @@ function buildTree(files: SkillFileInfo[]): TreeNode[] {
   return toNodes(root, '')
 }
 
+/** Rejects traversal/absolute/placeholder paths — shared by add + rename. */
+const validPath = (value: string) => {
+  const name = value.split('/').pop() ?? ''
+  return (
+    value.length > 0 &&
+    !value.startsWith('/') &&
+    !value.includes('..') &&
+    !value.includes('\\') &&
+    name !== '.gitkeep'
+  )
+}
+
+const dirOf = (path: string) => {
+  const i = path.lastIndexOf('/')
+  return i === -1 ? '' : path.slice(0, i)
+}
+
+const allFolderPaths = (nodes: TreeNode[], out: string[] = []): string[] => {
+  for (const n of nodes) {
+    if (n.kind === 'folder') {
+      out.push(n.path)
+      allFolderPaths(n.children, out)
+    }
+  }
+  return out
+}
+
 export function SkillFileTree({
   files,
   activePath,
@@ -132,28 +159,25 @@ export function SkillFileTree({
 
   // Default: everything expanded (empty open-set means "all open").
   const tree = useMemo(() => buildTree(files), [files])
+  const allFolders = useMemo(() => allFolderPaths(tree), [tree])
+
   const isOpen = (path: string) => open.size === 0 || open.has(path)
   const toggle = (path: string) => {
     setOpen((prev) => {
-      const next = new Set(prev.size ? prev : allFolderPaths(tree))
+      const next = new Set(prev.size ? prev : allFolders)
       if (next.has(path)) next.delete(path)
       else next.add(path)
       return next
     })
   }
 
-  const allFolderPaths = (nodes: TreeNode[], out: string[] = []): string[] => {
-    for (const n of nodes) {
-      if (n.kind === 'folder') {
-        out.push(n.path)
-        allFolderPaths(n.children, out)
-      }
-    }
-    return out
+  const beginAdd = (kind: 'file' | 'folder', into?: string) => {
+    setAdding(kind)
+    setDraft(into ? `${into}/` : '')
+    draftRef.current = into ? `${into}/` : ''
+    setInvalid(false)
+    setRenaming(null)
   }
-
-  const validPath = (value: string) =>
-    value.length > 0 && !value.startsWith('/') && !value.includes('..') && !value.includes('\\')
 
   const submitAdd = async () => {
     const value = draftRef.current.trim()
@@ -173,16 +197,25 @@ export function SkillFileTree({
     else await onCreateFolder(value)
   }
 
-  const submitRename = async (from: string) => {
-    const to = renameDraft.trim()
-    setRenaming(null)
-    if (!to || to === from) return
-    await onRename(from, to)
+  const beginRename = (path: string) => {
+    const dir = dirOf(path)
+    setRenaming(path)
+    setRenameDraft(dir ? `${dir}/` : '')
+    setInvalid(false)
   }
 
-  const dirOf = (path: string) => {
-    const i = path.lastIndexOf('/')
-    return i === -1 ? '' : path.slice(0, i)
+  const submitRename = async (from: string) => {
+    const to = renameDraft.trim()
+    if (!to || to === from) {
+      setRenaming(null)
+      return
+    }
+    if (!validPath(to)) {
+      setInvalid(true)
+      return
+    }
+    setRenaming(null)
+    await onRename(from, to)
   }
 
   const renderNode = (node: TreeNode): React.ReactNode => {
@@ -190,13 +223,67 @@ export function SkillFileTree({
       const expanded = isOpen(node.path)
       return (
         <div key={node.path} className="st-folder">
-          <div className="st-row" onClick={() => toggle(node.path)}>
+          <div
+            className="st-row group/row"
+            role="treeitem"
+            aria-expanded={expanded}
+            tabIndex={0}
+            onClick={() => toggle(node.path)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                toggle(node.path)
+              }
+            }}
+          >
             <span className="st-caret">
               {expanded ? <ChevronDownIcon className="size-3" /> : <ChevronRightIcon className="size-3" />}
             </span>
             {expanded ? <FolderOpenIcon className="st-ico" /> : <FolderIcon className="st-ico" />}
             <span className="st-name">{node.name}</span>
             <span className="text-[9px] text-muted-foreground">▾ {node.children.length}</span>
+            <span className="st-grow" />
+            {renaming === node.path ? (
+              <span className="flex" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  autoFocus
+                  value={renameDraft}
+                  onChange={(e) => setRenameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void submitRename(node.path)
+                    if (e.key === 'Escape') setRenaming(null)
+                  }}
+                  className={cn('h-6 w-24 font-mono text-[11px]', invalid && 'border-destructive')}
+                />
+              </span>
+            ) : (
+              <>
+                <span
+                  className="hidden items-center gap-1 rounded px-1 hover:text-foreground group-hover/row:flex"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    beginAdd('file', node.path)
+                  }}
+                  role="button"
+                  aria-label={`${t('skills.newFile')} in ${node.path}`}
+                  title={`${t('skills.newFile')}…`}
+                >
+                  <PlusIcon className="size-3" />
+                </span>
+                <span
+                  className="hidden items-center gap-1 rounded px-1 hover:text-foreground group-hover/row:flex"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    beginRename(node.path)
+                  }}
+                  role="button"
+                  aria-label={t('skills.renameFile')}
+                  title={t('skills.renameFile')}
+                >
+                  <PencilIcon className="size-3" />
+                </span>
+              </>
+            )}
           </div>
           {expanded && <div className="st-children">{node.children.map(renderNode)}</div>}
         </div>
@@ -206,7 +293,18 @@ export function SkillFileTree({
     const isActive = node.path === activePath
     return (
       <div key={node.path} className="st-file group/row">
-        <div className={cn('st-row', isActive && 'on')} onClick={() => onSelect(node.path)}>
+        <div
+          className={cn('st-row', isActive && 'on')}
+          role="treeitem"
+          tabIndex={0}
+          onClick={() => onSelect(node.path)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onSelect(node.path)
+            }
+          }}
+        >
           {node.path === MAIN ? (
             <FileTextIcon className="st-ico" style={{ color: 'var(--accent)' }} />
           ) : (
@@ -224,7 +322,7 @@ export function SkillFileTree({
                 if (e.key === 'Escape') setRenaming(null)
               }}
               onClick={(e) => e.stopPropagation()}
-              className="h-6 w-28 font-mono text-[11px]"
+              className={cn('h-6 w-28 font-mono text-[11px]', invalid && 'border-destructive')}
             />
           ) : (
             <>
@@ -233,10 +331,10 @@ export function SkillFileTree({
                 className="hidden items-center gap-1 rounded px-1 hover:text-foreground group-hover/row:flex"
                 onClick={(e) => {
                   e.stopPropagation()
-                  const dir = dirOf(node.path)
-                  setRenaming(node.path)
-                  setRenameDraft(dir ? `${dir}/` : '')
+                  beginRename(node.path)
                 }}
+                role="button"
+                aria-label={t('skills.renameFile')}
                 title={t('skills.renameFile')}
               >
                 <PencilIcon className="size-3" />
@@ -247,6 +345,8 @@ export function SkillFileTree({
                   e.stopPropagation()
                   onDelete(node.path)
                 }}
+                role="button"
+                aria-label={t('common.delete')}
                 title={t('common.delete')}
               >
                 <TrashIcon className="size-3" />
@@ -259,37 +359,19 @@ export function SkillFileTree({
   }
 
   return (
-    <div className="skill-tree">
+    <div className="skill-tree" role="tree" aria-label={t('skills.packageTree')}>
       <div className="mb-2 flex items-center justify-between px-2">
         <span className="text-[9px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           {t('skills.packageTree')}
-          <span className="scribe ml-1 text-[12px] normal-case tracking-normal" style={{ color: 'var(--teal)' }}>
+          <span className="ml-1 text-[12px] normal-case tracking-normal" style={{ color: 'var(--teal)' }}>
             · {files.length}
           </span>
         </span>
         <span className="flex gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6"
-            title={t('skills.newFile')}
-            onClick={() => {
-              setAdding('file')
-              setDraft('')
-            }}
-          >
+          <Button size="icon" variant="ghost" className="h-6 w-6" title={t('skills.newFile')} onClick={() => beginAdd('file')}>
             <PlusIcon className="size-3.5" />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6"
-            title={t('skills.newFolder')}
-            onClick={() => {
-              setAdding('folder')
-              setDraft('')
-            }}
-          >
+          <Button size="icon" variant="ghost" className="h-6 w-6" title={t('skills.newFolder')} onClick={() => beginAdd('folder')}>
             <FolderPlusIcon className="size-3.5" />
           </Button>
         </span>
@@ -318,6 +400,9 @@ export function SkillFileTree({
           />
           {invalid && <p className="mt-1 text-[10.5px] text-destructive">{t('skills.invalidPath')}</p>}
         </div>
+      )}
+      {renaming && invalid && (
+        <p className="px-2 pb-1 text-[10.5px] text-destructive">{t('skills.invalidPath')}</p>
       )}
 
       {tree.length === 0 ? (

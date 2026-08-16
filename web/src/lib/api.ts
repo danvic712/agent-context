@@ -192,10 +192,13 @@ export async function readSkillFile(id: string, path: string): Promise<Blob> {
   return data
 }
 
-export async function writeSkillFile(id: string, path: string, content: string): Promise<SkillDetail> {
+export async function writeSkillFile(id: string, path: string, content: string | Blob): Promise<SkillDetail> {
+  // A Blob body keeps binary assets byte-exact (used by rename); a string is
+  // plain text. axios sends Blob bodies with their own content type.
+  const isBlob = content instanceof Blob
   const { data } = await http.put<SkillDetail>(`/skills/${id}/file`, content, {
     params: { path },
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    headers: isBlob ? {} : { 'Content-Type': 'text/plain; charset=utf-8' },
   })
   return data
 }
