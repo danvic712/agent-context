@@ -6,7 +6,7 @@ import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SkillManager } from '@/components/skill-manager'
 import { getHealth } from '@/lib/api'
 
-type Tab = 'knowledge' | 'skills'
+type Tab = 'knowledge' | 'review' | 'skills'
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>('knowledge')
@@ -54,6 +54,13 @@ export function AppShell() {
             Knowledge
           </Button>
           <Button
+            variant={tab === 'review' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab('review')}
+          >
+            Review
+          </Button>
+          <Button
             variant={tab === 'skills' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setTab('skills')}
@@ -61,7 +68,11 @@ export function AppShell() {
             Skills
           </Button>
         </nav>
-        {tab === 'knowledge' ? <KnowledgeManager /> : <SkillManager />}
+        {tab === 'skills' ? (
+          <SkillManager />
+        ) : (
+          <KnowledgeManager mode={tab === 'review' ? 'review' : 'all'} />
+        )}
       </main>
     </div>
   )

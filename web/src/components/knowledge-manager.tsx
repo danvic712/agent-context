@@ -17,11 +17,13 @@ import {
   type KnowledgeItem,
 } from '@/lib/api'
 
-type Tab = 'all' | 'review'
+export type KnowledgeMode = 'all' | 'review'
 
+interface KnowledgeManagerProps {
+  mode: KnowledgeMode
+}
 
-export function KnowledgeManager() {
-  const [tab, setTab] = useState<Tab>('all')
+export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
   const [items, setItems] = useState<KnowledgeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,8 +33,9 @@ export function KnowledgeManager() {
     setLoading(true)
     setError(null)
     try {
-      if (tab === 'all') {
+      if (mode === 'all') {
         setItems(await listKnowledge())
+        setThreshold(null)
       } else {
         const review = await listReviewKnowledge()
         setItems(review.items)
@@ -48,7 +51,7 @@ export function KnowledgeManager() {
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
+  }, [mode])
 
   const togglePrivate = async (item: KnowledgeItem) => {
     setError(null)
@@ -75,22 +78,11 @@ export function KnowledgeManager() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <Button
-          variant={tab === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setTab('all')}
-        >
-          Knowledge
-        </Button>
-        <Button
-          variant={tab === 'review' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setTab('review')}
-        >
-          {threshold === null ? 'Review' : `Review (below ${threshold})`}
-        </Button>
-      </div>
+      {mode === 'review' && threshold !== null && (
+        <p className="text-sm text-muted-foreground">
+          Items below the Confidence threshold ({threshold}) — candidates for review.
+        </p>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -99,7 +91,7 @@ export function KnowledgeManager() {
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">
-            {tab === 'all'
+            {mode === 'all'
               ? 'No knowledge yet. Report sessions through Craft Agents and the Learning Engine will distill them here.'
               : 'Nothing below the Confidence threshold — the knowledge base is healthy.'}
           </CardContent>
