@@ -25,6 +25,9 @@
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.9.0" />
     <!-- Hosting / MCP / logging -->
     <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
+    <!-- T14: Streamable HTTP MCP endpoint (/mcp) in web mode — remote clients (Craft Agents)
+         connect by URL instead of spawning a local mcp-stdio process. -->
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <!-- OpenTelemetry (T13, issue #14): logs via Serilog.Sinks.OpenTelemetry (dual-write),
          traces + metrics via the OTel SDK, all exported over OTLP to the Aspire dashboard. -->

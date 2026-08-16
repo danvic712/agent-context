@@ -19,7 +19,7 @@ namespace AgentContext.Application;
 
 /// <summary>
 /// The single shared service registration for both entrypoints (ADR 0006):
-/// one DI graph, one DbContext, one configuration. `--web` and `--mcp-stdio`
+/// one DI graph, one DbContext, one configuration.
 /// both call this before adding their own surface-specific wiring.
 /// </summary>
 public static class ServiceCollectionExtensions

@@ -14,17 +14,17 @@ using Serilog.Sinks.OpenTelemetry;
 // OtlpProtocol enum — alias the Serilog one so the sink's protocol stays unambiguous.
 using OtlpProtocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol;
 
-// Triple-mode entrypoint (ADR 0006): `--mcp-stdio` runs the MCP server over stdio for
-// Craft Agents local sources; `--apphost` (T13 follow-up) runs the binary as an
-// Aspire DistributedApplication so the dashboard gains the Resources view;
-// anything else (default / `--web`) runs the ASP.NET Core host serving the REST
-// API + React UI. All share one DI graph via AddApplicationServices.
-if (args.Contains("--mcp-stdio"))
-{
-    return await McpStdioHost.RunAsync(args);
-}
-
-if (args.Contains("--apphost"))
+// Single-binary entrypoint (ADR 0006). There is exactly one behaviour and no
+// startup flags: running the binary starts the complete environment — postgres
+// + portal (UI + REST API + MCP /mcp) + Aspire dashboard — orchestrated as one
+// DistributedApplication. The dashboard is useless alone, so it always comes up
+// together with the UI.
+//
+// The only conditional is the internal HOST_MODE=portal role marker injected
+// into the portal child process by the orchestrator (and set on the container
+// image): it makes that process serve the portal instead of re-orchestrating
+// (nested containers are impossible). It is not a user-facing mode or argument.
+if (Environment.GetEnvironmentVariable("HOST_MODE") != "portal")
 {
     return await AppHostRunner.RunAsync(args);
 }
@@ -61,6 +61,14 @@ builder.Services.AddControllers(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddApplicationServices(builder.Configuration);
 
+// T14: the v1 MCP toolset over Streamable HTTP — Craft Agents connects to
+// /mcp by URL (https://agent-context.orb.local/mcp). Stateless per the SDK's
+// recommendation: no session affinity, no Mcp-Session-Id dependency, scales
+// horizontally. Same DI graph (DbContext, settings, LLM client) as the REST
+// surface.
+builder.Services.AddAgentContextMcp()
+    .WithHttpTransport(options => options.Stateless = true);
+
 // T13 (issue #14): OpenTelemetry traces + metrics, on by default (OTLP export to
 // the Aspire dashboard). Logs are wired through the Serilog sink above.
 builder.Services.AddOtelObservability(builder.Configuration);
@@ -90,6 +98,10 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 app.MapControllers();
+
+// T14: Streamable HTTP MCP endpoint — the only MCP surface, one URL for
+// remote clients. Unauthenticated in MVP.
+app.MapMcp("/mcp");
 
 // Serve the React UI (built into wwwroot by the SPA target; see web/ and csproj).
 app.UseDefaultFiles();

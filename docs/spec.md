@@ -8,12 +8,12 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 - **Users**: personal & family first (a technically capable person does the initial setup), small teams next. Domain-agnostic — dev, home, business, any domain.
 - **Four value axes**: Shared AI Context (foundation) · Continuous Learning (foundation, table stakes) · AI Capability Management (core) · AI Usage Intelligence (**differentiator**).
-- **Deployment**: self-hosted Docker Compose first (ADR 0002); SaaS later. One .NET binary, three-mode (ADR 0006).
+- **Deployment**: self-hosted Docker Compose first (ADR 0002); SaaS later. One .NET binary, one entrypoint (ADR 0006).
 
 ## 2. Delivered Capabilities (T1–T13)
 
 ### 2.1 Integration — MCP gateway (T2, T6, T9)
-- One project, three-mode: `--web` = REST API + React UI; `--mcp-stdio` = MCP server for Craft Agents over stdio; `--apphost` = Aspire DistributedApplication (T13 follow-up, ADR 0006). MCP surface is stdio-only — no HTTP transport.
+- One project, one entrypoint: no-args startup runs the full environment — portal (REST API + React UI + MCP over Streamable HTTP at `/mcp`) + Aspire dashboard + postgres, as one DistributedApplication (ADR 0006). Craft Agents connect to the MCP toolset by URL; the legacy stdio server remains as an internal/test path.
 - Five tools: `save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`. Resources: `skill://{domain}/{slug}/{file}` (T12), `knowledge://{id}`.
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
@@ -58,7 +58,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - New compose service `aspire-dashboard` (UI 18888, OTLP/gRPC 4317, OTLP/HTTP 4318).
 
 ### 2.12 AppHost mode + dashboard menu + CI/CD (T13 follow-ups)
-- `--apphost`: the same binary runs as an Aspire DistributedApplication (postgres + portal resources) so the dashboard gains the **Resources** view (`docs/guides/apphost-mode.md`).
+- **Default (no args)**: the same binary runs as an Aspire DistributedApplication (postgres + portal resources) so the dashboard gains the **Resources** view (`docs/guides/apphost-mode.md`).
 - UI topbar "Dashboard" entry opens the Aspire dashboard (`GET /api/health/dashboard`, `DASHBOARD_URL` env).
 - **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
 
@@ -85,9 +85,8 @@ All validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs
                             |
         ┌───────────────────┴───────────────────┐
         │   AgentContext (single .NET project)  │
-        │   --web: REST API + UI                │
-        │   --mcp-stdio: MCP for Craft Agents   │
-        │   --apphost: Aspire DistributedApp    │
+        │   default: portal REST API + UI + MCP │
+        │   default: Aspire DistributedApp      │
         │   shared: EF Core / retrieval /       │
         │   learning / BackgroundService        │
         │   OTel exporter → aspire-dashboard    │
@@ -97,7 +96,7 @@ All validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs
               (no Redis, no Hangfire)
 ```
 
-- Single project, three-mode entrypoint (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
+- Single project, one entrypoint — no-args startup runs the full 3-in-1 environment (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
 - Background processing: `BackgroundService` + Postgres-as-queue (ADR 0005); hygiene on `PeriodicTimer`.
 - Platform settings live in the `settings` table (ADR 0003); localization resources in one JSON store (ADR 0008).
 
@@ -134,7 +133,7 @@ AppSetting (platform settings: LLM endpoint, language, theme) · ModelPricing (c
 | 0003 | Platform LLM via configurable OpenAI-compatible endpoint (settings table) |
 | 0004 | MVP scope = learning loop + thin skills + session overview; explicit no-list |
 | 0005 | BackgroundService + Postgres-as-queue; Hangfire deferred |
-| 0006 | One project, three-mode entrypoint (`--web` / `--mcp-stdio` / `--apphost`) |
+| 0006 | One project, one entrypoint (no-args = full 3-in-1 environment) |
 | 0007 | Redis deferred from MVP stack |
 | 0008 | Localization resources in one JSON file per locale, shared frontend/backend |
 

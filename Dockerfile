@@ -41,5 +41,9 @@ COPY --from=build /app/publish .
 # http://Host.agent-context.orb.local work without a port.
 ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
+# The image runs the portal host only: compose already provides postgres + the
+# Aspire dashboard as sibling services, so the container must not re-orchestrate
+# them (a nested DistributedApplication would try to start more containers).
+ENV HOST_MODE=portal
 EXPOSE 80
-ENTRYPOINT ["dotnet", "AgentContext.Host.dll", "--web"]
+ENTRYPOINT ["dotnet", "AgentContext.Host.dll"]
