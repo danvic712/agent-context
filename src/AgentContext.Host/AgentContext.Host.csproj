@@ -18,6 +18,11 @@
     </PackageReference>
     <PackageReference Include="ModelContextProtocol" />
     <PackageReference Include="Serilog.AspNetCore" />
+    <!-- T13 (issue #14): OpenTelemetry — logs (Serilog dual-write) + traces + metrics on by default. -->
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
   </ItemGroup>
 
   <!--

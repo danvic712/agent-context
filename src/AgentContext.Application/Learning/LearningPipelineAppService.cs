@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Enums;
@@ -71,6 +72,11 @@ public sealed class LearningPipelineAppService(
             return new LearningPipelineResult(sessionId, PipelineOutcome.NotClaimed);
         }
 
+        // T13 (issue #14): one span per pipeline run so the work shows up as traces
+        // in the Aspire dashboard (the source is subscribed by the host's trace provider).
+        using var activity = LearningPipelineTelemetry.Source.StartActivity("learning-pipeline.process");
+        activity?.SetTag("session.id", sessionId);
+
         try
         {
             var session = await db.Sessions.AsNoTracking()
@@ -82,7 +88,10 @@ public sealed class LearningPipelineAppService(
             if (session.DomainId is null)
             {
                 logger.LogInformation("Session {SessionId} has no domain; skipping knowledge extraction.", sessionId);
-                return await CompleteAsync(sessionId, now, 0, 0, cancellationToken);
+                var skipped = await CompleteAsync(sessionId, now, 0, 0, cancellationToken);
+                activity?.SetTag("pipeline.outcome", skipped.Outcome.ToString());
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                return skipped;
             }
 
             var extractions = await llm.ExtractKnowledgeAsync(session.SummaryJson, cancellationToken);
@@ -165,10 +174,18 @@ public sealed class LearningPipelineAppService(
                 "Session {SessionId}: {Created} Knowledge created, {Corroborated} corroborated.",
                 sessionId, created, corroborated);
 
-            return await CompleteAsync(sessionId, now, created, corroborated, cancellationToken);
+            var result = await CompleteAsync(sessionId, now, created, corroborated, cancellationToken);
+            activity?.SetTag("knowledge.created", created);
+            activity?.SetTag("knowledge.corroborated", corroborated);
+            activity?.SetTag("pipeline.outcome", result.Outcome.ToString());
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            return result;
         }
         catch (Exception ex)
         {
+            activity?.SetTag("pipeline.outcome", PipelineOutcome.Failed.ToString());
+            activity?.SetTag("error.type", ex.GetType().Name);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             logger.LogError(ex, "Learning pipeline failed for session {SessionId}.", sessionId);
             return await FailAsync(sessionId, ex, cancellationToken);
         }

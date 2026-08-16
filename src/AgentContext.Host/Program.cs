@@ -1,12 +1,14 @@
 using AgentContext.Application;
 using AgentContext.Host;
 using AgentContext.Host.Mcp;
+using AgentContext.Host.Observability;
 using AgentContext.Host.Workers;
 using AgentContext.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 
 // Dual-mode entrypoint (ADR 0006): `--mcp-stdio` runs the MCP server over stdio for
 // Craft Agents local sources; anything else (default / `--web`) runs the ASP.NET
@@ -20,7 +22,26 @@ if (args.Contains("--mcp-stdio"))
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, services, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+
+    // T13 (issue #14): dual-write structured logs to the Aspire dashboard over OTLP.
+    // Skipped by the same escape hatches as the OTel SDK (OTEL_SDK_DISABLED / empty endpoint).
+    if (OtelDefaults.IsOtlpExportEnabled(context.Configuration))
+    {
+        var otelConfig = context.Configuration;
+        configuration.WriteTo.OpenTelemetry(options =>
+        {
+            options.Endpoint = OtelDefaults.GetOtlpEndpoint(otelConfig)!;
+            options.Protocol = OtelDefaults.GetProtocolName(otelConfig) == "http/protobuf"
+                ? OtlpProtocol.HttpProtobuf
+                : OtlpProtocol.Grpc;
+            // Correlate log records with their ASP.NET Core / pipeline activity.
+            options.IncludedData = IncludedData.TraceIdField | IncludedData.SpanIdField;
+            options.ResourceAttributes = new Dictionary<string, object>(OtelDefaults.ResourceAttributes);
+        });
+    }
+});
 
 builder.Services.AddControllers(options =>
         // T11: LocalizedException → { errorCode, message } in the configured language.
@@ -29,6 +50,10 @@ builder.Services.AddControllers(options =>
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddApplicationServices(builder.Configuration);
+
+// T13 (issue #14): OpenTelemetry traces + metrics, on by default (OTLP export to
+// the Aspire dashboard). Logs are wired through the Serilog sink above.
+builder.Services.AddOtelObservability(builder.Configuration);
 
 // Postgres-as-queue scheduler (ADR 0005): marks pending Sessions processed.
 builder.Services.AddHostedService<SessionProcessingWorker>();

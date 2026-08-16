@@ -33,6 +33,10 @@ services:
       # (settings REST/UI is a later ticket) — no env surface for it in v1.
       # Skill packages (T12) live on the filesystem under Skills:Directory.
       Skills__Directory: /data/skills
+      # T13: OTLP export destination. In-network address of the aspire-dashboard
+      # service — the image listens on 18889 for OTLP/gRPC (host port 4317 is just
+      # a mapping); standalone runs default to http://localhost:4317 in code.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
       # Listen on 80 (HTTP default) so OrbStack domains need no port.
       # OrbStack proxies HTTPS automatically for .orb.local domains, so both of
       # these work: http://portal.agent-context.orb.local and
@@ -45,6 +49,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      aspire-dashboard:
+        condition: service_started
+    restart: unless-stopped
+
+  aspire-dashboard:
+    # Global observability (T13): the default destination for the portal's OTLP
+    # export — a feature, not an opt-in. UI on 18888; OTLP ingest exposed on the
+    # standard host ports 4317 (gRPC) / 4318 (HTTP), mapped from the image's
+    # internal 18889/18890. Telemetry is in-memory (dev/diagnostics tool).
+    container_name: agent-context-aspire-dashboard
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      # Local development only: no login token / API key to view telemetry.
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888" # dashboard UI
+      - "4317:18889"  # OTLP/gRPC
+      - "4318:18890"  # OTLP/HTTP
     restart: unless-stopped
 
 volumes:
