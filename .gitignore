@@ -57,7 +57,10 @@ bld/
 .vs/
 wwwroot/
 # T12: Skill packages live on the filesystem (Skills:Directory), not in git.
-skills/
+# Anchored to the repo root only — an unanchored `skills/` matches any folder
+# named that at any depth and (with core.ignoreCase on case-insensitive macOS)
+# silently excluded src/AgentContext.Application/Skills/*.cs from the repo.
+/skills/
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/
