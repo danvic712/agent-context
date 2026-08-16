@@ -1,15 +1,14 @@
-# Handoff — T1–T5 delivered (schema, sessions, learning engine, retrieval, knowledge UI)
+# Handoff — T1–T10 delivered (schema → learning engine → knowledge UI → skills/analytics/hygiene → Craft Agents + LLM config)
 
 > For the next session implementing the remaining MVP tickets.
-> This bridges what T1–T5 already shipped. Work from the tickets; this file is
+> This bridges what T1–T10 already shipped. Work from the tickets; this file is
 > the context bridge, not a substitute for `docs/spec.md` / `CONTEXT.md` /
 > `CODING_STANDARDS.md` / the ADRs.
 
 ## Status at handoff
 
-- `main` contains T1–T5 — **84/84 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.
-- **Since this handoff was written, T6–T10 also shipped and closed** (#7–#11: skills, analytics, hygiene/health, Craft Agents integration, LLM endpoint config). The only open ticket is **#12 (T11) — platform localization (en-US/zh-CN)**.
-- Closed: #2, #3, #4 (T3), #5 (T4), #6 (T5). Open: #12 (T11).
+- `main` contains T1–T10 — **140/140 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.
+- Closed: #2–#11 (T1–T10). Open: **#12 (T11) — platform localization (en-US/zh-CN, single JSON store)**.
 
 ## Repo conventions (must follow — see CODING_STANDARDS.md)
 
@@ -63,13 +62,9 @@
 
 ## Backlog (open tickets)
 
-- **#7 T6** — Thin Skill management (CRUD + versions + `get_skill`); no blockers.
-- **#8 T7** — Session overview analytics (sessions / tokens / cost); no blockers.
-- **#9 T8** — Knowledge hygiene + Learning Engine health view (queued/failed/retries); decay + review/archive semantics for `KnowledgeStatus`.
-- **#10 T9** — Craft Agents integration + guide skill + full-loop validation (depends on the above).
-- **#11 T10** — LLM endpoint configuration: setup wizard step + settings REST + settings page; no blockers (builds on the closed #2/#4 seams).
+- **#12 T11** — Platform localization (en-US/zh-CN, single JSON store, DB-configured language); no open blockers.
 
 ## Notes
 
-- Conflicts / citation +0.1 and temporal decay are NOT yet implemented (dynamic Confidence is only the T5 rate path; the health/hygiene work lands in T8).
+- Conflict pairs (T4) and hygiene decay / review-archive (T8) are delivered. The **citation +0.1** dynamic Confidence bump (retrieval-cited knowledge gains weight) is still NOT implemented — only the `rate_knowledge` path adjusts dynamic Confidence so far. If T11 (localization) touches Confidence, keep this in mind; otherwise it is a candidate follow-up.
 - Knowledge list/review UI + `rate_knowledge` already exist (T5, closed) — do not rebuild.
