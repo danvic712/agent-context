@@ -26,6 +26,13 @@ public static class LearningPipelineDefaults
     /// <summary>Cosine similarity at/above which an item is treated as a duplicate.</summary>
     public const double DedupCosineThreshold = 0.9;
 
+    /// <summary>
+    /// Cosine similarity at/above which related-but-distinct content is marked as
+    /// a conflict pair (T4, issue #5 AC4): [ConflictMinSimilarity, DedupCosineThreshold)
+    /// → share a ConflictGroupId; below → standalone.
+    /// </summary>
+    public const double ConflictMinSimilarity = 0.6;
+
     /// <summary>Retry backoff base delay; doubles per attempt, capped.</summary>
     public static readonly TimeSpan RetryBaseDelay = TimeSpan.FromSeconds(30);
 
