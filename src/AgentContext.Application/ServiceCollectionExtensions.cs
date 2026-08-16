@@ -1,6 +1,8 @@
+using AgentContext.Application.Analytics;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
+using AgentContext.Application.Pricing;
 using AgentContext.Application.Retrieval;
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Settings;
@@ -44,6 +46,10 @@ public static class ServiceCollectionExtensions
 
         // Skill management (T6, issue #7): CRUD + versions + get_skill
         services.AddScoped<ISkillAppService, SkillAppService>();
+
+        // Session overview analytics + model pricing (T7, issue #8)
+        services.AddScoped<IPricingAppService, PricingAppService>();
+        services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
 
         return services;
     }

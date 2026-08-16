@@ -1,5 +1,6 @@
 using AgentContext.Application;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Pricing;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Sessions;
@@ -42,7 +43,7 @@ public sealed class SessionProcessingWorkerSmokeTests : PostgresTestBase
             db.Domains.Add(domain);
             await db.SaveChangesAsync();
 
-            var service = new SaveSessionAppService(db);
+            var service = new SaveSessionAppService(db, new PricingAppService(db));
             sessionId = (await service.SaveAsync(new SaveSessionRequest(
                 Domain: "dev", Task: "t", Conclusion: "c", Model: "gpt-4o", TokensIn: 1, TokensOut: 1))).SessionId;
 
