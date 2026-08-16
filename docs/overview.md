@@ -40,43 +40,45 @@ Market research ([competitive-landscape.md](./research/competitive-landscape.md)
 | Platform LLM | Configurable OpenAI-compatible endpoint, extraction + embedding | [0003](./adr/0003-platform-llm-via-openai-compatible-endpoint.md) |
 | MVP scope | Learning loop + thin skills + session overview; explicit no-list | [0004](./adr/0004-mvp-scope-and-no-list.md) |
 | Background | BackgroundService + Postgres-as-queue; Hangfire deferred | [0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md) |
-| Hosting | One project, dual-mode entrypoint: `--web` (API/UI/MCP-HTTP) and `--mcp-stdio` (Craft Agents) | [0006](./adr/0006-single-project-dual-mode.md) |
+| Hosting | One project, three-mode entrypoint: `--web` (API/UI), `--mcp-stdio` (Craft Agents), `--apphost` (Aspire dashboard Resources view) | [0006](./adr/0006-single-project-dual-mode.md) |
 | Cache | Redis deferred from MVP stack | [0007](./adr/0007-redis-deferred-from-mvp.md) |
 
 ## 4. High Level Architecture
 
-One project, two entrypoints ([ADR 0006](./adr/0006-single-project-dual-mode.md)):
+One project, three entrypoints ([ADR 0006](./adr/0006-single-project-dual-mode.md)):
 
 ```
-                 Users (React UI)
+                 Users (React UI, botanical theme)
                       |
         ┌─────────────┴─────────────┐
         │   AgentContext (single .NET project)   │
-        │   --web: REST API + UI + MCP-over-HTTP │
+        │   --web: REST API + UI                 │
         │   --mcp-stdio: MCP over stdio          │
+        │   --apphost: Aspire DistributedApp     │
         │   shared: EF Core / retrieval /        │
         │   learning / BackgroundService         │
-        └─────────────┬─────────────┘
-                      |
-            PostgreSQL (+ pgvector)
-            (Redis deferred, ADR 0007)
-                      |
-        ┌─────────────┴─────────────┐
-  Craft Agents (stdio MCP)    Other MCP clients (HTTP)
+        │   OTel exporter → aspire-dashboard     │
+        └───────┬──────────────────┬─────────────┘
+                |                  |
+      PostgreSQL (+ pgvector)  Aspire dashboard
+      (Redis deferred, ADR 0007)
+                |
+         Craft Agents (stdio MCP)
 ```
 
 ## 5. Technology Stack
 
-- **Backend**: ASP.NET Core, Entity Framework Core, Serilog (logging); background processing via `BackgroundService` + Postgres-as-queue (Hangfire deferred — [ADR 0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md))
-- **Frontend**: React, TypeScript, shadcn/ui
+- **Backend**: ASP.NET Core (.NET 10), Entity Framework Core, Serilog, Microsoft Agent Framework (chat + embeddings); OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink); Aspire (AppHost mode); background processing via `BackgroundService` + Postgres-as-queue (Hangfire deferred — [ADR 0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md))
+- **Frontend**: React, TypeScript, shadcn/ui (botanical theme, Tailwind v4), react-i18next, react-markdown + shiki
 - **Data**: PostgreSQL + pgvector (Redis deferred — [ADR 0007](./adr/0007-redis-deferred-from-mvp.md))
-- **Integration**: one project, dual-mode — `--web` serves REST/UI/MCP-HTTP, `--mcp-stdio` serves Craft Agents as a local stdio source + a guide skill
+- **CI/CD**: GitHub Actions — `build.yml` (build + test on push/PR), `release.yml` (v* tags → multi-arch GHCR image + GitHub Release)
+- **Integration**: one project, three-mode — `--web` serves REST/UI, `--mcp-stdio` serves Craft Agents as a local stdio source + a guide skill, `--apphost` runs as an Aspire DistributedApplication
 
 ## 6. Core Components
 
 ### 6.1 MCP Gateway (v1 toolset)
 
-The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): in-process HTTP for MCP-over-HTTP clients, stdio process (`--mcp-stdio`) for Craft Agents.
+The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): a stdio server (`--mcp-stdio`) for Craft Agents — the v1 toolset is stdio-only, no HTTP transport.
 
 Tools:
 - `save_session` — domain, structured summary, optional `remember` (full context), optional pre-structured knowledge
@@ -84,7 +86,7 @@ Tools:
 - `get_skill` — fetch a skill by slug
 - `rate_knowledge` — useful/useless feedback (feeds Confidence)
 
-Resources: `skill://{domain}/{slug}`, `knowledge://{id}`
+Resources: `skill://{domain}/{slug}/{file}` (T12 package files), `knowledge://{id}`
 
 ### 6.2 Session Management
 
@@ -100,11 +102,11 @@ Pipeline: `save_session` → background worker → dedup → extraction LLM → 
 
 **Hygiene**: decay for stale items + scheduled cleanup (low-confidence / long-unused → review or archive) + conflict pairs shown side by side at retrieval.
 
-### 6.4 Skill Management (thin MVP)
+### 6.4 Skill Management (packages)
 
-- A skill = markdown instructions + version + domain.
-- Retrieved via `get_skill`; UI edits and publishes new versions.
-- Git sync and marketplace are later.
+- A skill = a **filesystem package** (manifest + `SKILL.md` + assets/scripts), versioned per `(domain, slug)`.
+- Retrieved via `get_skill` (manifest + per-file content); UI renders a file tree, edits files, drag-drops uploads and imports zips; publish bumps the version, history retained.
+- Legacy `Instructions` column is lazily migrated to `SKILL.md`; git sync and marketplace are later.
 
 ### 6.5 Analytics (MVP)
 
@@ -131,7 +133,7 @@ Workspace ──┬── Domain ──┬── Knowledge (confidence, source s
 
 ## 9. MVP Scope
 
-**In**: learning loop (session → knowledge → retrieval), thin skill management, session overview, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
+**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), session overview, platform localization, LLM/theme/language settings, OTel observability + Aspire dashboard, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
 
 **Out (no-list)**: skill marketplace, enterprise SSO/audit, auto memory injection, git-synced skills, per-item ACL, built-in chat UI, traffic proxy, SaaS hosting.
 
