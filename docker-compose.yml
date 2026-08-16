@@ -1,8 +1,6 @@
 services:
-  Database:
-    # Fixed container name (no compose -1 suffix): on OrbStack this makes the
-    # container reachable at agent-context-db.orb.local.
-    container_name: agent-context-db
+  postgres:
+    container_name: agent-context-postgres
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: agent_context
@@ -19,25 +17,18 @@ services:
       retries: 10
     restart: unless-stopped
 
-  Host:
-    # Fixed container name (no compose -1 suffix): on OrbStack this makes the
-    # UI reachable at http://agent-context.orb.local:8080 without port mapping.
+  app:
     container_name: agent-context
     image: danvic712/agent-context
     build:
       context: .
       dockerfile: Dockerfile
     environment:
-      ConnectionStrings__Default: Host=Database;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
-      # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
-      # (settings REST/UI is a later ticket) — no env surface for it in v1.
-      # Listen on 80 (HTTP default) so the OrbStack domain needs no port:
-      # http://Host.agent-context.orb.local (or http://agent-context.orb.local).
-      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
     ports:
       - "8080:80"
     depends_on:
-      Database:
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
