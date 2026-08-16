@@ -66,13 +66,13 @@
     --mut: #5b6b7a;
     --dim: #97a6b5;
 
-    --accent: #3f6f9d;
-    --accent-soft: rgba(63, 111, 157, 0.08);
-    --accent-ink: #2c587e;
-    --accent-shadow: rgba(63, 111, 157, 0.32);
+    --accent: #2f6fc8;
+    --accent-soft: rgba(47, 111, 200, 0.10);
+    --accent-ink: #1e4d8f;
+    --accent-shadow: rgba(47, 111, 200, 0.34);
     --hi: #d98e4a;
     --hi-soft: rgba(217, 142, 74, 0.14);
-    --hover: rgba(63, 111, 157, 0.08);
+    --hover: rgba(47, 111, 200, 0.10);
     --teal: #4f9d8f;
     --red: #c96f5a;
     --red-soft: rgba(201, 111, 90, 0.13);
@@ -83,7 +83,7 @@
     --card-foreground: #33414d;
     --popover: #fbfdff;
     --popover-foreground: #33414d;
-    --primary: #3f6f9d;
+    --primary: #2f6fc8;
     --primary-foreground: #ffffff;
     --secondary: #e2e9f0;
     --secondary-foreground: #33414d;
@@ -93,8 +93,8 @@
     --destructive: #c96f5a;
     --border: rgba(51, 65, 77, 0.10);
     --input: rgba(51, 65, 77, 0.20);
-    --ring: #3f6f9d;
-    --chart-1: #3f6f9d;
+    --ring: #2f6fc8;
+    --chart-1: #2f6fc8;
     --chart-2: #d98e4a;
     --chart-3: #4f9d8f;
     --chart-4: #7a8fc9;
@@ -102,12 +102,12 @@
     --radius: 0.75rem;
     --sidebar: #eef2f6;
     --sidebar-foreground: #33414d;
-    --sidebar-primary: #3f6f9d;
+    --sidebar-primary: #2f6fc8;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: rgba(217, 142, 74, 0.14);
     --sidebar-accent-foreground: #33414d;
     --sidebar-border: rgba(51, 65, 77, 0.10);
-    --sidebar-ring: #3f6f9d;
+    --sidebar-ring: #2f6fc8;
 
     --line: rgba(51, 65, 77, 0.10);
     --line2: rgba(51, 65, 77, 0.20);
@@ -115,7 +115,7 @@
     --ok: #4f9d8f;
     --warn: #c08a2e;
     --code-bg: #26323d;
-    --code-ink: #dce8f2;
+    --code-ink: #e5eff8;
     --shadow-card: 0 1px 3px rgba(51, 65, 77, 0.04), 0 12px 30px rgba(51, 65, 77, 0.08);
     --topbg: rgba(251, 253, 255, 0.82);
 }
@@ -129,13 +129,13 @@
     --mut: #93a4b5;
     --dim: #5d6e80;
 
-    --accent: #6fb0d9;
-    --accent-soft: rgba(111, 176, 217, 0.10);
-    --accent-ink: #9cc8ea;
-    --accent-shadow: rgba(111, 176, 217, 0.35);
+    --accent: #84c3ec;
+    --accent-soft: rgba(132, 195, 236, 0.12);
+    --accent-ink: #b3dbf6;
+    --accent-shadow: rgba(132, 195, 236, 0.40);
     --hi: #e0a05e;
     --hi-soft: rgba(224, 160, 94, 0.15);
-    --hover: rgba(111, 176, 217, 0.10);
+    --hover: rgba(132, 195, 236, 0.12);
     --teal: #55c4a3;
     --red: #e0806e;
     --red-soft: rgba(224, 128, 110, 0.15);
@@ -146,7 +146,7 @@
     --card-foreground: #e6edf4;
     --popover: #1c2733;
     --popover-foreground: #e6edf4;
-    --primary: #6fb0d9;
+    --primary: #84c3ec;
     --primary-foreground: #15202b;
     --secondary: #24323f;
     --secondary-foreground: #e6edf4;
@@ -156,8 +156,8 @@
     --destructive: #e0806e;
     --border: rgba(230, 237, 244, 0.11);
     --input: rgba(230, 237, 244, 0.20);
-    --ring: #6fb0d9;
-    --chart-1: #6fb0d9;
+    --ring: #84c3ec;
+    --chart-1: #84c3ec;
     --chart-2: #e0a05e;
     --chart-3: #55c4a3;
     --chart-4: #9c8fd9;
@@ -165,12 +165,12 @@
     --radius: 0.75rem;
     --sidebar: #15202b;
     --sidebar-foreground: #e6edf4;
-    --sidebar-primary: #6fb0d9;
+    --sidebar-primary: #84c3ec;
     --sidebar-primary-foreground: #15202b;
     --sidebar-accent: rgba(224, 160, 94, 0.15);
     --sidebar-accent-foreground: #e6edf4;
     --sidebar-border: rgba(230, 237, 244, 0.11);
-    --sidebar-ring: #6fb0d9;
+    --sidebar-ring: #84c3ec;
 
     --line: rgba(230, 237, 244, 0.11);
     --line2: rgba(230, 237, 244, 0.20);
@@ -178,7 +178,7 @@
     --ok: #55c4a3;
     --warn: #d9b45c;
     --code-bg: #0e1620;
-    --code-ink: #cfe0ef;
+    --code-ink: #dbeaf7;
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 16px 40px rgba(0, 0, 0, 0.42);
     --topbg: rgba(28, 39, 51, 0.88);
 }
@@ -194,7 +194,7 @@ html {
     body {
         color: var(--ink);
         background-color: var(--paper);
-        background-image: radial-gradient(1100px 420px at 85% -10%, rgba(63, 111, 157, 0.08), transparent 60%);
+        background-image: radial-gradient(1100px 420px at 85% -10%, rgba(47, 111, 200, 0.10), transparent 60%);
         -webkit-font-smoothing: antialiased;
     }
 }
