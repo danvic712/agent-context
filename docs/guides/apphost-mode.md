@@ -1,17 +1,17 @@
-# AppHost mode — the dashboard with a Resources view
+# Default startup — the full 3-in-1 environment (UI + MCP + dashboard)
 
-> T13 follow-up: the standalone (compose) Aspire dashboard shows logs/traces/
-> metrics but **no Resources / service view** — the resource service is an
-> AppHost-only feature. The Host binary now also runs as an Aspire
-> DistributedApplication (`--apphost`) so the dashboard gains the full
-> Resources view (service list, states, dependency graph, console logs) while
-> the same T13 OTel stack keeps exporting all three signals to it.
+> The public entrypoint is one mode: **running the binary with no arguments
+> starts everything** — the Host runs as an Aspire DistributedApplication so
+> the dashboard gains the full Resources view (service list, states,
+> dependency graph, console logs) that the standalone (compose) dashboard
+> lacks, while the same T13 OTel stack keeps exporting all three signals to
+> it. There are no `--apphost` / `--web` / `--portal` flags to remember.
 
 ## Run
 
 ```bash
 # from the repo root; requires Docker (for the pgvector container) and .NET 10
-dotnet run --project src/AgentContext.Host -- --apphost
+dotnet run --project src/AgentContext.Host
 ```
 
 What happens:
@@ -21,7 +21,8 @@ What happens:
   `ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true` for no login).
 - A pgvector Postgres container (`pgvector/pgvector:pg17`) is started with a
   fixed password (`agent_context`) and the named volume `agentcontext-pgdata`.
-- The portal runs as a child process of the same binary (`--web`), bound to
+- The portal runs as a child process of the same binary (internal
+  `HOST_MODE=portal` role), bound to
   `http://localhost:8080` with `ConnectionStrings__Default` and
   `Skills__Directory` injected by Aspire.
 - `WithOtlpExporter()` injects the OTLP endpoint + `OTEL_SERVICE_NAME` into the
@@ -39,21 +40,25 @@ What happens:
 
 ## Relationship to docker compose
 
-Both modes are first-class:
+Both run styles are first-class:
 
-| | `docker compose up` | `dotnet run ... -- --apphost` |
+| | `docker compose up` | `dotnet run` (default) |
 |---|---|---|
-| Dashboard | compose service, :18888 | in-process, :5179 (token) |
+| Dashboard | compose service, :18888 | in-process, dynamic port (token) |
 | Resources view | **no** (standalone) | **yes** (AppHost) |
 | Portal | container, :8080 | child process, :8080 |
 | Postgres | compose service | Aspire container (own volume) |
 
-They share ports (8080/18888), so run one at a time.
+They share ports (8080/18888), so run one at a time. The container image is
+scoped to the portal host via the internal `HOST_MODE=portal` role marker
+(compose already provides postgres + dashboard as sibling services).
 
 ## Implementation notes
 
 - `src/AgentContext.Host/AppHost/AppHostRunner.cs` — the
-  `DistributedApplication` model.
+  `DistributedApplication` model; the portal runs as a child process of the
+  same binary, scoped to the portal role via the internal `HOST_MODE` env
+  (not a user-facing mode).
 - `AgentContext.Host.csproj` — SDK is
   `Microsoft.NET.Sdk.Web;Aspire.AppHost.Sdk/13.4.6` (the Aspire SDK ships the
   DCP + dashboard binaries via `Aspire.Dashboard.Sdk.<rid>` /

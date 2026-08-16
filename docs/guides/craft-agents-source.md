@@ -1,9 +1,10 @@
 # Registering Agent Context as a Craft Agents local MCP source
 
-> T9 (issue #10), AC1: "Craft Agents connects to the platform as a local MCP source;
-> all five tools are visible." This document is the setter-upper's operational guide —
-> the platform ships the `--mcp-stdio` mode (ADR 0006), and this is how a Craft Agents
-> workspace consumes it.
+> **Superseded (T14):** the platform no longer ships a stdio MCP mode — the
+> single entrypoint runs everything and exposes the toolset over Streamable
+> HTTP at `/mcp` (see [`craft-agents-docker-source.md`](./craft-agents-docker-source.md)).
+> This page is kept as a historical record of the T9 (issue #10) integration,
+> when the platform shipped the `--mcp-stdio` mode (ADR 0006).
 
 ## Prerequisites
 

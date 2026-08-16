@@ -40,30 +40,31 @@ Market research ([competitive-landscape.md](./research/competitive-landscape.md)
 | Platform LLM | Configurable OpenAI-compatible endpoint, extraction + embedding | [0003](./adr/0003-platform-llm-via-openai-compatible-endpoint.md) |
 | MVP scope | Learning loop + thin skills + session overview; explicit no-list | [0004](./adr/0004-mvp-scope-and-no-list.md) |
 | Background | BackgroundService + Postgres-as-queue; Hangfire deferred | [0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md) |
-| Hosting | One project, three-mode entrypoint: `--web` (API/UI), `--mcp-stdio` (Craft Agents), `--apphost` (Aspire dashboard Resources view) | [0006](./adr/0006-single-project-dual-mode.md) |
+| Hosting | One project, one entrypoint: no-args startup runs the full 3-in-1 environment (portal UI/REST/MCP + Aspire dashboard + postgres) | [0006](./adr/0006-single-project-dual-mode.md) |
 | Cache | Redis deferred from MVP stack | [0007](./adr/0007-redis-deferred-from-mvp.md) |
 
 ## 4. High Level Architecture
 
-One project, three entrypoints ([ADR 0006](./adr/0006-single-project-dual-mode.md)):
+One project, one entrypoint ([ADR 0006](./adr/0006-single-project-dual-mode.md)) —
+running the binary with no arguments starts everything:
 
 ```
                  Users (React UI, botanical theme)
                       |
         ┌─────────────┴─────────────┐
         │   AgentContext (single .NET project)   │
-        │   --web: REST API + UI                 │
-        │   --mcp-stdio: MCP over stdio          │
-        │   --apphost: Aspire DistributedApp     │
+        │   default: Aspire DistributedApp       │
+        │     ├─ portal: REST API + UI + MCP /mcp│
+        │     └─ in-process dashboard            │
         │   shared: EF Core / retrieval /        │
         │   learning / BackgroundService         │
-        │   OTel exporter → aspire-dashboard     │
+        │   OTel exporter → dashboard            │
         └───────┬──────────────────┬─────────────┘
                 |                  |
       PostgreSQL (+ pgvector)  Aspire dashboard
       (Redis deferred, ADR 0007)
                 |
-         Craft Agents (stdio MCP)
+         Craft Agents (Streamable HTTP /mcp)
 ```
 
 ## 5. Technology Stack
@@ -72,13 +73,15 @@ One project, three entrypoints ([ADR 0006](./adr/0006-single-project-dual-mode.m
 - **Frontend**: React, TypeScript, shadcn/ui (botanical theme, Tailwind v4), react-i18next, react-markdown + shiki
 - **Data**: PostgreSQL + pgvector (Redis deferred — [ADR 0007](./adr/0007-redis-deferred-from-mvp.md))
 - **CI/CD**: GitHub Actions — `build.yml` (build + test on push/PR), `release.yml` (v* tags → multi-arch GHCR image + GitHub Release)
-- **Integration**: one project, three-mode — `--web` serves REST/UI, `--mcp-stdio` serves Craft Agents as a local stdio source + a guide skill, `--apphost` runs as an Aspire DistributedApplication
+- **Integration**: one project, one mode — no-args startup runs the full
+  environment; the portal serves REST/UI + the MCP toolset over Streamable HTTP
+  at `/mcp` (Craft Agents connect by URL).
 
 ## 6. Core Components
 
 ### 6.1 MCP Gateway (v1 toolset)
 
-The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): a stdio server (`--mcp-stdio`) for Craft Agents — the v1 toolset is stdio-only, no HTTP transport.
+The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): the portal serves the v1 toolset over Streamable HTTP at `/mcp` — Craft Agents connect by URL.
 
 Tools:
 - `save_session` — domain, structured summary, optional `remember` (full context), optional pre-structured knowledge

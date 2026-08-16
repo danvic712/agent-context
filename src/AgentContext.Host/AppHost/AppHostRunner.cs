@@ -5,12 +5,13 @@ using Aspire.Hosting.Postgres;
 namespace AgentContext.Host.AppHost;
 
 /// <summary>
-/// T13 follow-up: the <c>--apphost</c> entrypoint. Runs this same binary as an
-/// Aspire DistributedApplication so the dashboard gains the Resources / service
-/// view that the standalone (compose) dashboard lacks — the resource service is
+/// The default entrypoint (no args): runs this same binary as an Aspire
+/// DistributedApplication so the dashboard gains the Resources / service view
+/// that the standalone (compose) dashboard lacks — the resource service is
 /// AppHost-only. Models the platform as two resources: postgres (pgvector
-/// container) and the portal itself (a child process of this binary with
-/// <c>--web</c>). The dashboard is hosted in-process by Aspire; the portal opts
+/// container) and the portal itself (a child process of this binary, narrowed
+/// to the portal host via <c>HOST_MODE=portal</c>). The dashboard is hosted
+/// in-process by Aspire; the portal opts
 /// into OTLP export via <c>WithOtlpExporter()</c> (AddExecutable resources aren't
 /// covered by the automatic env injection), which the portal's T13 stack
 /// (<see cref="Observability.OtelDefaults"/>, reads <c>OTEL_EXPORTER_OTLP_ENDPOINT</c>)
@@ -21,19 +22,14 @@ public static class AppHostRunner
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        // Filter out our own flag so the DistributedApplication argument parser
-        // only sees configuration it understands.
-        var appArgs = args.Where(a => a != "--apphost").ToArray();
-
         // Local development only: the in-process dashboard serves plain HTTP on
-        // localhost (like the compose standalone container); a launch-profile
-        // equivalent for the --apphost flag path. Frontend auth is also switched
-        // to Unsecured so the UI's "open dashboard" menu lands straight on the
-        // dashboard (the compose dashboard is anonymous too).
+        // localhost (like the compose standalone container). Frontend auth is
+        // also switched to Unsecured so the UI's "open dashboard" menu lands
+        // straight on the dashboard (the compose dashboard is anonymous too).
         Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
         Environment.SetEnvironmentVariable("Dashboard__Frontend__AuthMode", "Unsecured");
 
-        var builder = DistributedApplication.CreateBuilder(appArgs);
+        var builder = DistributedApplication.CreateBuilder(args);
 
         var repoRoot = FindRepoRoot();
         var baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
@@ -48,7 +44,10 @@ public static class AppHostRunner
             .WithImageTag("pg17")
             .WithDataVolume("agentcontext-pgdata");
 
-        builder.AddExecutable("portal", "dotnet", baseDir, "AgentContext.Host.dll", "--web")
+        builder.AddExecutable("portal", "dotnet", baseDir, "AgentContext.Host.dll")
+            // The child process must run only the portal host (no nested
+            // orchestration); the env var is the deployment seam, not a flag.
+            .WithEnvironment("HOST_MODE", "portal")
             // Non-proxied so the portal binds 8080 directly (same surface as compose);
             // DCP's proxied endpoints don't inject ASPNETCORE_URLS into AddExecutable
             // processes, leaving the portal on the default 5000.
