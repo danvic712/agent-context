@@ -19,7 +19,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  platform:
+  portal:
     # Fixed container name (no compose -1 suffix): on OrbStack the UI is also
     # reachable at agent-context.orb.local (stable alias).
     container_name: agent-context
@@ -31,8 +31,10 @@ services:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
       # (settings REST/UI is a later ticket) — no env surface for it in v1.
-      # Listen on 80 (HTTP default) so OrbStack domains need no port:
-      # http://platform.agent-context.orb.local
+      # Listen on 80 (HTTP default) so OrbStack domains need no port.
+      # OrbStack proxies HTTPS automatically for .orb.local domains, so both of
+      # these work: http://portal.agent-context.orb.local and
+      # https://portal.agent-context.orb.local
       ASPNETCORE_URLS: http://+:80
     ports:
       - "8080:80"
