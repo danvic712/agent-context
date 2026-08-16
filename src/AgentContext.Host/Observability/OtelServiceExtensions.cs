@@ -32,8 +32,15 @@ public static class OtelServiceExtensions
                 // Resource attributes populated from the host environment: honors the
                 // standard OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES variables.
                 .AddEnvironmentVariableDetector()
-                // service.name is fixed regardless of what the host environment says.
-                .AddService(serviceName: OtelDefaults.ServiceName))
+                // service.name defaults to agent-context, but a host-provided
+                // OTEL_SERVICE_NAME wins (spec-conformant). This keeps logs and traces
+                // attributed to the same name: the Serilog OTLP sink already prefers
+                // OTEL_SERVICE_NAME, and Aspire's WithOtlpExporter injects the resource
+                // name (e.g. "portal") so the dashboard groups both signals together.
+                .AddAttributes(new Dictionary<string, object>
+                {
+                    ["service.name"] = OtelDefaults.GetServiceName(configuration),
+                }))
             .WithTracing(tracing => tracing
                 .AddSource(OtelDefaults.LearningPipelineActivitySource)
                 .AddAspNetCoreInstrumentation()

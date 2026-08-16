@@ -11,8 +11,24 @@ namespace AgentContext.Host.Observability;
 /// </summary>
 public static class OtelDefaults
 {
-    /// <summary>service.name for every signal, fixed regardless of the host environment.</summary>
+    /// <summary>
+    /// Default service.name when the host environment doesn't provide one.
+    /// A host-provided <c>OTEL_SERVICE_NAME</c> wins (spec-conformant) — see
+    /// <see cref="GetServiceName"/>. Keeps logs and traces attributed to the same
+    /// name: the Serilog OTLP sink prefers OTEL_SERVICE_NAME too.
+    /// </summary>
     public const string ServiceName = "agent-context";
+
+    /// <summary>
+    /// service.name for every signal: the standard <c>OTEL_SERVICE_NAME</c> when
+    /// the host environment sets it (e.g. Aspire's WithOtlpExporter injects the
+    /// resource name), otherwise the fixed <see cref="ServiceName"/> default.
+    /// </summary>
+    public static string GetServiceName(IConfiguration configuration)
+    {
+        var fromEnvironment = configuration["OTEL_SERVICE_NAME"];
+        return string.IsNullOrWhiteSpace(fromEnvironment) ? ServiceName : fromEnvironment;
+    }
 
     /// <summary>
     /// Standalone default OTLP/gRPC endpoint. Matches the compose host mapping of

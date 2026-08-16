@@ -1,5 +1,6 @@
 using AgentContext.Application;
 using AgentContext.Host;
+using AgentContext.Host.AppHost;
 using AgentContext.Host.Mcp;
 using AgentContext.Host.Observability;
 using AgentContext.Host.Workers;
@@ -9,14 +10,23 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
+// Aspire.Hosting.AppHost injects a global `using Aspire.Hosting` which also declares an
+// OtlpProtocol enum — alias the Serilog one so the sink's protocol stays unambiguous.
+using OtlpProtocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol;
 
-// Dual-mode entrypoint (ADR 0006): `--mcp-stdio` runs the MCP server over stdio for
-// Craft Agents local sources; anything else (default / `--web`) runs the ASP.NET
-// Core host serving the REST API + React UI. Both share one DI graph via
-// AddApplicationServices.
+// Triple-mode entrypoint (ADR 0006): `--mcp-stdio` runs the MCP server over stdio for
+// Craft Agents local sources; `--apphost` (T13 follow-up) runs the binary as an
+// Aspire DistributedApplication so the dashboard gains the Resources view;
+// anything else (default / `--web`) runs the ASP.NET Core host serving the REST
+// API + React UI. All share one DI graph via AddApplicationServices.
 if (args.Contains("--mcp-stdio"))
 {
     return await McpStdioHost.RunAsync(args);
+}
+
+if (args.Contains("--apphost"))
+{
+    return await AppHostRunner.RunAsync(args);
 }
 
 var builder = WebApplication.CreateBuilder(args);
