@@ -23,7 +23,10 @@ services:
     # Fixed container name (no compose -1 suffix): on OrbStack the UI is also
     # reachable at agent-context.orb.local (stable alias).
     container_name: agent-context
-    image: danvic712/agent-context
+    # Published by the release workflow (v* tags) as multi-arch linux/amd64 +
+    # linux/arm64; Docker picks the matching platform automatically. The local
+    # `build:` block is still available for `docker compose build`.
+    image: ghcr.io/danvic712/agent-context:latest
     build:
       context: .
       dockerfile: Dockerfile
