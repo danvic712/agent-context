@@ -21,6 +21,7 @@ public sealed class AgentContextDbContext(DbContextOptions<AgentContextDbContext
     public DbSet<Knowledge> Knowledge => Set<Knowledge>();
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Usage> Usage => Set<Usage>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

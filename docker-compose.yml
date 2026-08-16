@@ -22,15 +22,8 @@ services:
       dockerfile: Dockerfile
     environment:
       ConnectionStrings__Default: Host=Database;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
-      # Learning Engine LLM endpoint (ADR 0003): one OpenAI-compatible base URL + key
-      # serves extraction and embedding in v1. Override via the host environment, e.g.
-      #   LLM_BASE_URL=http://host.docker.internal:11434/v1 LLM_API_KEY=... docker compose up
-      # Default EmbeddingModel is text-embedding-3-small (vector(1536)); if the endpoint
-      # serves another dimension the vector(1536) column needs a new migration.
-      Llm__BaseUrl: ${LLM_BASE_URL:-}
-      Llm__ApiKey: ${LLM_API_KEY:-}
-      Llm__Model: ${LLM_MODEL:-gpt-4o-mini}
-      Llm__EmbeddingModel: ${LLM_EMBEDDING_MODEL:-text-embedding-3-small}
+      # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
+      # (settings REST/UI is a later ticket) — no env surface for it in v1.
       ASPNETCORE_URLS: http://+:8080
     ports:
       - "8080:8080"

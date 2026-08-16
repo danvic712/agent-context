@@ -6,7 +6,6 @@ using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -18,70 +17,80 @@ namespace AgentContext.Application.Learning;
 /// (microsoft/agent-framework): extraction runs as an <see cref="AIAgent"/>
 /// (Chat Completions provider via <c>Microsoft.Agents.AI.OpenAI</c>) with a
 /// structured-output <c>RunAsync&lt;T&gt;</c>; embedding runs through MAF's AI
-/// abstraction layer (<c>IEmbeddingGenerator</c>). Both hit the same configured
-/// OpenAI-compatible endpoint (ADR 0003 — one base URL + key serves both; the
-/// endpoint option is the custom-base-URL seam for Ollama / LM Studio / gateways).
+/// abstraction layer (<c>IEmbeddingGenerator</c>). Both hit the configured
+/// OpenAI-compatible endpoint (ADR 0003). The endpoint is resolved from the
+/// database on every call (<see cref="ISettingsAppService"/>) so a settings
+/// change takes effect without a restart.
 /// </summary>
-public sealed class LlmClient : ILlmClient
+public sealed class LlmClient(ISettingsAppService settings, HttpClient? httpClient = null) : ILlmClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() },
     };
 
-    private readonly AIAgent _agent;
-    private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
-
-    public LlmClient(IOptions<LlmOptions> options, HttpClient? httpClient = null)
-    {
-        // Resolving .Value runs LlmOptionsValidator (invalid config throws
-        // OptionsValidationException here — the worker tick records it).
-        var settings = options.Value;
-
-        var openAiOptions = new OpenAIClientOptions { Endpoint = new Uri(settings.BaseUrl) };
-        if (httpClient is not null)
-        {
-            // Custom transport lets tests stub requests; production uses the SDK default.
-            openAiOptions.Transport = new HttpClientPipelineTransport(httpClient);
-        }
-
-        var credential = new ApiKeyCredential(settings.ApiKey);
-        var openAiClient = new OpenAIClient(credential, openAiOptions);
-
-        // MAF: the Learning Engine extraction step as an agent over the configured endpoint.
-        _agent = openAiClient.GetChatClient(settings.Model).AsAIAgent(
-            instructions: ExtractionSystemPrompt,
-            name: "learning-engine");
-
-        // MAF AI abstraction: embedding generator over the same endpoint.
-        _embeddingGenerator =
-            new OpenAI.Embeddings.EmbeddingClient(settings.EffectiveEmbeddingModel, credential, openAiOptions)
-                .AsIEmbeddingGenerator();
-    }
-
     public async Task<IReadOnlyList<KnowledgeExtraction>> ExtractKnowledgeAsync(
         string sessionSummaryJson, CancellationToken cancellationToken = default)
     {
-        // Structured output: RunAsync<T> deserializes the agent's JSON reply.
+        var options = ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken));
+
+        // MAF structured output: RunAsync<T> deserializes the agent's JSON reply.
         // (session: null → a fresh one-off run; options: null → agent defaults.)
-        var response = await _agent.RunAsync<ExtractionEnvelope>(sessionSummaryJson, null, JsonOptions, null, cancellationToken);
+        var response = await CreateAgent(options).RunAsync<ExtractionEnvelope>(
+            sessionSummaryJson, null, JsonOptions, null, cancellationToken);
+
         return response.Result?.KnowledgeItems ?? [];
     }
 
     public async Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
     {
-        var generated = await _embeddingGenerator.GenerateAsync([text], cancellationToken: cancellationToken);
+        var options = ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken));
+
+        var generated = await CreateGenerator(options).GenerateAsync([text], cancellationToken: cancellationToken);
         var vector = generated[0].Vector;
 
         if (vector.Length != LearningPipelineDefaults.EmbeddingDimensions)
         {
             throw new InvalidOperationException(
                 $"Embedding endpoint returned {vector.Length} dimensions; the schema is fixed at " +
-                $"{LearningPipelineDefaults.EmbeddingDimensions} (vector(1536)). Point Llm:EmbeddingModel at a " +
-                "1536-dim model (e.g. text-embedding-3-small) or migrate the column.");
+                $"{LearningPipelineDefaults.EmbeddingDimensions} (vector(1536)). Configure an embedding model " +
+                "with 1536 dimensions (e.g. text-embedding-3-small) or migrate the column.");
         }
 
         return vector.ToArray();
+    }
+
+    private static LlmOptions ResolveOptions(LlmOptions? options) =>
+        options ?? throw new InvalidOperationException(
+            "The LLM endpoint is not configured. Save the LLM settings (BaseUrl/ApiKey/Model) first.");
+
+    private AIAgent CreateAgent(LlmOptions options)
+    {
+        var openAiOptions = CreateClientOptions(options.BaseUrl);
+        var credential = new ApiKeyCredential(options.ApiKey);
+        return new OpenAIClient(credential, openAiOptions)
+            .GetChatClient(options.Model)
+            .AsAIAgent(instructions: ExtractionSystemPrompt, name: "learning-engine");
+    }
+
+    private IEmbeddingGenerator<string, Embedding<float>> CreateGenerator(LlmOptions options)
+    {
+        var openAiOptions = CreateClientOptions(options.BaseUrl);
+        var credential = new ApiKeyCredential(options.ApiKey);
+        return new OpenAI.Embeddings.EmbeddingClient(options.EffectiveEmbeddingModel, credential, openAiOptions)
+            .AsIEmbeddingGenerator();
+    }
+
+    private OpenAIClientOptions CreateClientOptions(string baseUrl)
+    {
+        var openAiOptions = new OpenAIClientOptions { Endpoint = new Uri(baseUrl) };
+        if (httpClient is not null)
+        {
+            // Custom transport lets tests stub requests; production uses the SDK default.
+            openAiOptions.Transport = new HttpClientPipelineTransport(httpClient);
+        }
+
+        return openAiOptions;
     }
 
     private sealed record ExtractionEnvelope(IReadOnlyList<KnowledgeExtraction>? KnowledgeItems);

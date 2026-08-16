@@ -1,7 +1,9 @@
 using AgentContext.Application;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Application.Learning;
 using AgentContext.Application.Sessions;
+using AgentContext.Application.Settings;
 using AgentContext.Domain;
 using AgentContext.Domain.Entities;
 using AgentContext.Host.Workers;
@@ -43,6 +45,14 @@ public sealed class SessionProcessingWorkerSmokeTests : PostgresTestBase
             var service = new SaveSessionAppService(db);
             sessionId = (await service.SaveAsync(new SaveSessionRequest(
                 Domain: "dev", Task: "t", Conclusion: "c", Model: "gpt-4o", TokensIn: 1, TokensOut: 1))).SessionId;
+
+            // LLM endpoint config lives in the settings table (DB-backed settings).
+            await new SettingsAppService(db).SaveLlmOptionsAsync(new LlmOptions
+            {
+                BaseUrl = "http://localhost:11434/v1",
+                ApiKey = "test-key",
+                Model = "llama3.2",
+            });
         }
 
         // Real DI graph (shared AddApplicationServices), fast polling interval,
