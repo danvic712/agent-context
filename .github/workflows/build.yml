@@ -25,11 +25,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      # SkipSpaBuild keeps the test build web-free (the suite drives the REST/MCP
-      # seams, not the UI); Testcontainers needs Docker, preinstalled on this runner.
+      # The web UI must exist: WebHostSmokeTests serves the React app from
+      # wwwroot. Build it first, then let the Host build copy it into the output
+      # (SkipSpaBuild avoids re-running Vite inside the dotnet build).
+      # Testcontainers needs Docker, preinstalled on this runner.
+      - name: Build the web UI
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
       - name: Build
         run: dotnet build tests/AgentContext.Tests/AgentContext.Tests.csproj -c Release -p:SkipSpaBuild=true
       - name: Test
