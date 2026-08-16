@@ -1,4 +1,5 @@
 using AgentContext.Application.Contracts;
+using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Retrieval;
 using AgentContext.Application.Sessions;
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILlmClient, LlmClient>();
         services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();
         services.AddScoped<IRetrievalAppService, RetrievalAppService>();
+        services.AddScoped<IKnowledgeAppService, KnowledgeAppService>();
 
         return services;
     }

@@ -25,6 +25,55 @@ namespace AgentContext.Tests.AdapterTests;
 public sealed class McpKnowledgeToolsTests : PostgresTestBase
 {
     [Fact]
+    public async Task Rate_knowledge_tool_adjusts_confidence_persistently()
+    {
+        // rate_knowledge is pure DB work — no LLM call, so no stub needed.
+        Guid id;
+        await using (var db = Fixture.CreateDbContext())
+        {
+            await db.Database.MigrateAsync();
+            var workspace = new Workspace { Name = "W", Type = WorkspaceType.Personal };
+            var domain = new DomainEntity { WorkspaceId = workspace.Id, Name = "dev", IsShared = false };
+            db.Workspaces.Add(workspace);
+            db.Domains.Add(domain);
+            var knowledge = new Knowledge
+            {
+                WorkspaceId = workspace.Id, DomainId = domain.Id,
+                Type = KnowledgeType.Solution, Title = "Title alpha", Content = "alpha",
+                Confidence = 0.6, Status = KnowledgeStatus.Active,
+            };
+            db.Knowledge.Add(knowledge);
+            await db.SaveChangesAsync();
+            id = knowledge.Id;
+        }
+
+        await using var client = await McpProcess.CreateClientAsync(Fixture.ConnectionString);
+        var tools = await client.ListToolsAsync();
+        var rate = Assert.Single(tools, t => t.Name == "rate_knowledge");
+
+        var useful = await client.CallToolAsync(rate.Name, new Dictionary<string, object?>
+        {
+            ["id"] = id,
+            ["useful"] = true,
+        });
+        var usefulText = Assert.Single(useful.Content.OfType<TextContentBlock>()).Text;
+        Assert.Equal(0.7, JsonDocument.Parse(usefulText).RootElement.GetProperty("confidence").GetDouble(), 3);
+
+        var notUseful = await client.CallToolAsync(rate.Name, new Dictionary<string, object?>
+        {
+            ["id"] = id,
+            ["useful"] = false,
+        });
+        var cleared = JsonDocument.Parse(Assert.Single(notUseful.Content.OfType<TextContentBlock>()).Text)
+            .RootElement.GetProperty("confidence").GetDouble();
+        Assert.Equal(0, cleared);
+
+        // Persisted: the DB reflects the cleared value.
+        await using var check = Fixture.CreateDbContext();
+        Assert.Equal(0, await check.Knowledge.AsNoTracking().Where(k => k.Id == id).Select(k => k.Confidence).SingleAsync());
+    }
+
+    [Fact]
     public async Task Search_memory_tool_returns_domain_scoped_knowledge()
     {
         using var stub = new EmbeddingStub();

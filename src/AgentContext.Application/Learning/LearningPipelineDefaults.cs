@@ -23,6 +23,12 @@ public static class LearningPipelineDefaults
     /// <summary>Confidence bump when duplicate content corroborates existing Knowledge (AC3).</summary>
     public const double CorroborationBump = 0.05;
 
+    /// <summary>Dynamic Confidence bump for rate_knowledge(useful) / citation (spec §6.3).</summary>
+    public const double RateConfidenceBump = 0.1;
+
+    /// <summary>Confidence ceiling for dynamic adjustments (spec §6.3 "capped").</summary>
+    public const double MaxConfidence = 1.0;
+
     /// <summary>Cosine similarity at/above which an item is treated as a duplicate.</summary>
     public const double DedupCosineThreshold = 0.9;
 
