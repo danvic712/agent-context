@@ -43,13 +43,27 @@ public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppS
     {
         ArgumentNullException.ThrowIfNull(options);
 
+        var entries = await db.AppSettings.ToListAsync(cancellationToken);
+
+        // A blank ApiKey means "keep the existing key" — the UI never returns the
+        // key (only a masked preview), so a partial update (e.g. model-only) must
+        // not wipe it. Resolve before validating: when the store already has a key
+        // the blank input inherits it; a genuinely first-time save still requires
+        // one (validation below reports it).
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            var existingKey = entries.FirstOrDefault(e => e.Key == SettingKeys.LlmApiKey)?.Value;
+            if (!string.IsNullOrWhiteSpace(existingKey))
+            {
+                options.ApiKey = existingKey;
+            }
+        }
+
         var errors = LlmOptions.Validate(options);
         if (errors.Count > 0)
         {
             throw new ArgumentException(string.Join("; ", errors), nameof(options));
         }
-
-        var entries = await db.AppSettings.ToListAsync(cancellationToken);
         var upsert = (string key, string value) =>
         {
             var existing = entries.FirstOrDefault(e => e.Key == key);

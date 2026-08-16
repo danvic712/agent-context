@@ -105,6 +105,41 @@ public sealed class SettingsApiTests : PostgresTestBase
     }
 
     [Fact]
+    public async Task Put_with_blank_api_key_keeps_the_existing_key_and_updates_the_model()
+    {
+        var (_, client) = await SeededAsync();
+
+        // First save: full configuration.
+        var initial = await client.PutAsJsonAsync("/api/settings/llm-options", new
+        {
+            baseUrl = "https://api.openai.com/v1",
+            apiKey = "sk-secret-value-42",
+            model = "gpt-4o-mini",
+        });
+        initial.EnsureSuccessStatusCode();
+
+        // Partial update: change only the model, leave the key blank — the
+        // existing key must be preserved, not wiped (UI contract: "Leaving it
+        // blank keeps the existing key").
+        var update = await client.PutAsJsonAsync("/api/settings/llm-options", new
+        {
+            baseUrl = "https://api.openai.com/v1",
+            apiKey = "",
+            model = "gpt-5.6-luna",
+        });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        var body = await client.GetFromJsonAsync<JsonElement>("/api/settings/llm-options");
+        Assert.Equal("gpt-5.6-luna", body.GetProperty("model").GetString());
+        Assert.True(body.GetProperty("configured").GetBoolean());
+
+        // The key survives the partial update (masked preview still reflects it).
+        var masked = body.GetProperty("maskedApiKey").GetString();
+        Assert.Contains("sk-sec", masked);
+        Assert.DoesNotContain("secret-value-42", masked);
+    }
+
+    [Fact]
     public async Task Settings_survive_round_trip_and_are_readable_after_restart()
     {
         var (factory, client) = await SeededAsync();
