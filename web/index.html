@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agent Context</title>
+    <script>
+      // Apply the theme before first paint (T12). The platform theme lives in the
+      // DB (settings.theme); the localStorage copy is a cache so the first frame
+      // matches without a round-trip — the app then corrects it from the server.
+      ;(function () {
+        var cached = localStorage.getItem('agent-context:theme')
+        var value = cached === 'light' || cached === 'dark' ? cached : (cached === 'system' ? cached : 'system')
+        if (value === 'system') {
+          value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        document.documentElement.dataset.theme = value
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

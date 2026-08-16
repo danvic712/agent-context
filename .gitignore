@@ -56,6 +56,8 @@ bld/
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 wwwroot/
+# T12: Skill packages live on the filesystem (Skills:Directory), not in git.
+skills/
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/

@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   deleteKnowledge,
   listArchivedKnowledge,
@@ -108,7 +109,22 @@ export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        <div className="flex flex-col gap-4" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
+                <Skeleton className="h-6 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-40" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">

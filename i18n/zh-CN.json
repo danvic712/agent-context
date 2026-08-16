@@ -100,7 +100,32 @@
       "failedSave": "保存技能失败",
       "failedDelete": "删除技能失败",
       "deleteAria": "删除 {{slug}}",
-      "version": "v{{version}}"
+      "version": "v{{version}}",
+      "selectHint": "在左侧选择一个技能以查看其包。",
+      "noSkillsHint": "还没有技能 — 创建一个开始。",
+      "newSkill": "新建技能",
+      "importPackage": "导入包",
+      "uploadFiles": "上传文件",
+      "publishVersion": "发布版本",
+      "dragHint": "将文件拖放到此处,或点击选择",
+      "uploading": "正在上传…",
+      "uploadedFiles": "已上传 {{count}} 个文件。",
+      "uploadFailed": "上传失败。",
+      "importFailed": "导入失败。",
+      "deleteFileConfirm": "从包中删除 “{{name}}”?",
+      "fileSaved": "已保存 ✓",
+      "fileSaveFailed": "保存文件失败。",
+      "fileLoadFailed": "加载文件失败。",
+      "binaryFileNote": "二进制文件 — 无法在浏览器中编辑。",
+      "downloadFile": "下载",
+      "emptyPackage": "该包还没有文件 — 上传或导入以添加文件。",
+      "createSkillDescription": "新技能以 SKILL.md 主文件开始。",
+      "mainFile": "主文件",
+      "allFiles": "全部文件",
+      "package": "包",
+      "files": "个文件",
+      "edit": "编辑",
+      "preview": "预览"
     },
     "analytics": {
       "overviewTitle": "会话概览",
@@ -169,6 +194,13 @@
       "languageDescription": "平台级语言 (BCP-47)。应用于界面、后端错误消息与新知识提取。",
       "english": "English",
       "chinese": "中文 (简体)",
+      "theme": "主题",
+      "themeDescription": "平台级外观 — 亮色、暗色或跟随系统。对所有浏览器生效。",
+      "themeLight": "亮色",
+      "themeDark": "暗色",
+      "themeSystem": "跟随系统",
+      "themeToggleDark": "切换到暗色主题",
+      "themeToggleLight": "切换到亮色主题",
       "failedLoad": "加载设置失败",
       "failedSave": "保存设置失败"
     }
@@ -195,7 +227,12 @@
       "slugInvalid": "别名必须是小写字母数字单词,以单个连字符分隔。",
       "nameRequired": "需要填写名称。",
       "notFound": "找不到技能 {0}。",
-      "slugNotFound": "领域 “{1}” 中找不到技能 “{0}”。"
+      "slugNotFound": "领域 “{1}” 中找不到技能 “{0}”。",
+      "packageExists": "“{1}/{0}” 版本 {2} 的包已经存在。",
+      "filePathInvalid": "文件路径无效。请使用包内的相对路径,例如 “examples/tool.ts”。",
+      "fileNotFound": "包中找不到文件 “{0}”。",
+      "fileTooLarge": "文件 “{0}” 超过 10 MB 上限。",
+      "importInvalid": "上传的归档无效或包含不安全的路径。"
     },
     "pricing": {
       "modelRequired": "需要填写模型名称。",
@@ -213,7 +250,8 @@
       "notConfigured": "平台尚未配置。请先运行首次设置向导。"
     },
     "settings": {
-      "unsupportedLanguage": "不支持的语言 “{0}”。支持的 locale:en-US、zh-CN。"
+      "unsupportedLanguage": "不支持的语言 “{0}”。支持的 locale:en-US、zh-CN。",
+      "unsupportedTheme": "不支持的主题 “{0}”。支持的值:light、dark、system。"
     }
   },
   "prompts": {

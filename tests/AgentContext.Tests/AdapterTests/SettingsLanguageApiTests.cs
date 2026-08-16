@@ -94,6 +94,36 @@ public sealed class SettingsLanguageApiTests : PostgresTestBase
     }
 
     [Fact]
+    public async Task Theme_get_falls_back_to_system_and_put_round_trips()
+    {
+        var (_, client) = Seeded();
+
+        var initial = await client.GetFromJsonAsync<JsonElement>("/api/settings/theme");
+        Assert.Equal("system", initial.GetProperty("theme").GetString());
+
+        var put = await client.PutAsJsonAsync("/api/settings/theme", new { theme = "dark" });
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        Assert.Equal("dark", (await put.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("theme").GetString());
+
+        var after = await client.GetFromJsonAsync<JsonElement>("/api/settings/theme");
+        Assert.Equal("dark", after.GetProperty("theme").GetString());
+    }
+
+    [Fact]
+    public async Task Theme_put_invalid_value_returns_400_with_coded_error()
+    {
+        var (_, client) = Seeded();
+
+        var put = await client.PutAsJsonAsync("/api/settings/theme", new { theme = "blue" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, put.StatusCode);
+        var body = await put.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("settings.unsupportedTheme", body.GetProperty("errorCode").GetString());
+        Assert.Contains("blue", body.GetProperty("message").GetString());
+    }
+
+    [Fact]
     public async Task Setup_errors_localize_to_the_configured_language()
     {
         var (_, client) = Seeded();

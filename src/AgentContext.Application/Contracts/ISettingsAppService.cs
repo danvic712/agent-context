@@ -34,4 +34,16 @@ public interface ISettingsAppService
     /// the canonical form (e.g. <c>en-us</c> → <c>en-US</c>) is stored.
     /// </summary>
     Task SaveLanguageAsync(string locale, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The platform theme (T12): <c>light</c> / <c>dark</c> / <c>system</c> from the
+    /// settings table, falling back to <c>system</c> when missing or invalid.
+    /// </summary>
+    Task<string> GetThemeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Validates and persists the platform theme. Unsupported value →
+    /// <see cref="Localization.LocalizedException"/> (400, <c>settings.unsupportedTheme</c>).
+    /// </summary>
+    Task SaveThemeAsync(string theme, CancellationToken cancellationToken = default);
 }

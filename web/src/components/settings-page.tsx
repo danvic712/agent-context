@@ -13,11 +13,14 @@ import {
 } from '@/components/ui/card'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getLanguage, getLlmOptions, saveLanguage, saveLlmOptions, type LlmOptionsDto } from '@/lib/api'
 import i18n from '@/i18n'
+import { useTheme } from '@/theme'
 
 export function SettingsPage() {
   const { t } = useTranslation()
+  const { mode, setMode } = useTheme()
   const [options, setOptions] = useState<LlmOptionsDto | null>(null)
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -89,6 +92,38 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
+            <SettingsIcon className="size-4 text-muted-foreground" />
+            {t('settings.theme')}
+          </CardTitle>
+          <CardDescription>{t('settings.themeDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div role="radiogroup" aria-label={t('settings.theme')} className="flex flex-wrap gap-2">
+            {(
+              [
+                ['light', t('settings.themeLight')],
+                ['dark', t('settings.themeDark')],
+                ['system', t('settings.themeSystem')],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={mode === value}
+                variant={mode === value ? 'default' : 'outline'}
+                onClick={() => void setMode(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
             <LanguagesIcon className="size-4 text-muted-foreground" />
             {t('settings.language')}
           </CardTitle>
@@ -122,7 +157,14 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {loading ? (
-            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+            <div className="flex flex-col gap-3" aria-busy="true">
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-24" />
+            </div>
           ) : (
             <>
               <div className="flex items-center gap-2">

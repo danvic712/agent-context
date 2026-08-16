@@ -67,6 +67,20 @@ export async function saveLanguage(language: string): Promise<LanguageDto> {
   return data
 }
 
+export interface ThemeDto {
+  theme: string
+}
+
+export async function getTheme(): Promise<ThemeDto> {
+  const { data } = await http.get<ThemeDto>('/settings/theme')
+  return data
+}
+
+export async function saveTheme(theme: string): Promise<ThemeDto> {
+  const { data } = await http.put<ThemeDto>('/settings/theme', { theme })
+  return data
+}
+
 export type KnowledgeType = 'Problem' | 'Solution' | 'Pattern'
 
 export interface KnowledgeItem {
@@ -135,8 +149,14 @@ export interface SkillItem {
   updatedAtUtc: string
 }
 
+export interface SkillFileInfo {
+  path: string
+  size: number
+  binary: boolean
+}
+
 export interface SkillDetail extends SkillItem {
-  instructions: string
+  manifest: SkillFileInfo[]
 }
 
 export interface SkillInput {
@@ -164,6 +184,40 @@ export async function getSkill(domain: string, slug: string): Promise<SkillDetai
 
 export async function publishSkill(id: string, input: Omit<SkillInput, 'domain' | 'slug'>): Promise<SkillDetail> {
   const { data } = await http.post<SkillDetail>(`/skills/${id}/publish`, input)
+  return data
+}
+
+export async function readSkillFile(id: string, path: string): Promise<Blob> {
+  const { data } = await http.get<Blob>(`/skills/${id}/file`, { params: { path }, responseType: 'blob' })
+  return data
+}
+
+export async function writeSkillFile(id: string, path: string, content: string): Promise<SkillDetail> {
+  const { data } = await http.put<SkillDetail>(`/skills/${id}/file`, content, {
+    params: { path },
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
+  return data
+}
+
+export async function deleteSkillFile(id: string, path: string): Promise<SkillDetail> {
+  const { data } = await http.delete<SkillDetail>(`/skills/${id}/file`, { params: { path } })
+  return data
+}
+
+export async function uploadSkillFiles(id: string, files: File[]): Promise<SkillDetail> {
+  const form = new FormData()
+  for (const file of files) {
+    form.append('files', file, file.name)
+  }
+  const { data } = await http.post<SkillDetail>(`/skills/${id}/files`, form)
+  return data
+}
+
+export async function importSkillZip(id: string, zip: File): Promise<SkillDetail> {
+  const form = new FormData()
+  form.append('archive', zip, zip.name)
+  const { data } = await http.post<SkillDetail>(`/skills/${id}/import`, form)
   return data
 }
 

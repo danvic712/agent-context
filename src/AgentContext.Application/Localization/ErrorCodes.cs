@@ -34,6 +34,11 @@ public static class ErrorCodes
         public const string NameRequired = "skill.nameRequired";
         public const string NotFound = "skill.notFound";
         public const string SlugNotFound = "skill.slugNotFound";
+        public const string PackageExists = "skill.packageExists";
+        public const string FilePathInvalid = "skill.filePathInvalid";
+        public const string FileNotFound = "skill.fileNotFound";
+        public const string FileTooLarge = "skill.fileTooLarge";
+        public const string ImportInvalid = "skill.importInvalid";
     }
 
     public static class Pricing
@@ -62,5 +67,6 @@ public static class ErrorCodes
     public static class Settings
     {
         public const string UnsupportedLanguage = "settings.unsupportedLanguage";
+        public const string UnsupportedTheme = "settings.unsupportedTheme";
     }
 }

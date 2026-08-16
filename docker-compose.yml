@@ -31,6 +31,8 @@ services:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
       # (settings REST/UI is a later ticket) — no env surface for it in v1.
+      # Skill packages (T12) live on the filesystem under Skills:Directory.
+      Skills__Directory: /data/skills
       # Listen on 80 (HTTP default) so OrbStack domains need no port.
       # OrbStack proxies HTTPS automatically for .orb.local domains, so both of
       # these work: http://portal.agent-context.orb.local and
@@ -38,6 +40,8 @@ services:
       ASPNETCORE_URLS: http://+:80
     ports:
       - "8080:80"
+    volumes:
+      - skills-data:/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,3 +49,4 @@ services:
 
 volumes:
   pgdata:
+  skills-data:

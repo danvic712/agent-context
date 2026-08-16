@@ -75,6 +75,26 @@ public sealed class SettingsController(ISettingsAppService settings) : Controlle
         return Ok(new SettingsLanguageDto(await settings.GetLanguageAsync(cancellationToken)));
     }
 
+    /// <summary>
+    /// The platform theme (T12): light / dark / system, defaulting to system
+    /// (follow the OS) when nothing is stored yet.
+    /// </summary>
+    [HttpGet("theme")]
+    public async Task<ActionResult<SettingsThemeDto>> GetTheme(CancellationToken cancellationToken)
+        => Ok(new SettingsThemeDto(await settings.GetThemeAsync(cancellationToken)));
+
+    /// <summary>
+    /// Validates and persists the platform theme (T12). Unsupported value → 400
+    /// <c>{ errorCode, message }</c> via the global filter.
+    /// </summary>
+    [HttpPut("theme")]
+    public async Task<ActionResult<SettingsThemeDto>> SaveTheme(
+        [FromBody] SettingsThemeDto request, CancellationToken cancellationToken)
+    {
+        await settings.SaveThemeAsync(request.Theme, cancellationToken);
+        return Ok(new SettingsThemeDto(await settings.GetThemeAsync(cancellationToken)));
+    }
+
     /// <summary>Masks an API key, keeping only a short prefix (e.g. "sk-…").</summary>
     internal static string Mask(string apiKey)
         => apiKey.Length <= 6

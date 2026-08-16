@@ -1,9 +1,10 @@
 namespace AgentContext.Application.Dtos;
 
 /// <summary>
-/// A full Skill including its markdown instructions (T6 / spec US21–23).
-/// Returned by get_skill over REST and MCP; the resource surface
-/// skill://{domain}/{slug} resolves to the latest version of the same shape.
+/// A full Skill including its package file manifest (T12 / spec US21–23). The
+/// package files live on the filesystem; the manifest lists them so clients can
+/// read individual files. Returned by get_skill over REST; the MCP tool returns
+/// <see cref="SkillPackage"/> (manifest + contents).
 /// </summary>
 public sealed record SkillDetail(
     Guid Id,
@@ -11,7 +12,7 @@ public sealed record SkillDetail(
     string Slug,
     string Name,
     string Description,
-    string Instructions,
     int Version,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    IReadOnlyList<SkillFileInfo> Manifest);
