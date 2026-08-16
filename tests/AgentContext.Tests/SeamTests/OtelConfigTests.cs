@@ -79,9 +79,17 @@ public class OtelConfigTests
     }
 
     [Fact]
-    public void Service_name_is_fixed_to_agent_context()
+    public void Service_name_defaults_to_agent_context_without_an_override()
     {
-        Assert.Equal("agent-context", OtelDefaults.ServiceName);
+        Assert.Equal("agent-context", OtelDefaults.GetServiceName(BuildConfig()));
         Assert.Equal("agent-context", OtelDefaults.ResourceAttributes["service.name"]);
+    }
+
+    [Fact]
+    public void Service_name_honors_the_standard_OTEL_SERVICE_NAME_override()
+    {
+        var config = BuildConfig(("OTEL_SERVICE_NAME", "portal"));
+
+        Assert.Equal("portal", OtelDefaults.GetServiceName(config));
     }
 }

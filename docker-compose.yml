@@ -58,7 +58,7 @@ services:
     # export — a feature, not an opt-in. UI on 18888; OTLP ingest exposed on the
     # standard host ports 4317 (gRPC) / 4318 (HTTP), mapped from the image's
     # internal 18889/18890. Telemetry is in-memory (dev/diagnostics tool).
-    container_name: agent-context-aspire-dashboard
+    container_name: agent-context-dashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
     environment:
       # Local development only: no login token / API key to view telemetry.
