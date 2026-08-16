@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Context — Field Notes Palettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#101216;font-family:'Instrument Sans',system-ui,sans-serif;padding:28px 20px 80px}
+.intro{max-width:1320px;margin:0 auto 26px}
+.intro h1{font-family:'Fraunces',serif;font-weight:600;font-size:23px;letter-spacing:-.02em;color:#ece7db}
+.intro p{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7c8494;margin-top:6px}
+.pals{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-items:start}
+@media(max-width:1240px){.pals{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.pals{grid-template-columns:1fr}}
+.pal-head{display:flex;align-items:baseline;gap:10px;margin-bottom:11px}
+.pal-head .no{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;color:#8a919c}
+.pal-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:17px;color:#ece7db;letter-spacing:-.01em}
+.pal-head .sw{display:flex;gap:4px;margin-left:auto}
+.pal-head .sw i{width:14px;height:14px;border-radius:50%;display:block;border:1px solid rgba(255,255,255,.2)}
+.frame{border-radius:6px;overflow:hidden;box-shadow:0 22px 54px rgba(0,0,0,.45);border:1px solid var(--rule)}
+
+/* shared field-notes structure — palette comes from per-variant CSS vars */
+.fn{background:
+  repeating-linear-gradient(transparent, transparent 27px, var(--linergb) 27px, var(--linergb) 28px),
+  var(--paper);
+  color:var(--ink);padding:15px;font-family:'Instrument Sans',sans-serif;position:relative}
+.fn .brand{display:flex;align-items:baseline;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:10px;position:relative}
+.fn .brand .logo{font-family:'Fraunces',serif;font-weight:600;font-size:18px;letter-spacing:-.02em}
+.fn .brand small{font-family:'JetBrains Mono',monospace;font-size:7.5px;letter-spacing:.14em;color:var(--dim)}
+.fn .brand .scribe{position:absolute;right:0;bottom:1px;font-family:'Caveat',cursive;font-size:14px;color:var(--red);transform:rotate(-3deg)}
+.fn .nav{display:flex;gap:4px;margin-bottom:11px;flex-wrap:wrap}
+.fn .nav button{border:none;background:transparent;font-size:12.5px;color:var(--mut);padding:2px 8px;cursor:pointer;position:relative}
+.fn .nav button.on{color:var(--ink)}
+.fn .nav button.on::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;background:var(--hi)}
+.fn .lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.fn .lbl em{font-family:'Caveat',cursive;font-style:normal;font-size:12px;letter-spacing:0;text-transform:none;color:var(--teal)}
+.fn .skill{border:1px solid var(--rule);background:var(--card);padding:8px 11px;margin-bottom:6px;font-size:12.5px;position:relative;border-radius:3px}
+.fn .skill.on{background:var(--hi-soft);border-color:var(--hi)}
+.fn .skill.on::after{content:"→ 选中";position:absolute;right:9px;bottom:1px;font-family:'Caveat',cursive;font-size:12px;color:var(--red)}
+.fn .skill .dm{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:2px}
+.fn .skill .v{position:absolute;right:9px;top:7px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--mut);background:var(--card2);border:1px solid var(--rule);padding:1px 6px;border-radius:99px}
+.fn .tree{font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.9;background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:9px 11px;color:var(--mut)}
+.fn .tree .f{color:var(--red);font-weight:700}
+.fn .tree .ind{padding-left:15px;color:var(--dim)}
+.fn .tree .cur{background:var(--hi-soft);color:var(--ink);padding:0 4px;border-radius:2px}
+.fn .code{background:var(--code);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:8px 10px;border-radius:3px;margin-top:8px;line-height:1.65}
+.fn .code .k{color:var(--hikey)}.fn .code .c{color:var(--dim)}
+.fn .pill{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--mut);border:1px solid var(--rule);background:var(--card);padding:3px 9px;border-radius:99px;margin-top:8px}
+.fn .pill i{width:5px;height:5px;border-radius:50%;background:var(--ok);box-shadow:0 0 5px var(--ok);display:inline-block}
+.fn .kpi{margin-top:9px;border:1px solid var(--rule);border-radius:3px;background:var(--card);padding:9px 12px;display:flex;align-items:baseline;gap:9px}
+.fn .kpi .l{font-family:'JetBrains Mono',monospace;font-size:7.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.fn .kpi .v{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
+.fn .kpi em{font-family:'Caveat',cursive;font-style:normal;font-size:12px;color:var(--red);margin-left:auto;transform:rotate(2deg)}
+
+/* ============ PALETTE 01 · 墨绿 × 金 ============ */
+.p1{--paper:#f3efe2; --card:#fbf8ee; --card2:#e9e4d2; --ink:#21362d; --mut:#5f6f63; --dim:#9ba38f;
+  --red:#b08a2e; --red-soft:rgba(176,138,46,.14); --hi:#f2d273; --hi-soft:rgba(242,210,115,.35);
+  --teal:#2d8f7a; --teal-soft:rgba(45,143,122,.12); --rule:rgba(33,54,45,.16); --rule2:rgba(33,54,45,.30);
+  --ok:#2a8f6a; --code:#21362d; --code-ink:#e3ecd7; --hikey:#f2d273;
+  --linergb:rgba(33,54,45,.09)}
+/* ============ PALETTE 02 · 石墨 × 电光蓝 ============ */
+.p2{--paper:#eef0f2; --card:#fbfcfd; --card2:#e3e7eb; --ink:#20262f; --mut:#5d6672; --dim:#9aa3ae;
+  --red:#2563eb; --red-soft:rgba(37,99,235,.10); --hi:#a5c8ff; --hi-soft:rgba(165,200,255,.35);
+  --teal:#0e8f8f; --teal-soft:rgba(14,143,143,.12); --rule:rgba(32,38,47,.15); --rule2:rgba(32,38,47,.28);
+  --ok:#1f9d63; --code:#1e2632; --code-ink:#d9e6ff; --hikey:#7fb3ff;
+  --linergb:rgba(32,38,47,.08)}
+/* ============ PALETTE 03 · 陶土 × 深咖 ============ */
+.p3{--paper:#f7f0e5; --card:#fdf9f1; --card2:#ecdfcc; --ink:#3a2c21; --mut:#6d5c4a; --dim:#a89a85;
+  --red:#c25e3c; --red-soft:rgba(194,94,60,.12); --hi:#ffd7a1; --hi-soft:rgba(255,215,161,.40);
+  --teal:#3f7d6d; --teal-soft:rgba(63,125,109,.12); --rule:rgba(58,44,33,.16); --rule2:rgba(58,44,33,.30);
+  --ok:#7a8f3c; --code:#3a2c21; --code-ink:#f3e8d4; --hikey:#ffd7a1;
+  --linergb:rgba(58,44,33,.09)}
+/* ============ PALETTE 04 · 靛夜 × 珊瑚(深色) ============ */
+.p4{--paper:#131a28; --card:#1a2334; --card2:#222d42; --ink:#e8e2d8; --mut:#98a3b8; --dim:#5c6b84;
+  --red:#ff7266; --red-soft:rgba(255,114,102,.14); --hi:#ffd84d; --hi-soft:rgba(255,216,77,.16);
+  --teal:#41dcc4; --teal-soft:rgba(65,220,196,.12); --rule:rgba(232,226,216,.13); --rule2:rgba(232,226,216,.24);
+  --ok:#3ccb8f; --code:#0c1019; --code-ink:#cfe0ff; --hikey:#ffd84d;
+  --linergb:rgba(232,226,216,.05)}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Agent Context · Field Notes — 同款结构 × 4 套配色</h1>
+  <p>01 墨绿×金 ／ 02 石墨×电光蓝 ／ 03 陶土×深咖 ／ 04 靛夜×珊瑚(深色)—— 都是「手账 × AI 观测」语言,只换主题与纸感</p>
+</div>
+
+<div class="pals">
+  <!-- 01 墨绿×金 -->
+  <div class="pal">
+    <div class="pal-head">
+      <span class="no">01</span><h2>墨绿 × 金</h2>
+      <div class="sw"><i style="background:#21362d"></i><i style="background:#b08a2e"></i><i style="background:#f2d273"></i><i style="background:#2d8f7a"></i></div>
+    </div>
+    <div class="frame p1">
+      <div class="fn">
+        <div class="brand"><span class="logo">Agent Context</span><small>CONTEXT LAYER · MODEL v2.6</small><div class="scribe">工程日志 →</div></div>
+        <div class="nav"><button class="on">知识</button><button>技能</button><button>分析</button><button>设置</button></div>
+        <div class="lbl">技能清单 <em>● 12</em></div>
+        <div class="skill on">SQL 调试<div class="dm">dev / sql-debugging</div><span class="v">v2</span></div>
+        <div class="skill">KQL 分析<div class="dm">dev / kql-analysis</div><span class="v">v2</span></div>
+        <div class="lbl">包结构</div>
+        <div class="tree"><span class="f">▣</span> sql-debugging/<br><span class="ind"><span class="cur">SKILL.md</span></span><br><span class="ind"><span class="f">▣</span> scripts/ ▾ dedupe.sql · trace-analysis.ts</span><br><span class="ind"><span class="f">▣</span> reference/ · kql-snippets.md</span></div>
+        <div class="code"><span class="c">// 重复事件排查</span><br><span class="k">const</span> rows = <span class="k">await</span> query(`SELECT operation_Id …`)</div>
+        <div class="pill"><i></i>ENGINE OK · LLM 在线</div>
+        <div class="kpi"><span class="l">置信度</span><span class="v">0.62</span><em>检索阈值 0.5</em></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 石墨×电光蓝 -->
+  <div class="pal">
+    <div class="pal-head">
+      <span class="no">02</span><h2>石墨 × 电光蓝</h2>
+      <div class="sw"><i style="background:#20262f"></i><i style="background:#2563eb"></i><i style="background:#a5c8ff"></i><i style="background:#0e8f8f"></i></div>
+    </div>
+    <div class="frame p2">
+      <div class="fn">
+        <div class="brand"><span class="logo">Agent Context</span><small>CONTEXT LAYER · MODEL v2.6</small><div class="scribe">系统观测 →</div></div>
+        <div class="nav"><button class="on">知识</button><button>技能</button><button>分析</button><button>设置</button></div>
+        <div class="lbl">技能清单 <em>● 12</em></div>
+        <div class="skill on">SQL 调试<div class="dm">dev / sql-debugging</div><span class="v">v2</span></div>
+        <div class="skill">KQL 分析<div class="dm">dev / kql-analysis</div><span class="v">v2</span></div>
+        <div class="lbl">包结构</div>
+        <div class="tree"><span class="f">▣</span> sql-debugging/<br><span class="ind"><span class="cur">SKILL.md</span></span><br><span class="ind"><span class="f">▣</span> scripts/ ▾ dedupe.sql · trace-analysis.ts</span><br><span class="ind"><span class="f">▣</span> reference/ · kql-snippets.md</span></div>
+        <div class="code"><span class="c">// 重复事件排查</span><br><span class="k">const</span> rows = <span class="k">await</span> query(`SELECT operation_Id …`)</div>
+        <div class="pill"><i></i>ENGINE OK · LLM 在线</div>
+        <div class="kpi"><span class="l">置信度</span><span class="v">0.62</span><em>检索阈值 0.5</em></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 陶土×深咖 -->
+  <div class="pal">
+    <div class="pal-head">
+      <span class="no">03</span><h2>陶土 × 深咖</h2>
+      <div class="sw"><i style="background:#3a2c21"></i><i style="background:#c25e3c"></i><i style="background:#ffd7a1"></i><i style="background:#3f7d6d"></i></div>
+    </div>
+    <div class="frame p3">
+      <div class="fn">
+        <div class="brand"><span class="logo">Agent Context</span><small>CONTEXT LAYER · MODEL v2.6</small><div class="scribe">田野笔记 →</div></div>
+        <div class="nav"><button class="on">知识</button><button>技能</button><button>分析</button><button>设置</button></div>
+        <div class="lbl">技能清单 <em>● 12</em></div>
+        <div class="skill on">SQL 调试<div class="dm">dev / sql-debugging</div><span class="v">v2</span></div>
+        <div class="skill">KQL 分析<div class="dm">dev / kql-analysis</div><span class="v">v2</span></div>
+        <div class="lbl">包结构</div>
+        <div class="tree"><span class="f">▣</span> sql-debugging/<br><span class="ind"><span class="cur">SKILL.md</span></span><br><span class="ind"><span class="f">▣</span> scripts/ ▾ dedupe.sql · trace-analysis.ts</span><br><span class="ind"><span class="f">▣</span> reference/ · kql-snippets.md</span></div>
+        <div class="code"><span class="c">// 重复事件排查</span><br><span class="k">const</span> rows = <span class="k">await</span> query(`SELECT operation_Id …`)</div>
+        <div class="pill"><i></i>ENGINE OK · LLM 在线</div>
+        <div class="kpi"><span class="l">置信度</span><span class="v">0.62</span><em>检索阈值 0.5</em></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 靛夜×珊瑚(深色) -->
+  <div class="pal">
+    <div class="pal-head">
+      <span class="no">04</span><h2>靛夜 × 珊瑚 · 深色</h2>
+      <div class="sw"><i style="background:#131a28"></i><i style="background:#ff7266"></i><i style="background:#ffd84d"></i><i style="background:#41dcc4"></i></div>
+    </div>
+    <div class="frame p4">
+      <div class="fn">
+        <div class="brand"><span class="logo">Agent Context</span><small>CONTEXT LAYER · MODEL v2.6</small><div class="scribe">夜航日志 →</div></div>
+        <div class="nav"><button class="on">知识</button><button>技能</button><button>分析</button><button>设置</button></div>
+        <div class="lbl">技能清单 <em>● 12</em></div>
+        <div class="skill on">SQL 调试<div class="dm">dev / sql-debugging</div><span class="v">v2</span></div>
+        <div class="skill">KQL 分析<div class="dm">dev / kql-analysis</div><span class="v">v2</span></div>
+        <div class="lbl">包结构</div>
+        <div class="tree"><span class="f">▣</span> sql-debugging/<br><span class="ind"><span class="cur">SKILL.md</span></span><br><span class="ind"><span class="f">▣</span> scripts/ ▾ dedupe.sql · trace-analysis.ts</span><br><span class="ind"><span class="f">▣</span> reference/ · kql-snippets.md</span></div>
+        <div class="code"><span class="c">// 重复事件排查</span><br><span class="k">const</span> rows = <span class="k">await</span> query(`SELECT operation_Id …`)</div>
+        <div class="pill"><i></i>ENGINE OK · LLM 在线</div>
+        <div class="kpi"><span class="l">置信度</span><span class="v">0.62</span><em>检索阈值 0.5</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

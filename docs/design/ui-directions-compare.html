@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Context — UI Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#101216;font-family:'Instrument Sans',system-ui,sans-serif;padding:28px 20px 80px;color:#e6e2d8}
+.intro{max-width:1300px;margin:0 auto 26px}
+.intro h1{font-family:'Fraunces',serif;font-weight:600;font-size:24px;letter-spacing:-.02em}
+.intro p{color:#8a8f98;font-size:13px;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.dirs{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:start}
+@media(max-width:1100px){.dirs{grid-template-columns:1fr}}
+.dir-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.dir-head .tag{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;border-radius:3px}
+.dir-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:19px;letter-spacing:-.01em}
+.frame{border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.console{display:flex;align-items:center;gap:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#9aa0a8}
+.console .dots{display:flex;gap:5px;margin-right:4px}
+.console .dots i{width:9px;height:9px;border-radius:50%;display:block}
+
+/* ================= A · NOTEBOOK 手账 ================= */
+.dir-a .tag{background:#e85d3f;color:#fff}
+.dir-a h2{color:#e8b04b}
+.dir-a .frame{background:#fbf8f1}
+.dir-a .console{background:#3a4659;color:#d8d2c4;border-radius:8px 8px 0 0}
+.dir-a .console .dots i:nth-child(1){background:#ff6b6b}
+.dir-a .console .dots i:nth-child(2){background:#ffd93d}
+.dir-a .console .dots i:nth-child(3){background:#6bcb77}
+.nb{background:
+  repeating-linear-gradient(transparent, transparent 25px, rgba(59,74,95,.10) 25px, rgba(59,74,95,.10) 26px),
+  #fbf8f1;
+  color:#2b3a55;padding:16px;font-family:'Instrument Sans',sans-serif}
+.nb .brand{display:flex;align-items:center;gap:8px;font-family:'Caveat',cursive;font-size:22px;color:#2b3a55;border-bottom:2px solid #e85d3f;padding-bottom:8px;margin-bottom:12px}
+.nb .brand em{font-style:normal;background:#ffe08a;padding:0 6px;border-radius:2px}
+.nb .nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.nb .nav button{font-family:'Caveat',cursive;font-size:16px;border:none;background:transparent;color:#5d6b85;padding:2px 8px;cursor:pointer;border-bottom:2px dashed transparent}
+.nb .nav button.on{color:#e85d3f;border-bottom-color:#e85d3f}
+.nb .lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;color:#a99f8c;text-transform:uppercase;margin-bottom:6px}
+.nb .note{background:#fff8d6;border:1px solid #f0e2a8;padding:9px 11px;border-radius:3px;font-size:12px;margin:8px 0;transform:rotate(-.4deg);box-shadow:2px 3px 0 rgba(43,58,85,.06)}
+.nb .note b{color:#e85d3f}
+.nb .skill{border:1px solid rgba(43,58,85,.18);background:#fff;padding:9px 11px;margin-bottom:7px;font-size:12.5px;position:relative;border-radius:2px}
+.nb .skill.on{border-color:#e85d3f;border-left:4px solid #e85d3f}
+.nb .skill .dm{font-family:'JetBrains Mono',monospace;font-size:9px;color:#8d95a8;margin-top:2px}
+.nb .skill .v{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:9px;color:#8d95a8;background:#f4f1e8;padding:1px 6px;border-radius:99px}
+.nb .tree{font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.9;color:#3b4a63;background:#fff;border:1px solid rgba(43,58,85,.18);border-radius:3px;padding:10px 12px}
+.nb .tree .f{color:#e85d3f;font-weight:700}
+.nb .tree .ind{padding-left:16px;color:#93a0b8}
+.nb .tag-stick{display:inline-block;background:#ffe08a;font-family:'Caveat',cursive;font-size:14px;padding:1px 8px;transform:rotate(-1deg)}
+.nb .code{background:#2b3a55;color:#cfe0ff;font-family:'JetBrains Mono',monospace;font-size:10px;padding:9px 11px;border-radius:3px;margin:8px 0;line-height:1.6}
+
+/* ================= B · BRUTAL TERMINAL 粗野终端 ================= */
+.dir-b .tag{background:#33ff66;color:#0a0a0a}
+.dir-b h2{color:#33ff66}
+.dir-b .frame{background:#0a0a0a;border:2px solid #33ff66;border-radius:4px}
+.dir-b .console{background:#0a0a0a;border-bottom:2px solid #33ff66;border-radius:4px 4px 0 0;color:#33ff66}
+.dir-b .console .dots i{width:7px;height:7px;background:#33ff66 !important;border-radius:0}
+.bt{background:#0a0a0a;color:#c8ffd0;font-family:'JetBrains Mono',monospace;padding:16px;font-size:11px}
+.bt .brand{font-weight:700;color:#fff;margin-bottom:10px}
+.bt .brand::before{content:"$ ";color:#33ff66}
+.bt .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.bt .nav button{background:#0a0a0a;color:#33ff66;border:2px solid #33ff66;padding:5px;font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em}
+.bt .nav button.on{background:#33ff66;color:#0a0a0a;font-weight:700}
+.bt .lbl{color:#33ff66;letter-spacing:.14em;font-size:9px;text-transform:uppercase;border-bottom:1px solid #33ff66;padding-bottom:3px;margin-bottom:8px}
+.bt .skill{border:1px solid #33ff66;padding:7px 9px;margin-bottom:6px}
+.bt .skill.on{background:#33ff66;color:#0a0a0a;font-weight:700}
+.bt .skill .dm{color:#7faa88;font-size:9px;margin-top:2px}
+.bt .skill.on .dm{color:#0a0a0a}
+.bt .tree{line-height:2;border:1px dashed #33ff66;padding:9px 11px;margin-top:10px}
+.bt .tree .f{color:#33ff66;font-weight:700}
+.bt .tree .ind{padding-left:16px;color:#6d8f74}
+.bt .prompt{margin-top:10px}
+.bt .prompt::before{content:"$ ";color:#33ff66}
+.bt .btnrow{display:flex;gap:8px;margin:10px 0}
+.bt .btnrow button{border:2px solid #33ff66;background:#0a0a0a;color:#33ff66;padding:5px 10px;font-family:'JetBrains Mono',monospace;font-size:10.5px;cursor:pointer;box-shadow:3px 3px 0 #33ff66}
+.bt .btnrow button.primary{background:#33ff66;color:#0a0a0a;font-weight:700}
+.bt .code{border:1px solid #33ff66;padding:8px 10px;margin-top:8px;line-height:1.6;color:#c8ffd0}
+.bt .code .k{color:#33ff66}.bt .code .c{color:#6d8f74}
+
+/* ================= C · BOTANICAL 植物 ================= */
+.dir-c .tag{background:#7a9a7e;color:#fff}
+.dir-c h2{color:#9fc2a4}
+.dir-c .frame{background:#f7f3ec}
+.dir-c .console{background:#e8e2d4;color:#6a7268;border-radius:14px 14px 0 0}
+.dir-c .console .dots i{width:8px;height:8px;background:#c8c0ae !important}
+.bo{background:#f7f3ec;color:#3d463e;font-family:'Instrument Sans',sans-serif;padding:16px}
+.bo .brand{font-family:'Newsreader',serif;font-size:20px;font-weight:600;color:#3d463e;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.bo .brand i{font-style:normal;font-size:14px}
+.bo .nav{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.bo .nav button{border:none;background:#ece7db;color:#6a7268;padding:6px 12px;border-radius:99px;font-size:12px;cursor:pointer}
+.bo .nav button.on{background:#7a9a7e;color:#fff}
+.bo .lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a49b8b;margin-bottom:7px;font-weight:600}
+.bo .skill{background:#fff;border:1px solid #e6e0d2;border-radius:14px;padding:10px 13px;margin-bottom:8px;font-size:13px;box-shadow:0 2px 6px rgba(61,70,62,.05)}
+.bo .skill.on{border-color:#c86b4d;background:#fdf7f4}
+.bo .skill .dm{font-family:'JetBrains Mono',monospace;font-size:9px;color:#a49b8b;margin-top:3px}
+.bo .skill .v{float:right;font-family:'JetBrains Mono',monospace;font-size:9px;color:#7a9a7e;background:#eef3ec;padding:1px 7px;border-radius:99px}
+.bo .tree{background:#fff;border:1px solid #e6e0d2;border-radius:14px;padding:11px 13px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:2}
+.bo .tree .f{color:#c86b4d;font-weight:700}
+.bo .tree .ind{padding-left:16px;color:#a9b0a4}
+.bo .pill{display:inline-flex;align-items:center;gap:6px;background:#eef3ec;color:#7a9a7e;font-size:11px;padding:4px 11px;border-radius:99px;margin:8px 0}
+.bo .pill i{width:6px;height:6px;border-radius:50%;background:#7a9a7e;display:inline-block}
+.bo .code{background:#ece7db;border-radius:12px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.6;color:#5c6658;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Agent Context — UI Directions · 三选一</h1>
+  <p>A · 手账笔记本 ／ B · 粗野终端 ／ C · 柔和植物 —— 每个方向都保留「技能=文件夹」的文件树形式</p>
+</div>
+
+<div class="dirs">
+
+  <!-- ============ A · NOTEBOOK ============ -->
+  <div class="dir dir-a">
+    <div class="dir-head"><span class="tag">A · NOTEBOOK</span><h2>手账笔记本</h2></div>
+    <div class="frame">
+      <div class="console"><span class="dots"><i></i><i></i><i></i></span>skills · 笔记本</div>
+      <div class="nb">
+        <div class="brand">✒ <em>Agent Context</em></div>
+        <div class="nav"><button class="on">知识</button><button>技能</button><button>分析</button><button>设置</button></div>
+        <div class="lbl">技能清单 / SKILLS</div>
+        <div class="skill on"><span class="tag-stick">调试</span> SQL 调试<div class="dm">dev / sql-debugging</div><span class="v">v2</span></div>
+        <div class="skill">KQL 分析<div class="dm">dev / kql-analysis</div><span class="v">v2</span></div>
+        <div class="note"><b>触发条件:</b>重复行 / 多数据源关联 / 聚合可疑</div>
+        <div class="lbl">包结构 / PACKAGE</div>
+        <div class="tree">
+          <div><span class="f">▣</span> sql-debugging/</div>
+          <div class="ind">SKILL.md</div>
+          <div class="ind"><span class="f">▣</span> scripts/<span style="color:#a9a0c0">▾</span></div>
+          <div class="ind" style="padding-left:32px">dedupe.sql</div>
+          <div class="ind" style="padding-left:32px">trace-analysis.ts</div>
+          <div class="ind"><span class="f">▣</span> reference/ · kql-snippets.md</div>
+        </div>
+        <div class="code"><span style="color:#7fb4a0">// 重复事件排查</span><br>const rows = await query(`SELECT operation_Id …`)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B · BRUTAL TERMINAL ============ -->
+  <div class="dir dir-b">
+    <div class="dir-head"><span class="tag">B · BRUTAL TERM</span><h2>粗野终端</h2></div>
+    <div class="frame">
+      <div class="console"><span class="dots"><i></i><i></i><i></i></span>agent-context — /skills</div>
+      <div class="bt">
+        <div class="brand">agent-context</div>
+        <div class="nav"><button class="on">KNOWLEDGE</button><button>SKILLS</button><button>ANALYTICS</button><button>SETTINGS</button></div>
+        <div class="lbl">> SKILLS — 12 ENTRIES</div>
+        <div class="skill on">SQL-DEBUGGING v2 <span class="dm">dev/sql-debugging</span></div>
+        <div class="skill">KQL-ANALYSIS v2 <span class="dm">dev/kql-analysis</span></div>
+        <div class="tree">
+          <div><span class="f">[D]</span> sql-debugging/</div>
+          <div class="ind">SKILL.md</div>
+          <div class="ind"><span class="f">[D]</span> scripts/</div>
+          <div class="ind" style="padding-left:32px">dedupe.sql</div>
+          <div class="ind" style="padding-left:32px">trace-analysis.ts</div>
+          <div class="ind"><span class="f">[D]</span> reference/ → kql-snippets.md</div>
+        </div>
+        <div class="btnrow">
+          <button class="primary">[ NEW SKILL ]</button>
+          <button>[ IMPORT ]</button>
+          <button>[ + FILE ]</button>
+        </div>
+        <div class="code"><span class="c">// dedupe</span><br><span class="k">const</span> rows = <span class="k">await</span> query(`SELECT …`)</div>
+        <div class="prompt">cat scripts/dedupe.sql <span style="color:#6d8f74"># 运行中…</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ C · BOTANICAL ============ -->
+  <div class="dir dir-c">
+    <div class="dir-head"><span class="tag">C · BOTANICAL</span><h2>柔和植物</h2></div>
+    <div class="frame">
+      <div class="console"><span class="dots"><i></i><i></i><i></i></span>skills · 技能库</div>
+      <div class="bo">
+        <div class="brand">🌿 Agent Context</div>
+        <div class="nav"><button>知识</button><button class="on">技能</button><button>分析</button><button class="on">设置</button></div>
+        <div class="lbl">技能清单</div>
+        <div class="skill on">SQL 调试 <span class="v">v2</span><div class="dm">dev / sql-debugging</div></div>
+        <div class="skill">KQL 分析 <span class="v">v2</span><div class="dm">dev / kql-analysis</div></div>
+        <div class="pill"><i></i>引擎在线 · 队列 0</div>
+        <div class="lbl">包结构</div>
+        <div class="tree">
+          <div><span class="f">📁</span> sql-debugging/</div>
+          <div class="ind">SKILL.md</div>
+          <div class="ind"><span class="f">📁</span> scripts/ ▾</div>
+          <div class="ind" style="padding-left:32px">dedupe.sql</div>
+          <div class="ind" style="padding-left:32px">trace-analysis.ts</div>
+          <div class="ind"><span class="f">📁</span> reference/ · kql-snippets.md</div>
+        </div>
+        <div class="code">// 重复事件排查<br>const rows = await query(`SELECT operation_Id …`)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

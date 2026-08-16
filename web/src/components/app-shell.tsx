@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ActivityIcon,
-  BarChart3Icon,
-  BookOpenIcon,
-  DatabaseIcon,
-  FolderArchiveIcon,
-  FolderSearchIcon,
-  SettingsIcon,
-  WrenchIcon,
-} from 'lucide-react'
+import { ActivityIcon, BarChart3Icon, BookOpenIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, WrenchIcon } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
@@ -75,87 +66,109 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-svh flex-col md:flex-row">
-      {/* Sidebar (Direction D) */}
-      <aside className="hidden w-[232px] shrink-0 flex-col border-r border-border bg-sidebar px-3 py-4 md:flex">
-        <div className="flex items-center gap-2.5 px-2 pb-4 text-sm font-semibold tracking-tight">
-          <div className="flex size-[22px] items-center justify-center rounded-md bg-gradient-to-br from-[#5e6ad2] to-[#8b5cf6] text-[11px] font-bold text-white">
-            AC
+      {/* Sidebar (Field Notes) — becomes a top tab strip below md */}
+      <aside className="hidden w-[232px] shrink-0 flex-col gap-0.5 px-3 py-4 md:flex" style={{ borderRight: '1px solid var(--line)' }}>
+        <div className="mb-3 flex flex-col px-2 pb-4" style={{ borderBottom: '1px solid var(--line)' }}>
+          <div className="serif text-[21px] font-semibold tracking-tight">{t('appShell.title')}</div>
+          <div className="mt-0.5 font-mono text-[8px] uppercase tracking-[0.18em] text-muted-foreground">
+            CONTEXT LAYER · MODEL v2.6
           </div>
-          <DatabaseIcon className="size-4 text-muted-foreground" />
-          {t('appShell.title')}
         </div>
 
+        <p className="px-2 pb-1 pt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+          {t('appShell.workspace')}
+        </p>
+
         <nav className="flex flex-col gap-0.5">
-          {tabs.map((item) => (
+          {tabs.map((item, i) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
               aria-current={tab === item.id ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors',
-                tab === item.id && 'bg-accent/15 text-foreground [&>svg]:text-[#5e6ad2]',
-                tab !== item.id && 'hover:bg-secondary hover:text-foreground',
+                'relative flex items-center gap-2.5 rounded px-2.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors',
+                tab === item.id && 'text-foreground',
               )}
             >
-              {icons[item.id]}
-              {item.label}
+              {tab === item.id && (
+                <span className="absolute -left-3 bottom-1 top-1 w-[3px] rounded-full" style={{ background: 'var(--hi)' }} />
+              )}
+              <span className="font-mono text-[9px] text-muted-foreground">{String(i + 1).padStart(2, '0')}</span>
+              <span className={cn('flex items-center gap-2', tab === item.id && 'hl rounded-sm')}>
+                {icons[item.id]}
+                {item.label}
+              </span>
             </button>
           ))}
         </nav>
 
         <div className="flex-1" />
 
-        <div className="mt-2 flex items-center gap-2.5 border-t border-border px-2 pt-3 text-[12.5px]">
-          <div className="flex size-7 items-center justify-center rounded-full border border-border bg-secondary text-[11px] text-muted-foreground">
+        <div className="mt-2 flex items-center gap-2.5 px-2 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
+          <div className="flex size-7 items-center justify-center rounded-full border border-border bg-secondary font-mono text-[10px] text-muted-foreground">
             {t('appShell.title').slice(0, 1).toUpperCase()}
           </div>
-          <span className="truncate text-muted-foreground">{t('appShell.title')}</span>
+          <span className="truncate text-[12.5px] text-muted-foreground">{t('appShell.title')}</span>
+          <span className="ml-auto text-[9px] text-muted-foreground">zh-CN</span>
         </div>
       </aside>
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="flex items-center gap-3 border-b border-border px-5 py-3">
-          {/* Mobile brand */}
-          <div className="flex items-center gap-2 font-semibold md:hidden">
-            <DatabaseIcon className="size-4 text-muted-foreground" />
-            {t('appShell.title')}
+        <header className="flex items-center gap-3 border-b px-5 py-2.5" style={{ borderColor: 'var(--line)' }}>
+          {/* Mobile brand + tab strip */}
+          <div className="flex w-full flex-col gap-1.5 md:hidden">
+            <div className="flex items-center gap-2">
+              <div className="serif text-base font-semibold">{t('appShell.title')}</div>
+              <div className="ml-auto flex items-center gap-2">
+                <div className="pill flex items-center gap-1.5 font-mono text-[9.5px] text-muted-foreground">
+                  <span
+                    className={cn(
+                      'inline-block size-1.5 rounded-full',
+                      healthy === null ? 'bg-warn' : healthy ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : 'bg-destructive',
+                    )}
+                  />
+                  {healthy === null ? t('appShell.checking') : healthy ? t('appShell.healthy') : t('appShell.degraded')}
+                </div>
+                <ThemeToggle />
+              </div>
+            </div>
+            <div className="flex gap-1 overflow-x-auto">
+              {tabs.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTab(item.id)}
+                  className={cn(
+                    'whitespace-nowrap rounded px-2 py-1 text-xs font-medium',
+                    tab === item.id ? 'hl' : 'text-muted-foreground',
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
-            {tabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
+          {/* Desktop: breadcrumb-ish + status + theme */}
+          <div className="hidden items-center gap-3 md:flex">
+            <div className="font-mono text-[10.5px] text-muted-foreground">
+              {t('appShell.crumb', { section: t(`appShell.tabs.${tab}`) })}
+            </div>
+            <div className="pill flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] text-muted-foreground" style={{ borderColor: 'var(--line)' }}>
+              <span
                 className={cn(
-                  'rounded-md px-2 py-1 text-xs font-medium',
-                  tab === item.id ? 'bg-accent/15 text-foreground' : 'text-muted-foreground',
+                  'inline-block size-1.5 rounded-full',
+                  healthy === null ? 'bg-warn' : healthy ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : 'bg-destructive',
                 )}
-              >
-                {item.label}
-              </button>
-            ))}
+              />
+              ENGINE {healthy === null ? t('appShell.checking') : healthy ? 'OK · 0 QUEUED' : t('appShell.degraded')}
+            </div>
           </div>
 
-          {/* Engine status pill */}
-          <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-[12.5px] text-muted-foreground md:flex">
-            <span
-              className={cn(
-                'size-[7px] rounded-full',
-                healthy === null ? 'bg-warn' : healthy ? 'bg-[#22a06b] shadow-[0_0_0_3px_rgba(34,160,107,0.18)]' : 'bg-destructive',
-              )}
-            />
-            {healthy === null
-              ? t('appShell.checking')
-              : healthy
-                ? t('appShell.healthy')
-                : t('appShell.degraded')}
-          </div>
-
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <ThemeToggle />
           </div>
         </header>

@@ -12,6 +12,8 @@
       "checking": "checking…",
       "healthy": "healthy",
       "degraded": "degraded",
+      "workspace": "Workspace · Personal",
+      "crumb": "WORKSPACE / {{section}}",
       "tabs": {
         "knowledge": "Knowledge",
         "review": "Review",
@@ -125,7 +127,16 @@
       "package": "package",
       "files": "files",
       "edit": "Edit",
-      "preview": "Preview"
+      "preview": "Preview",
+      "packageTree": "PACKAGE",
+      "newFile": "New file",
+      "newFolder": "New folder",
+      "folderName": "Folder name",
+      "filePath": "Path, e.g. scripts/deploy.sh",
+      "renameFile": "Rename",
+      "renameFailed": "Failed to rename file.",
+      "invalidPath": "That path is not allowed — use a relative path inside the package.",
+      "emptyPackageTree": "No files yet — create one or import a package."
     },
     "analytics": {
       "overviewTitle": "Session overview",

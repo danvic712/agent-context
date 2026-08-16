@@ -3,16 +3,20 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource/caveat/600.css";
 
-/* Direction D (T12): the theme is selected by [data-theme="light"|"dark"] on
-   <html> — driven by the platform theme setting (settings.theme) and applied by
-   the ThemeProvider. System mode resolves to one of the two via matchMedia. */
+/* Field Notes — AI 研究员工程手账 (T12 redesign)
+   Day = 石墨×电光蓝 / Night = 靛夜×珊瑚. Theme is selected by [data-theme] on
+   <html>, driven by settings.theme (DB) via ThemeProvider. */
 @custom-variant dark (&:is([data-theme="dark"] *));
 
 @theme inline {
     --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
-    --font-heading: var(--font-sans);
+    --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+    --font-script: 'Caveat', cursive;
+    --font-heading: var(--font-display);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,9 +50,6 @@
     --color-background: var(--background);
     --color-warn: var(--warn);
     --color-ok: var(--ok);
-    --color-panel: var(--panel);
-    --color-panel2: var(--panel2);
-    --color-line: var(--line);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -58,112 +59,159 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ---- Direction D palette (docs/design/ui-direction-d.html) ---- */
+/* ---------- DAY · 石墨 × 电光蓝 ---------- */
 :root,
 [data-theme="light"] {
-    --accent: #5e6ad2;
-    --accent-soft: rgba(94, 106, 210, 0.14);
-    --ok: #22a06b;
-    --warn: #d97706;
+    --paper: #eef0f2;
+    --card-paper: #fbfcfd;
+    --card2-paper: #e3e7eb;
+    --ink: #20262f;
+    --mut: #5d6672;
+    --dim: #9aa3ae;
 
-    --background: #f6f6f4;
-    --foreground: #1a1b1f;
-    --card: #ffffff;
-    --card-foreground: #1a1b1f;
-    --popover: #ffffff;
-    --popover-foreground: #1a1b1f;
-    --primary: #1a1b1f;
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.10);
+    --accent-ink: #2563eb;
+    --hi: #a5c8ff;
+    --hi-soft: rgba(165, 200, 255, 0.32);
+    --teal: #0e8f8f;
+    --teal-soft: rgba(14, 143, 143, 0.12);
+    --red: #2563eb;
+    --red-soft: rgba(37, 99, 235, 0.10);
+
+    --background: #eef0f2;
+    --foreground: #20262f;
+    --card: #fbfcfd;
+    --card-foreground: #20262f;
+    --popover: #fbfcfd;
+    --popover-foreground: #20262f;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
-    --secondary: #fbfbf9;
-    --secondary-foreground: #1a1b1f;
-    --muted: #f3f3f1;
-    --muted-foreground: #5f6670;
-    --accent-foreground: #5e6ad2;
-    --destructive: #d64545;
-    --border: rgba(16, 17, 20, 0.09);
-    --input: rgba(16, 17, 20, 0.16);
-    --ring: #5e6ad2;
-    --chart-1: #5e6ad2;
-    --chart-2: #22a06b;
-    --chart-3: #d97706;
-    --chart-4: #a855f7;
-    --chart-5: #0ea5e9;
-    --radius: 0.625rem;
-    --sidebar: #f6f6f4;
-    --sidebar-foreground: #1a1b1f;
-    --sidebar-primary: #5e6ad2;
+    --secondary: #e3e7eb;
+    --secondary-foreground: #20262f;
+    --muted: #e3e7eb;
+    --muted-foreground: #5d6672;
+    --accent-foreground: #2563eb;
+    --destructive: #d13b3b;
+    --border: rgba(32, 38, 47, 0.14);
+    --input: rgba(32, 38, 47, 0.28);
+    --ring: #2563eb;
+    --chart-1: #2563eb;
+    --chart-2: #0e8f8f;
+    --chart-3: #b08a2e;
+    --chart-4: #c25e3c;
+    --chart-5: #5b6ea0;
+    --radius: 0.5rem;
+    --sidebar: #eef0f2;
+    --sidebar-foreground: #20262f;
+    --sidebar-primary: #2563eb;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgba(94, 106, 210, 0.14);
-    --sidebar-accent-foreground: #1a1b1f;
-    --sidebar-border: rgba(16, 17, 20, 0.09);
-    --sidebar-ring: #5e6ad2;
+    --sidebar-accent: rgba(165, 200, 255, 0.32);
+    --sidebar-accent-foreground: #20262f;
+    --sidebar-border: rgba(32, 38, 47, 0.14);
+    --sidebar-ring: #2563eb;
 
-    /* Direction D primitives for custom components */
-    --panel: #ffffff;
-    --panel2: #fbfbf9;
-    --line: rgba(16, 17, 20, 0.09);
-    --line2: rgba(16, 17, 20, 0.16);
-    --txt: #1a1b1f;
-    --mut: #5f6670;
-    --dim: #9aa1ab;
-    --code-bg: #fafaf8;
-    --shadow-card: 0 1px 2px rgba(16, 17, 20, 0.05), 0 8px 24px rgba(16, 17, 20, 0.07);
+    --line: rgba(32, 38, 47, 0.14);
+    --line2: rgba(32, 38, 47, 0.28);
+    --rule: rgba(32, 38, 47, 0.14);
+    --ok: #1f9d63;
+    --warn: #c27a14;
+    --code-bg: #1e2632;
+    --code-ink: #d9e6ff;
+    --shadow-card: 0 1px 2px rgba(32, 38, 47, 0.05), 0 16px 44px rgba(32, 38, 47, 0.10);
+    --linebg: repeating-linear-gradient(
+        transparent,
+        transparent 27px,
+        rgba(32, 38, 47, 0.07) 27px,
+        rgba(32, 38, 47, 0.07) 28px
+    );
 }
 
+/* ---------- NIGHT · 靛夜 × 珊瑚 ---------- */
 [data-theme="dark"] {
-    --accent: #5e6ad2;
-    --accent-soft: rgba(94, 106, 210, 0.14);
-    --ok: #22a06b;
-    --warn: #d97706;
+    --paper: #131a28;
+    --card-paper: #1a2334;
+    --card2-paper: #222d42;
+    --ink: #e8e2d8;
+    --mut: #98a3b8;
+    --dim: #5c6b84;
 
-    --background: #0b0c0e;
-    --foreground: #e7e9ec;
-    --card: #111316;
-    --card-foreground: #e7e9ec;
-    --popover: #111316;
-    --popover-foreground: #e7e9ec;
-    --primary: #e7e9ec;
-    --primary-foreground: #0b0c0e;
-    --secondary: #17191d;
-    --secondary-foreground: #e7e9ec;
-    --muted: #17191d;
-    --muted-foreground: #8f97a3;
-    --accent-foreground: #8b96e8;
-    --destructive: #e56565;
-    --border: rgba(255, 255, 255, 0.07);
-    --input: rgba(255, 255, 255, 0.12);
-    --ring: #5e6ad2;
-    --chart-1: #5e6ad2;
-    --chart-2: #22a06b;
-    --chart-3: #d97706;
-    --chart-4: #a855f7;
-    --chart-5: #0ea5e9;
-    --radius: 0.625rem;
-    --sidebar: #111316;
-    --sidebar-foreground: #e7e9ec;
-    --sidebar-primary: #5e6ad2;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgba(94, 106, 210, 0.14);
-    --sidebar-accent-foreground: #e7e9ec;
-    --sidebar-border: rgba(255, 255, 255, 0.07);
-    --sidebar-ring: #5e6ad2;
+    --accent: #ff7266;
+    --accent-soft: rgba(255, 114, 102, 0.14);
+    --accent-ink: #ff7266;
+    --hi: #ffd84d;
+    --hi-soft: rgba(255, 216, 77, 0.16);
+    --teal: #41dcc4;
+    --teal-soft: rgba(65, 220, 196, 0.12);
+    --red: #ff7266;
+    --red-soft: rgba(255, 114, 102, 0.14);
 
-    --panel: #111316;
-    --panel2: #17191d;
-    --line: rgba(255, 255, 255, 0.07);
-    --line2: rgba(255, 255, 255, 0.12);
-    --txt: #e7e9ec;
-    --mut: #8f97a3;
-    --dim: #5c6470;
-    --code-bg: #0d0f12;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+    --background: #131a28;
+    --foreground: #e8e2d8;
+    --card: #1a2334;
+    --card-foreground: #e8e2d8;
+    --popover: #1a2334;
+    --popover-foreground: #e8e2d8;
+    --primary: #ff7266;
+    --primary-foreground: #131a28;
+    --secondary: #222d42;
+    --secondary-foreground: #e8e2d8;
+    --muted: #222d42;
+    --muted-foreground: #98a3b8;
+    --accent-foreground: #ffd84d;
+    --destructive: #ff7063;
+    --border: rgba(232, 226, 216, 0.13);
+    --input: rgba(232, 226, 216, 0.24);
+    --ring: #ff7266;
+    --chart-1: #ff7266;
+    --chart-2: #41dcc4;
+    --chart-3: #ffd84d;
+    --chart-4: #9db8ff;
+    --chart-5: #b08ae0;
+    --radius: 0.5rem;
+    --sidebar: #131a28;
+    --sidebar-foreground: #e8e2d8;
+    --sidebar-primary: #ff7266;
+    --sidebar-primary-foreground: #131a28;
+    --sidebar-accent: rgba(255, 216, 77, 0.12);
+    --sidebar-accent-foreground: #e8e2d8;
+    --sidebar-border: rgba(232, 226, 216, 0.13);
+    --sidebar-ring: #ff7266;
+
+    --line: rgba(232, 226, 216, 0.13);
+    --line2: rgba(232, 226, 216, 0.24);
+    --rule: rgba(232, 226, 216, 0.13);
+    --ok: #3ccb8f;
+    --warn: #ffd84d;
+    --code-bg: #0c1019;
+    --code-ink: #cfe0ff;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 44px rgba(0, 0, 0, 0.45);
+    --linebg: repeating-linear-gradient(
+        transparent,
+        transparent 27px,
+        rgba(232, 226, 216, 0.045) 27px,
+        rgba(232, 226, 216, 0.045) 28px
+    );
 }
 
 html {
     @apply font-sans;
 }
 
-/* Smooth theme transitions (Direction D). */
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        color: var(--ink);
+        background-color: var(--paper);
+        background-image: var(--linebg);
+        font-feature-settings: "cv11", "ss01";
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+/* Smooth theme transitions (kept minimal — paper has texture) */
 html,
 html *,
 html *::before,
@@ -174,40 +222,58 @@ html *::after {
         color 0.25s ease;
 }
 
-@layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
-    body {
-        @apply bg-background text-foreground;
-        font-feature-settings: "cv11", "ss01";
-        -webkit-font-smoothing: antialiased;
-    }
+/* ---------- Field Notes helpers ---------- */
+/* 手写旁注 (Caveat) */
+.scribe {
+    font-family: var(--font-script);
+    font-style: normal;
+    line-height: 1;
+}
+/* 等宽 kicker (小标题标注) */
+.kicker {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+}
+/* 荧光高亮 (marker) */
+.hl {
+    background: var(--hi-soft);
+    padding: 0 5px;
+    border-radius: 2px;
+}
+/* 衬线标题 */
+.serif {
+    font-family: var(--font-display);
 }
 
-/* Markdown rendering (Skill SKILL.md, T12) — scoped to .md-view. */
+/* ---------- Markdown (SKILL.md) ---------- */
 .md-view {
     font-size: 13.5px;
-    line-height: 1.65;
-    color: var(--txt);
+    line-height: 1.7;
+    color: var(--ink);
 }
 .md-view h1 {
-    font-size: 17px;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 19px;
     letter-spacing: -0.02em;
     margin-bottom: 12px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--line);
 }
 .md-view h2 {
-    font-size: 14px;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 15px;
     margin: 16px 0 6px;
 }
 .md-view h3,
 .md-view h4 {
-    font-size: 13px;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 13.5px;
     margin: 14px 0 6px;
 }
 .md-view p {
@@ -224,7 +290,7 @@ html *::after {
     margin: 3px 0;
 }
 .md-view a {
-    color: var(--accent);
+    color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -233,65 +299,47 @@ html *::after {
     padding: 4px 12px;
     border-left: 3px solid var(--accent);
     color: var(--mut);
-    background: var(--panel2);
-    border-radius: 0 8px 8px 0;
+    background: var(--card2-paper);
+    border-radius: 0 6px 6px 0;
 }
 .md-view code:not(pre code) {
     font-family: var(--font-mono);
     font-size: 12px;
-    background: var(--panel2);
+    background: var(--card2-paper);
     border: 1px solid var(--line);
-    border-radius: 5px;
+    border-radius: 4px;
     padding: 1px 5px;
-    color: var(--txt);
+    color: var(--ink);
 }
-.md-view pre {
+.md-view pre,
+.md-view .md-shiki pre {
     margin: 10px 0;
     border: 1px solid var(--line);
-    border-radius: 9px;
-    overflow: hidden;
+    border-radius: 4px;
+    overflow-x: auto;
     background: var(--code-bg);
-}
-.md-view pre code {
-    display: block;
-    padding: 12px 14px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.65;
-    overflow-x: auto;
-    color: #cbd2dc;
-}
-/* Shiki dual-theme highlighting (T12): colors come from CSS variables that
-   follow [data-theme]; the container background stays the Direction D code bg. */
-.md-view .md-shiki pre,
-.md-view .shiki {
-    margin: 10px 0;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    overflow-x: auto;
-    background: var(--code-bg) !important;
     padding: 12px 14px;
 }
+.md-view pre code,
 .md-view .md-shiki pre code,
-.md-view .shiki code {
+.md-view .md-plain {
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1.65;
+    line-height: 1.7;
+    color: var(--code-ink);
+}
+.md-view .shiki {
+    background: transparent !important;
+}
+.md-view .shiki code {
     color: var(--shiki-light);
 }
 [data-theme="dark"] .md-view .shiki code {
     color: var(--shiki-dark);
 }
 .md-view .md-plain {
-    margin: 10px 0;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    background: var(--code-bg);
+    display: block;
     padding: 12px 14px;
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: #cbd2dc;
 }
 .md-view hr {
     border: none;
@@ -310,6 +358,129 @@ html *::after {
     text-align: left;
 }
 .md-view th {
-    background: var(--panel2);
+    background: var(--card2-paper);
     font-weight: 600;
+}
+
+/* ---------- Observables 观测表 ---------- */
+.obs {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin: 14px 0;
+    background: var(--card2-paper);
+    overflow: hidden;
+}
+.obs-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dim);
+}
+.obs-head .scribe {
+    font-size: 13px;
+    color: var(--teal);
+    letter-spacing: 0;
+    text-transform: none;
+}
+.obs-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    padding: 7px 13px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    align-items: center;
+}
+.obs-row:last-child {
+    border-bottom: none;
+}
+.obs-row .k {
+    color: var(--mut);
+}
+.obs-row .v {
+    font-weight: 500;
+}
+.obs-ok {
+    color: var(--ok);
+}
+.obs-run {
+    color: var(--teal);
+}
+
+/* ---------- File tree ---------- */
+.skill-tree {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--mut);
+}
+.skill-tree .st-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.skill-tree .st-row:hover {
+    background: var(--card2-paper);
+    color: var(--ink);
+}
+.skill-tree .st-row.on {
+    background: var(--hi-soft);
+    color: var(--ink);
+}
+.skill-tree .st-ico {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+.skill-tree .st-folder .st-row > .st-ico {
+    color: var(--red);
+}
+.skill-tree .st-folder > .st-row {
+    font-weight: 500;
+}
+.skill-tree .st-file .st-row > .st-ico {
+    color: var(--dim);
+}
+.skill-tree .st-children {
+    padding-left: 15px;
+    position: relative;
+    overflow: hidden;
+}
+.skill-tree .st-children::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+}
+.skill-tree .st-caret {
+    color: var(--dim);
+    font-size: 10px;
+    width: 12px;
+    flex-shrink: 0;
+}
+.skill-tree .st-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.skill-tree .st-ext {
+    margin-left: auto;
+    color: var(--dim);
+    font-size: 9.5px;
+}
+.skill-tree .st-grow {
+    flex: 1;
 }

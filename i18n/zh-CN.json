@@ -12,6 +12,8 @@
       "checking": "检查中…",
       "healthy": "正常",
       "degraded": "异常",
+      "workspace": "工作区 · 个人",
+      "crumb": "工作区 / {{section}}",
       "tabs": {
         "knowledge": "知识",
         "review": "复查",
@@ -125,7 +127,16 @@
       "package": "包",
       "files": "个文件",
       "edit": "编辑",
-      "preview": "预览"
+      "preview": "预览",
+      "packageTree": "包",
+      "newFile": "新建文件",
+      "newFolder": "新建文件夹",
+      "folderName": "文件夹名称",
+      "filePath": "路径,如 scripts/deploy.sh",
+      "renameFile": "重命名",
+      "renameFailed": "重命名文件失败。",
+      "invalidPath": "该路径不允许 — 请使用包内的相对路径。",
+      "emptyPackageTree": "还没有文件 — 创建一个或导入包。"
     },
     "analytics": {
       "overviewTitle": "会话概览",

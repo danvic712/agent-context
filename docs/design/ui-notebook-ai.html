@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Context — AI Field Notes UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ AI FIELD NOTES THEME ============ */
+[data-theme="light"]{
+  --paper:#faf6ec; --card:#fffdf6; --card2:#f2eddd; --ink:#2b3749; --mut:#6e7788; --dim:#a29a86;
+  --red:#e2574a; --red-soft:rgba(226,87,74,.09);
+  --hi:#ffd84d; --hi-soft:rgba(255,216,77,.35);
+  --teal:#1f9e88; --teal-soft:rgba(31,158,136,.10);
+  --rule:rgba(43,55,73,.14); --rule2:rgba(43,55,73,.26);
+  --ok:#2aa877; --code:#243247; --code-ink:#d7e3ff;
+  --linebg:repeating-linear-gradient(transparent, transparent 27px, rgba(43,55,73,.08) 27px, rgba(43,55,73,.08) 28px);
+  --shadow:0 1px 2px rgba(43,55,73,.05), 0 18px 44px rgba(43,55,73,.12);
+}
+[data-theme="dark"]{
+  --paper:#151821; --card:#1b1f2b; --card2:#222735; --ink:#e6e2d6; --mut:#9aa2b4; --dim:#5b6478;
+  --red:#ff7063; --red-soft:rgba(255,112,99,.12);
+  --hi:#ffd84d; --hi-soft:rgba(255,216,77,.16);
+  --teal:#41dcc4; --teal-soft:rgba(65,220,196,.12);
+  --rule:rgba(230,226,214,.12); --rule2:rgba(230,226,214,.24);
+  --ok:#3ccb8f; --code:#0d1018; --code-ink:#cfe0ff;
+  --linebg:repeating-linear-gradient(transparent, transparent 27px, rgba(230,226,214,.05) 27px, rgba(230,226,214,.05) 28px);
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 44px rgba(0,0,0,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e1016;font-family:'Instrument Sans',system-ui,sans-serif;padding:24px 16px 80px}
+.meta{max-width:1140px;margin:0 auto 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.meta h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;letter-spacing:-.02em;color:#ece7db}
+.meta h1 em{font-family:'Caveat',cursive;font-style:normal;color:#ffd84d}
+.meta .hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8494}
+.frame{max-width:1140px;margin:0 auto;border-radius:6px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.55);border:1px solid var(--rule)}
+
+/* ============ SHELL ============ */
+.shell{display:grid;grid-template-columns:238px 1fr;min-height:690px;background:var(--paper);color:var(--ink);transition:background .3s,color .3s;
+  background-image:var(--linebg)}
+.sidebar{border-right:1px solid var(--rule);padding:20px 16px 14px;display:flex;flex-direction:column;gap:1px;
+  background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0)), var(--paper)}
+[data-theme="dark"] .sidebar{background:linear-gradient(180deg, rgba(65,220,196,.04), rgba(0,0,0,0)), var(--paper)}
+.brand{display:flex;flex-direction:column;padding:2px 8px 18px;border-bottom:1px solid var(--rule);margin-bottom:12px;position:relative}
+.brand .logo{font-family:'Fraunces',serif;font-weight:600;font-size:21px;letter-spacing:-.02em}
+.brand .logo b{color:var(--red);font-weight:600}
+.brand small{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--dim);margin-top:3px}
+.brand .scribe{position:absolute;right:6px;bottom:2px;font-family:'Caveat',cursive;font-size:15px;color:var(--red);transform:rotate(-3deg)}
+.nav-sec{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:12px 10px 5px}
+.nav{display:flex;align-items:baseline;gap:10px;padding:8px 10px;font-size:13.5px;color:var(--mut);border-radius:3px;position:relative}
+.nav .num{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--dim)}
+.nav.on{color:var(--ink)}
+.nav.on::before{content:"";position:absolute;left:-16px;top:4px;bottom:4px;width:3px;background:var(--hi)}
+.nav.on .name{background:var(--hi-soft);padding:1px 5px;border-radius:2px}
+.nav .count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);background:var(--card2);border:1px solid var(--rule);padding:1px 7px;border-radius:99px}
+.sidebar .spacer{flex:1}
+.user{display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid var(--rule);margin-top:12px;font-size:12px}
+.user .av{width:26px;height:26px;border-radius:50%;background:var(--card2);border:1px solid var(--rule2);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mut)}
+.user .r{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--dim)}
+.user .r i{font-style:normal;color:var(--teal)}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 22px;border-bottom:1px solid var(--rule);background:rgba(255,255,255,.25)}
+[data-theme="dark"] .topbar{background:rgba(0,0,0,.18)}
+.crumb{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mut)}
+.crumb b{color:var(--red)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--mut);border:1px solid var(--rule);background:var(--card);padding:4px 10px;border-radius:99px}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.pill .ai{font-family:'Caveat',cursive;font-size:13px;color:var(--red);line-height:1}
+.theme-toggle{display:flex;gap:2px;background:var(--card2);border:1px solid var(--rule);border-radius:3px;padding:2px}
+.theme-toggle button{border:none;background:transparent;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--dim);padding:3px 9px;border-radius:2px;cursor:pointer}
+.theme-toggle button.on{background:var(--red);color:#fff}
+
+.content{padding:24px 26px 34px;display:flex;flex-direction:column;gap:20px}
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pagehead .kicker{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:5px}
+.pagehead h2{font-family:'Fraunces',serif;font-weight:600;font-size:29px;letter-spacing:-.02em;line-height:1.05}
+.pagehead h2 .hl{background:var(--hi-soft);padding:0 6px;border-radius:2px}
+.pagehead p{font-size:12.5px;color:var(--mut);margin-top:6px}
+.pagehead p code{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);background:var(--red-soft);padding:1px 6px;border-radius:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:3px;cursor:pointer}
+.btn.primary{background:var(--red);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.btn.ghost{border:1px solid var(--rule2);color:var(--ink);background:var(--card)}
+.btn svg{width:14px;height:14px}
+
+/* ============ SKILLS ============ */
+.grid{display:grid;grid-template-columns:285px minmax(0,1fr);gap:18px;align-items:start}
+.list{border:1px solid var(--rule);border-radius:4px;background:var(--card);overflow:hidden;box-shadow:var(--shadow)}
+.listhead{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--rule)}
+.listhead span{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.listhead em{font-family:'Caveat',cursive;font-style:normal;font-size:13px;color:var(--teal);letter-spacing:0}
+.skillrow{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--rule);cursor:pointer;position:relative}
+.skillrow:last-child{border-bottom:none}
+.skillrow.on{background:var(--hi-soft)}
+.skillrow.on::after{content:"→ 选中";position:absolute;right:12px;bottom:3px;font-family:'Caveat',cursive;font-size:12px;color:var(--red)}
+.skillrow .ic{width:30px;height:30px;border-radius:4px;background:var(--card2);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:13px}
+.skillrow .nm{font-size:13.5px;font-weight:600;line-height:1.25}
+.skillrow .dm{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--dim);margin-top:2px}
+.skillrow .ver{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--mut);background:var(--card2);border:1px solid var(--rule);padding:2px 7px;border-radius:99px}
+
+.detail{border:1px solid var(--rule);border-radius:4px;background:var(--card);overflow:hidden;box-shadow:var(--shadow)}
+.detailhead{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.detailhead h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:-.015em}
+.detailhead h3 .hl{background:var(--hi-soft);padding:0 6px;border-radius:2px}
+.detailhead .tags{margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:500;padding:3px 9px;border-radius:99px;border:1px solid var(--rule2);color:var(--mut)}
+.badge.red{background:var(--red-soft);color:var(--red);border-color:transparent}
+.badge.teal{background:var(--teal-soft);color:var(--teal);border-color:transparent}
+.badge.hi{background:var(--hi-soft);color:var(--ink);border-color:transparent}
+
+/* two-pane: tree + body */
+.pane{display:grid;grid-template-columns:252px minmax(0,1fr)}
+.tree{border-right:1px solid var(--rule);padding:14px 12px 16px;background:rgba(255,255,255,.22)}
+[data-theme="dark"] .tree{background:rgba(0,0,0,.16)}
+.treehead{display:flex;align-items:center;justify-content:space-between;padding:2px 8px 12px}
+.treehead span{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.treehead em{font-family:'Caveat',cursive;font-style:normal;color:var(--red);font-size:13px;letter-spacing:0;text-transform:none}
+.treehead .act{display:flex;gap:4px}
+.treehead .act button{border:1px solid var(--rule);background:var(--card);color:var(--mut);font-size:12px;width:21px;height:21px;border-radius:3px;cursor:pointer}
+.tnode{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1;border-radius:3px;color:var(--mut)}
+.trow{display:flex;align-items:center;gap:7px;padding:5.5px 8px;border-radius:3px}
+.trow:hover{background:var(--card2);color:var(--ink)}
+.trow.on{background:var(--hi-soft);color:var(--ink)}
+.trow svg{width:13px;height:13px;flex-shrink:0}
+.trow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .ch{color:var(--dim);font-size:9px}
+.tfolder>.trow{font-weight:500}
+.tfolder>.trow>svg{color:var(--red)}
+.tchildren{padding-left:16px;position:relative;overflow:hidden}
+.tchildren::before{content:"";position:absolute;left:15px;top:0;bottom:0;width:1px;background:var(--rule)}
+.tleaf>.trow>svg{color:var(--dim)}
+.tleaf .ext{color:var(--dim);font-size:9px;margin-left:auto}
+.tleaf .ext::before{content:"."}
+
+.body{padding:0 20px 20px}
+.mdview{padding:18px 0 4px;font-size:13px;line-height:1.7}
+.mdview h1{font-family:'Fraunces',serif;font-weight:600;font-size:19px;letter-spacing:-.02em;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.mdview h2{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:16px 0 6px}
+.mdview p{margin:6px 0;color:var(--mut)}
+.mdview .md-note{background:var(--hi-soft);border-left:3px solid var(--hi);border-radius:0 6px 6px 0;padding:10px 13px;color:var(--ink);font-size:12px;margin:12px 0}
+.mdview .md-note b{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--red)}
+.codeblock{margin:10px 0;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--code)}
+.codeblock .cbhead{display:flex;justify-content:space-between;padding:6px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);border-bottom:1px solid rgba(230,226,214,.12)}
+.codeblock pre{padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;overflow-x:auto;color:var(--code-ink)}
+.codeblock .k{color:#ffd84d}.codeblock .s{color:#7ee0c6}.codeblock .f{color:#9db8ff}.codeblock .c{color:#6b7592}
+
+.refs{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.ref{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mut);border:1px dashed var(--rule2);border-radius:3px;padding:4px 9px;background:var(--card2)}
+.ref svg{width:11px;height:11px;color:var(--teal)}
+
+/* observables (AI 感的数据表) */
+.obs{border:1px solid var(--rule);border-radius:4px;margin-top:14px;background:var(--card2);overflow:hidden}
+.obs .obsh{display:flex;align-items:center;gap:8px;padding:8px 13px;border-bottom:1px solid var(--rule)}
+.obs .obsh span{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.obs .obsh em{font-family:'Caveat',cursive;font-style:normal;font-size:13px;color:var(--teal)}
+.obs .row{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:8px 13px;border-bottom:1px solid var(--rule);font-family:'JetBrains Mono',monospace;font-size:10px;align-items:center}
+.obs .row:last-child{border-bottom:none}
+.obs .row .k{color:var(--mut)}
+.obs .row .v{font-weight:500}
+.obs .row .s-ok{color:var(--ok)}.obs .row .s-run{color:var(--teal)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{border:1px solid var(--rule);border-radius:4px;background:var(--card);padding:15px 17px;box-shadow:var(--shadow);position:relative}
+.kpi .l{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.14em;font-weight:500}
+.kpi .v{font-family:'Fraunces',serif;font-weight:600;font-size:25px;letter-spacing:-.02em;margin-top:5px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11px;margin-top:3px;color:var(--mut)}
+.kpi .d.up{color:var(--ok)}.kpi .d.dn{color:var(--red)}
+.kpi .note{position:absolute;top:9px;right:11px;font-family:'Caveat',cursive;font-size:12px;color:var(--red);transform:rotate(2deg)}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1080px){
+  .pane{grid-template-columns:1fr}
+  .tree{border-right:none;border-bottom:1px solid var(--rule)}
+  .tree .tnode{display:none}
+  .treehead{display:flex !important;padding-bottom:8px}
+  .tree.open .tnode{display:block}
+}
+@media (max-width: 900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:5px;border-right:none;border-bottom:1px solid var(--rule);padding:12px 14px}
+  .brand{border-bottom:none;margin-bottom:0;padding:0 10px 0 0}
+  .brand .logo{font-size:18px}
+  .brand small,.brand .scribe{display:none}
+  .nav-sec{display:none}
+  .nav{padding:5px 8px;font-size:13px}
+  .nav .num,.nav .count{display:none}
+  .sidebar .spacer,.user{display:none}
+  .topbar .crumb{display:none}
+}
+@media (max-width: 720px){
+  .grid{grid-template-columns:1fr}
+  .pagehead h2{font-size:24px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .content{padding:18px 16px 26px}
+  .skillrow{padding:10px 13px}
+  .detailhead{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Agent Context · <em>Field Notes</em> — 手账 × AI 引擎</h1>
+  <div class="hint">responsive: <900px 导航变顶栏 · <720px 堆叠 · 右上切「纸/夜」</div>
+</div>
+
+<div class="frame">
+  <div class="shell" id="shell" data-theme="light">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">Agent Context</div>
+        <small>CONTEXT LAYER · MODEL v2.6</small>
+        <div class="scribe">我的知识库 →</div>
+      </div>
+      <div class="nav-sec">Workspace · 个人</div>
+      <div class="nav"><span class="num">01</span><span class="name">知识</span><span class="count">214</span></div>
+      <div class="nav on"><span class="num">02</span><span class="name">技能</span><span class="count">12</span></div>
+      <div class="nav"><span class="num">03</span><span class="name">分析</span></div>
+      <div class="nav"><span class="num">04</span><span class="name">引擎</span></div>
+      <div class="nav-sec">系统</div>
+      <div class="nav"><span class="num">05</span><span class="name">设置</span></div>
+      <div class="spacer"></div>
+      <div class="user"><div class="av">DV</div>danvic<div class="r"><i>●</i> zh-CN ▾</div></div>
+    </aside>
+
+    <!-- main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="crumb">SKILLS / <b>DEV·SQL-DEBUGGING</b> · V2</div>
+        <div class="right">
+          <div class="pill"><span class="dot"></span>ENGINE OK · 0 QUEUED</div>
+          <div class="pill"><span class="ai">learning</span>LLM · 在线</div>
+          <div class="theme-toggle" id="tt">
+            <button data-t="light" class="on">纸</button><button data-t="dark">夜</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="pagehead">
+          <div>
+            <div class="kicker">01 · PACKAGE REGISTRY</div>
+            <h2>技能 <span class="hl">库</span></h2>
+            <p>集中管理可复用的能力包 · <code>dev</code> 域 · 12 个技能</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>导入包</div>
+            <div class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>新建技能</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="list">
+            <div class="listhead"><span>全部技能 / ALL SKILLS</span><em>● 12</em></div>
+            <div class="skillrow on">
+              <div class="ic">🐞</div>
+              <div><div class="nm">SQL 调试</div><div class="dm">dev / sql-debugging</div></div>
+              <div class="ver">v2</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">📊</div>
+              <div><div class="nm">KQL 分析</div><div class="dm">dev / kql-analysis</div></div>
+              <div class="ver">v2</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">🏠</div>
+              <div><div class="nm">家电维修</div><div class="dm">home / appliance-repair</div></div>
+              <div class="ver">v1</div>
+            </div>
+            <div class="skillrow">
+              <div class="ic">🧭</div>
+              <div><div class="nm">Craft Agents 引导</div><div class="dm">dev / craft-agents-guide</div></div>
+              <div class="ver">v1</div>
+            </div>
+          </div>
+
+          <div class="detail">
+            <div class="detailhead">
+              <h3>SQL <span class="hl">调试</span></h3>
+              <div class="tags">
+                <span class="badge red">dev</span>
+                <span class="badge teal">v2 · 最近发布</span>
+                <span class="badge hi">加载: get_skill</span>
+                <div class="btn ghost" style="padding:5px 10px;font-size:11px">发布版本</div>
+              </div>
+            </div>
+
+            <div class="pane">
+              <!-- file tree -->
+              <div class="tree" id="tree">
+                <div class="treehead">
+                  <span>PACKAGE / 包 <em>内容结构</em></span>
+                  <div class="act">
+                    <button class="toggle-tree" title="展开/收起">▾</button>
+                    <button title="新建文件">＋</button>
+                    <button title="新建文件夹">▣</button>
+                    <button title="上传">↑</button>
+                  </div>
+                </div>
+
+                <div class="tnode tfolder open">
+                  <div class="trow on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">SKILL.md</span></div>
+                </div>
+                <div class="tnode tfolder open">
+                  <div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span class="nm">scripts</span><span class="ch">▾ 2</span></div>
+                  <div class="tchildren">
+                    <div class="tnode tleaf"><div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">dedupe</span><span class="ext">sql</span></div></div>
+                    <div class="tnode tleaf"><div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">trace-analysis</span><span class="ext">ts</span></div></div>
+                  </div>
+                </div>
+                <div class="tnode tfolder open">
+                  <div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span class="nm">reference</span><span class="ch">▾ 1</span></div>
+                  <div class="tchildren">
+                    <div class="tnode tleaf"><div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">kql-snippets</span><span class="ext">md</span></div></div>
+                  </div>
+                </div>
+                <div class="tnode tfolder">
+                  <div class="trow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nm">assets</span><span class="ch">▸ 1</span></div>
+                </div>
+              </div>
+
+              <!-- body -->
+              <div class="body">
+                <div class="mdview">
+                  <h1>SQL 调试</h1>
+                  <p>用于诊断数据查询问题的技能包。当查询返回重复事件、聚合异常或性能退化时加载。</p>
+                  <div class="md-note"><b>触发条件</b> · 结果存在重复行 / 需要关联两个以上数据源 / 聚合结果可疑</div>
+                  <h2>诊断步骤</h2>
+                  <p>1. 先用 <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">operation_Id</code> 关联原始事件,再进行聚合。</p>
+                  <p>2. 聚合前必须去重,否则计数会被放大。</p>
+                  <h2>示例</h2>
+                  <div class="codeblock">
+                    <div class="cbhead"><span>scripts/trace-analysis.ts</span><span>ts</span></div>
+                    <pre><span class="c">// 重复事件排查</span>
+<span class="k">const</span> rows = <span class="k">await</span> query(<span class="s">`
+  SELECT operation_Id, arg_max(timestamp, *)
+  FROM events
+  GROUP BY operation_Id`</span>);</pre>
+                  </div>
+
+                  <div class="obs">
+                    <div class="obsh"><span>观测 / OBSERVABLES</span><em>引擎实测</em></div>
+                    <div class="row"><span class="k">加载路径</span><span class="v">skill://dev/sql-debugging/SKILL.md</span><span class="s-ok">OK</span></div>
+                    <div class="row"><span class="k">置信度</span><span class="v">0.62</span><span class="s-run">检索阈值 0.5</span></div>
+                    <div class="row"><span class="k">最后使用</span><span class="v">2026-08-15 14:22</span><span class="s-ok">活跃</span></div>
+                  </div>
+
+                  <div class="refs">
+                    <div class="ref"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>scripts/dedupe.sql</div>
+                    <div class="ref"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>reference/kql-snippets.md</div>
+                    <div class="ref"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>assets/query-flow.svg</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="l">会话</div><div class="v">128</div><div class="d up">↑ 12% 本周</div><div class="note">持续学习</div></div>
+          <div class="kpi"><div class="l">Tokens</div><div class="v">1.4M</div><div class="d up">↑ 8%</div></div>
+          <div class="kpi"><div class="l">成本</div><div class="v">$2.31</div><div class="d dn">↓ 3%</div><div class="note">模型记账</div></div>
+          <div class="kpi"><div class="l">知识置信度</div><div class="v">0.68</div><div class="d">214 条</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tt = document.getElementById('tt');
+tt.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  document.getElementById('shell').setAttribute('data-theme', b.dataset.t);
+  tt.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+});
+document.getElementById('tree').querySelector('.toggle-tree').addEventListener('click', () => document.getElementById('tree').classList.toggle('open'));
+</script>
+</body>
+</html>
