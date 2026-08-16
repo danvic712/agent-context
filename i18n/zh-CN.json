@@ -14,6 +14,7 @@
       "degraded": "异常",
       "workspace": "工作区 · 个人",
       "crumb": "工作区 / {{section}}",
+      "dashboard": "仪表盘",
       "tabs": {
         "knowledge": "知识",
         "review": "复查",

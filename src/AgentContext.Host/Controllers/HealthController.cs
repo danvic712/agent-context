@@ -7,7 +7,7 @@ namespace AgentContext.Host.Controllers;
 /// <summary>Liveness/readiness probe used by the UI and Docker health checks.</summary>
 [ApiController]
 [Route("api/health")]
-public sealed class HealthController(AgentContextDbContext db) : ControllerBase
+public sealed class HealthController(AgentContextDbContext db, IConfiguration configuration) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult> Get(CancellationToken cancellationToken)
@@ -22,4 +22,13 @@ public sealed class HealthController(AgentContextDbContext db) : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "degraded", database = "unavailable", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// The observability dashboard URL for the UI's "open dashboard" entry — the
+    /// portal doesn't know it (it only has the OTLP endpoint), so the deploy
+    /// surface injects it: compose sets <c>DASHBOARD_URL=http://localhost:18888</c>,
+    /// the AppHost mode injects the in-process dashboard address.
+    /// </summary>
+    [HttpGet("dashboard")]
+    public ActionResult GetDashboardUrl() => Ok(new { url = configuration["DASHBOARD_URL"] });
 }

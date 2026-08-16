@@ -27,8 +27,11 @@ public static class AppHostRunner
 
         // Local development only: the in-process dashboard serves plain HTTP on
         // localhost (like the compose standalone container); a launch-profile
-        // equivalent for the --apphost flag path.
+        // equivalent for the --apphost flag path. Frontend auth is also switched
+        // to Unsecured so the UI's "open dashboard" menu lands straight on the
+        // dashboard (the compose dashboard is anonymous too).
         Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
+        Environment.SetEnvironmentVariable("Dashboard__Frontend__AuthMode", "Unsecured");
 
         var builder = DistributedApplication.CreateBuilder(appArgs);
 
@@ -56,6 +59,9 @@ public static class AppHostRunner
             // stack (OtelDefaults reads OTEL_EXPORTER_OTLP_ENDPOINT) exports to
             // this AppHost's dashboard.
             .WithOtlpExporter()
+            // Browser-facing dashboard URL for the UI's "open dashboard" menu entry
+            // (the launchSettings http profile applicationUrl the dashboard binds).
+            .WithEnvironment("DASHBOARD_URL", "http://localhost:5179")
             // Aspire injects ConnectionStrings__Default from the postgres resource
             // (the platform reads ConnectionStrings:Default, not the resource name).
             .WithReference(postgres, connectionName: "Default")

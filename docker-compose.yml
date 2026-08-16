@@ -37,6 +37,8 @@ services:
       # service — the image listens on 18889 for OTLP/gRPC (host port 4317 is just
       # a mapping); standalone runs default to http://localhost:4317 in code.
       OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+      # Browser-facing dashboard URL for the UI's "open dashboard" menu entry.
+      DASHBOARD_URL: http://localhost:18888
       # Listen on 80 (HTTP default) so OrbStack domains need no port.
       # OrbStack proxies HTTPS automatically for .orb.local domains, so both of
       # these work: http://portal.agent-context.orb.local and
