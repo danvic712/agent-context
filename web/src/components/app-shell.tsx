@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIcon, BarChart3Icon, BookOpenIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, WrenchIcon } from 'lucide-react'
+import { ActivityIcon, BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, WrenchIcon } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillManager } from '@/components/skill-manager'
-import { getHealth } from '@/lib/api'
+import { getDashboardUrl, getHealth } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 type Tab = 'knowledge' | 'review' | 'archived' | 'skills' | 'analytics' | 'health' | 'settings'
@@ -26,6 +26,7 @@ export function AppShell() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('knowledge')
   const [healthy, setHealthy] = useState<boolean | null>(null)
+  const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -35,6 +36,13 @@ export function AppShell() {
       })
       .catch(() => {
         if (!cancelled) setHealthy(false)
+      })
+    getDashboardUrl()
+      .then((dto) => {
+        if (!cancelled) setDashboardUrl(dto.url)
+      })
+      .catch(() => {
+        // Dashboard URL is optional — the entry stays hidden when unconfigured.
       })
     return () => {
       cancelled = true
@@ -110,8 +118,20 @@ export function AppShell() {
             ))}
           </nav>
 
-          {/* Status + theme */}
+          {/* Status + dashboard + theme */}
           <div className="flex shrink-0 items-center gap-2">
+            {dashboardUrl && (
+              <button
+                type="button"
+                onClick={() => window.open(dashboardUrl, '_blank', 'noopener,noreferrer')}
+                title={dashboardUrl}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11.5px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground"
+                style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}
+              >
+                <ExternalLinkIcon className="size-3.5" />
+                {t('appShell.dashboard')}
+              </button>
+            )}
             <div className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] text-muted-foreground lg:flex" style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}>
               <span
                 className={cn(

@@ -119,4 +119,31 @@ public sealed class EngineHealthApiTests : PostgresTestBase
         Assert.Equal(0, secondResult.GetProperty("movedToReview").GetInt32());
         Assert.Equal(0, secondResult.GetProperty("archived").GetInt32());
     }
+
+    [Fact]
+    public async Task Dashboard_url_comes_back_when_configured()
+    {
+        var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("ConnectionStrings:Default", Fixture.ConnectionString);
+                builder.UseSetting("DASHBOARD_URL", "http://localhost:18888");
+            });
+        using var client = factory.CreateClient();
+
+        var response = await client.GetFromJsonAsync<JsonElement>("/api/health/dashboard");
+        Assert.Equal("http://localhost:18888", response.GetProperty("url").GetString());
+    }
+
+    [Fact]
+    public async Task Dashboard_url_is_null_when_unconfigured()
+    {
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+                builder.UseSetting("ConnectionStrings:Default", Fixture.ConnectionString));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetFromJsonAsync<JsonElement>("/api/health/dashboard");
+        Assert.True(response.GetProperty("url").ValueKind == JsonValueKind.Null);
+    }
 }
