@@ -1,15 +1,14 @@
-# Handoff — T1–T4 delivered (schema, sessions, learning engine, retrieval)
+# Handoff — T1–T5 delivered (schema, sessions, learning engine, retrieval, knowledge UI)
 
 > For the next session implementing the remaining MVP tickets.
-> This bridges what T1–T4 already shipped. Work from the tickets; this file is
+> This bridges what T1–T5 already shipped. Work from the tickets; this file is
 > the context bridge, not a substitute for `docs/spec.md` / `CONTEXT.md` /
 > `CODING_STANDARDS.md` / the ADRs.
 
 ## Status at handoff
 
-- `main` contains T1–T4 (and T5, which is also closed) — **84/84 tests green**, zero build warnings.
-- Closed: #2, #3, #4 (T3), #5 (T4), #6 (T5). Open: #7 (T6), #8 (T7), #9 (T8), #10 (T9).
-- T5 (Knowledge management UI + rate_knowledge) shipped on `main` (97ce17e) — know it exists before starting the next ticket; it added the knowledge list/review UI, REST + MCP rate_knowledge, and the axios frontend layer.
+- `main` contains T1–T5 — **84/84 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.
+- Closed: #2, #3, #4 (T3), #5 (T4), #6 (T5). Open: #7 (T6), #8 (T7), #9 (T8), #10 (T9), #11 (T10).
 
 ## Repo conventions (must follow — see CODING_STANDARDS.md)
 
@@ -43,6 +42,15 @@
 - `IRetrievalAppService` → `RetrievalAppService` (`Application/Retrieval`): `search_memory(domain, query, minConfidence=0.5, Top 10)` and `find_similar_solution(domain, problem)` — domain-scoped, cosine-ranked, Confidence ≥ threshold, conflict-group partners appended side by side (Score 0, deliberately bypassing the threshold — judgement needs both sides).
 - **Conflict detection at insert** (pipeline): similarity band `[0.6, 0.9)` → shared `ConflictGroupId` (joins an existing group); `≥ 0.9` dedups/corroborates (+0.05 capped); `< 0.6` standalone. Batch-internal conflicts handled in memory (`FindRelatedInBatch`).
 - REST: `GET /api/knowledge/search` + `/api/knowledge/similar-solution`. MCP: `search_memory` + `find_similar_solution` (`Host/Mcp/KnowledgeTools.cs`).
+
+### T5 — Knowledge management UI + rate_knowledge (97ce17e)
+
+- `IKnowledgeAppService` (`Application/KnowledgeManagement` — feature folder must NOT be named `Knowledge`, it shadows the entity): knowledge list with Confidence + source session; review list with threshold (`ReviewKnowledgeResult { Threshold, Items }` — the frontend never hardcodes the threshold); private marker; physical delete; rate.
+- `rate_knowledge` semantics (ticket definition, not the spec's citation mechanism): useful → Confidence +0.1 (cap 1.0); not-useful → cleared into review. Constants `RateConfidenceBump` / `MaxConfidence` in `LearningPipelineDefaults`.
+- REST: `GET /api/knowledge`, `GET /api/knowledge/review`, `PATCH /api/knowledge/{id}` (isPrivate), `DELETE /api/knowledge/{id}`, `POST /api/knowledge/{id}/rate`; KeyNotFound → 404 (same pattern as SessionsController).
+- MCP: `rate_knowledge` (`Host/Mcp/KnowledgeTools.cs`, injected `IKnowledgeAppService`).
+- UI: `web/src/components/knowledge-manager.tsx` (list / review / private / rate); axios single instance + error interceptor in `web/src/lib/api.ts`; shadcn primitives in `components/ui`. `wwwroot` build output is NOT committed.
+- Gotchas: EF can't `OrderBy` after a projection (order on the entity before `Select`, static `Expression<Func<>>` projection); `KnowledgeListItem` must include `CreatedAtUtc` for sorting.
 - Single-user MVP: private items always visible to the owner (AC5 seam, not filtered).
 - Gotcha: MCP end-to-end tests use a local `HttpListener` `/embeddings` stub (LLM config points at it); `WebApplicationFactory` tests use `ConfigureTestServices` to swap in a fake `ILlmClient`; test vectors for cosine similarity are hand-built unit vectors `(c, √(1−c²))`.
 
