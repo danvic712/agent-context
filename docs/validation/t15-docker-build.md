@@ -43,9 +43,13 @@ Results:
 - `GET http://localhost:8080/api/health` returns HTTP 200 with database `ok`.
 - `GET http://localhost:8080/monitor/` returns HTTP 200.
 - `GET http://localhost:8080/monitor/metrics` returns HTTP 200.
-- Dashboard HTML contains `<base href="/monitor/">` and `/navfix.js`.
+- `GET http://localhost:8080/?view=Parameters` is served by the Aspire Dashboard query route, while plain `GET http://localhost:8080/` remains the portal.
+- Dashboard HTML contains `<base href="/monitor/">` and `/navfix.js` on the prefixed surface.
 - Compose injects `DASHBOARD_URL=http://localhost:8080/monitor`.
 - Only portal port `8080` is published; Dashboard port `18888` remains container-internal.
 
 The navigation fixer now matches on URL pathnames and preserves query strings
 and fragments, so links such as metrics resource URLs remain under `/monitor`.
+Resources' `Parameters`/`Graph` tabs use root-query URLs; YARP matches those
+specific `view` queries and proxies them to Aspire without claiming the portal's
+plain root path.

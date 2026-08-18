@@ -111,20 +111,6 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
-app.UseSerilogRequestLogging();
-app.MapControllers();
-
-// T14: Streamable HTTP MCP endpoint — the only MCP surface, one URL for
-// remote clients. Unauthenticated in MVP.
-app.MapMcp("/mcp");
-
-// Single-port model (issue #15): /monitor/* -> in-process Aspire dashboard.
-// UseWebSockets lets the proxy forward the Blazor interactive circuit
-// (websocket upgrade to /monitor/_blazor). Registered before the SPA
-// fallback so the proxy route wins.
-app.UseWebSockets();
-app.MapReverseProxy();
-
 // Dashboard page redirect (issue #15): the dashboard's nav links are hard-coded
 // root paths (/consolelogs, /metrics, ...). Those root-path page requests are
 // redirected to their /monitor-prefixed equivalent so every dashboard route
@@ -134,8 +120,10 @@ app.MapReverseProxy();
 // used because Blazor's enhanced navigation follows the redirect and keeps the
 // final URL via history.pushState without a full-page reload — so component
 // navigations (e.g. the metrics page auto-selecting a resource) don't flash.
-// Link navigations are already rewritten to the prefix by navfix.js and never
-// reach this middleware.
+// Link navigations are already rewritten to the prefix by navfix.js. The
+// Resources view's root query (`/?view=Parameters`) is handled by a dedicated
+// YARP query route in DashboardProxySetup, so it reaches Aspire instead of the
+// portal SPA fallback.
 app.Use(async (context, next) =>
 {
     if (HttpMethods.IsGet(context.Request.Method) &&
@@ -147,6 +135,22 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+app.UseSerilogRequestLogging();
+app.UseRouting();
+app.MapControllers();
+
+// T14: Streamable HTTP MCP endpoint — the only MCP surface, one URL for
+// remote clients. Unauthenticated in MVP.
+app.MapMcp("/mcp");
+
+// Single-port model (issue #15): /monitor/* -> in-process Aspire dashboard.
+// UseWebSockets lets the proxy forward the Blazor interactive circuit
+// (websocket upgrade to /monitor/_blazor). Registered before the SPA
+// fallback so the proxy route wins.
+app.UseWebSockets();
+
+app.MapReverseProxy();
 
 // Serve the React UI (built into wwwroot by the SPA target; see web/ and csproj).
 app.UseDefaultFiles();

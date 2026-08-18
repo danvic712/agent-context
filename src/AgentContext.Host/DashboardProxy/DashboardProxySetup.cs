@@ -11,10 +11,14 @@ namespace AgentContext.Host.DashboardProxy;
 /// SPA's root-relative asset paths, and the header transforms stop the browser
 /// from 304-revalidating stale rewritten content.
 ///
-/// Two route families point at the same cluster:
+/// Three route families point at the same cluster:
 /// <list type="bullet">
 ///   <item><c>{PathPrefix}/*</c> — the primary entry; the prefix is stripped and
 ///   text bodies are rewritten for the prefix.</item>
+///   <item>root-query Dashboard views such as
+///   <c>/?view=Parameters</c> — Resources tabs use these root URLs directly, so
+///   query-specific routes proxy them without taking ownership of the portal's
+///   plain <c>/</c>.</item>
 ///   <item>dashboard root paths (see <see cref="RootPaths"/>) — the dashboard's
 ///   Blazor runtime references root-absolute URLs that bypass
 ///   <c>&lt;base href&gt;</c> (dynamically imported module scripts, nav links),
@@ -129,6 +133,31 @@ public static class DashboardProxySetup
 
         var routes = new[]
             {
+                // Aspire's Resources tabs use root-query URLs such as
+                // /?view=Parameters instead of /resources/.... Match only the
+                // known Dashboard views so the portal's plain / remains intact.
+                new RouteConfig
+                {
+                    RouteId = RouteId + "-root-view",
+                    Order = -100,
+                    ClusterId = ClusterId,
+                    Match = new RouteMatch
+                    {
+                        Path = "/{**catch-all}",
+                        QueryParameters =
+                        [
+                            new RouteQueryParameter
+                            {
+                                Name = "view",
+                                Values = ["Parameters", "Resources", "Graph"],
+                                Mode = QueryParameterMatchMode.Exact,
+                            },
+                        ],
+                    },
+                    // Keep the upstream root base href for this root-query
+                    // surface; its root asset routes are proxied below.
+                    Transforms = RootPathTransforms(),
+                },
                 // The prefix itself (no trailing segment): the prefix removal
                 // leaves an empty path, which the HttpClient normalizes to "/".
                 new RouteConfig
