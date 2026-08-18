@@ -5,6 +5,10 @@
 > the context bridge, not a substitute for `docs/spec.md` / `CONTEXT.md` /
 > `CODING_STANDARDS.md` / the ADRs.
 
+> **Historical handoff:** this snapshot predates T11–T15. For the current
+> single-entrypoint, Streamable HTTP MCP, and in-process dashboard topology, use
+> `AGENTS.md`, `docs/spec.md`, and `docs/guides/apphost-mode.md`.
+
 ## Status at handoff
 
 - `main` contains T1–T10 — **140/140 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.

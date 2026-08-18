@@ -19,6 +19,15 @@ export default defineConfig({
     proxy: {
       // Dev: the REST API runs on the ASP.NET Core host (default 8080).
       '/api': 'http://localhost:8080',
+      // Keep the same-origin dashboard URL working when the React UI is served
+      // by Vite instead of the ASP.NET host. WebSocket support is required by
+      // the Aspire Blazor circuit.
+      '/monitor': {
+        target: 'http://localhost:8080',
+        ws: true,
+      },
+      // Dashboard HTML injects this helper at the origin root.
+      '/navfix.js': 'http://localhost:8080',
     },
   },
   build: {

@@ -16,9 +16,11 @@ dotnet run --project src/AgentContext.Host
 
 What happens:
 
-- The Host runs an in-process Aspire dashboard (URL printed on startup,
-  typically `http://localhost:5179`, with a login token — or add
-  `ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true` for no login).
+- The Host runs an in-process Aspire dashboard on the fixed internal port
+  `18888` by default (override with `DASHBOARD_PORT`). Browser traffic uses the
+  portal's same-origin `/monitor/resources` route; the dashboard listener is
+  not a separately published Compose port. Add
+  `ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true` for no login.
 - A pgvector Postgres container (`pgvector/pgvector:pg17`) is started with a
   fixed password (`agent_context`) and the named volume `agentcontext-pgdata`.
 - The portal runs as a child process of the same binary (internal
@@ -44,7 +46,7 @@ Both run styles use the same AppHost code path:
 
 | | `docker compose up` | `dotnet run` (default) |
 |---|---|---|
-| Dashboard | in-process, portal `/monitor/resources` (internal :18888) | in-process, dynamic port |
+| Dashboard | in-process, portal `/monitor/resources` (internal :18888) | in-process, portal `/monitor/resources` (internal :18888) |
 | Resources view | **yes** | **yes** |
 | Portal | child process, :8080 | child process, :8080 |
 | Postgres | external Compose service | Aspire-managed container |

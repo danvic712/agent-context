@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { BrowserRouter } from 'react-router-dom'
 import { AppShell } from './components/app-shell'
 import { FirstRunWizard } from './components/first-run-wizard'
 import { getLanguage, getSetupStatus } from './lib/api'
@@ -22,17 +23,16 @@ export default function App() {
       .catch(() => setPhase('setup'))
   }, [])
 
-  if (phase === 'loading') {
-    return (
+  const content =
+    phase === 'loading' ? (
       <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">
         {t('common.loading')}
       </div>
+    ) : phase === 'setup' ? (
+      <FirstRunWizard onComplete={() => setPhase('app')} />
+    ) : (
+      <AppShell />
     )
-  }
 
-  if (phase === 'setup') {
-    return <FirstRunWizard onComplete={() => setPhase('app')} />
-  }
-
-  return <AppShell />
+  return <BrowserRouter>{content}</BrowserRouter>
 }

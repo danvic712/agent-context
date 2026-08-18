@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIcon, BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, WrenchIcon } from 'lucide-react'
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillManager } from '@/components/skill-manager'
-import { appTabs, getTabFromPath, getTabPath, type AppTab } from '@/lib/app-routes'
+import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
 import { getDashboardUrl, getHealth } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +24,8 @@ const icons: Record<AppTab, React.ReactNode> = {
 
 export function AppShell() {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<AppTab>(() => getTabFromPath(window.location.pathname))
+  const { pathname } = useLocation()
+  const tab = getTabFromPath(pathname)
   const [healthy, setHealthy] = useState<boolean | null>(null)
   const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
 
@@ -49,45 +51,6 @@ export function AppShell() {
   }, [])
 
   const tabs = appTabs.map((item) => ({ ...item, label: t(`appShell.tabs.${item.id}`) }))
-
-  useEffect(() => {
-    const syncTabFromLocation = () => {
-      const nextTab = getTabFromPath(window.location.pathname)
-      const canonicalPath = getTabPath(nextTab)
-
-      // Make the root and trailing-slash variants share one canonical URL while
-      // preserving query/hash state for future deep links.
-      if (window.location.pathname !== canonicalPath) {
-        window.history.replaceState(null, '', `${canonicalPath}${window.location.search}${window.location.hash}`)
-      }
-      setTab(nextTab)
-    }
-
-    window.addEventListener('popstate', syncTabFromLocation)
-    syncTabFromLocation()
-    return () => window.removeEventListener('popstate', syncTabFromLocation)
-  }, [])
-
-  const navigateToTab = (nextTab: AppTab) => {
-    const path = getTabPath(nextTab)
-    if (window.location.pathname !== path) {
-      window.history.pushState(null, '', path)
-    }
-    setTab(nextTab)
-  }
-
-  const page =
-    tab === 'skills' ? (
-      <SkillManager />
-    ) : tab === 'analytics' ? (
-      <AnalyticsOverview />
-    ) : tab === 'health' ? (
-      <EngineHealthView />
-    ) : tab === 'settings' ? (
-      <SettingsPage />
-    ) : (
-      <KnowledgeManager mode={tab === 'review' ? 'review' : tab === 'archived' ? 'archived' : 'all'} />
-    )
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -116,28 +79,19 @@ export function AppShell() {
           {/* Nav pills */}
           <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
             {tabs.map((item) => (
-              <a
+              <NavLink
                 key={item.id}
-                href={item.path}
-                onClick={(event) => {
-                  // Keep normal browser behaviour for new-tab, modified-click,
-                  // and accessibility-assisted navigation.
-                  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                  event.preventDefault()
-                  navigateToTab(item.id)
-                }}
-                aria-current={tab === item.id ? 'page' : undefined}
-                className={cn(
+                to={item.path}
+                end
+                className={({ isActive }) => cn(
                   'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all duration-150',
-                  tab === item.id
-                    ? 'text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground',
+                  isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground',
                 )}
-                style={tab === item.id ? { background: 'var(--accent)', boxShadow: '0 3px 10px var(--accent-shadow)' } : undefined}
+                style={({ isActive }) => isActive ? { background: 'var(--accent)', boxShadow: '0 3px 10px var(--accent-shadow)' } : undefined}
               >
                 {icons[item.id]}
                 {item.label}
-              </a>
+              </NavLink>
             ))}
           </nav>
 
@@ -184,7 +138,16 @@ export function AppShell() {
 
       {/* Content — keyed so tab switches animate in */}
       <main key={tab} className="animate-in fade-in slide-in-from-bottom-1 duration-200 flex-1 p-4 md:p-6">
-        {page}
+        <Routes>
+          <Route path="/knowledge" element={<KnowledgeManager mode="all" />} />
+          <Route path="/review" element={<KnowledgeManager mode="review" />} />
+          <Route path="/archived" element={<KnowledgeManager mode="archived" />} />
+          <Route path="/skills" element={<SkillManager />} />
+          <Route path="/analytics" element={<AnalyticsOverview />} />
+          <Route path="/health" element={<EngineHealthView />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/knowledge" replace />} />
+        </Routes>
       </main>
     </div>
   )
