@@ -7,7 +7,7 @@
 - Keep the single-container AppHost image contract: portal child process + in-process Aspire dashboard.
 - Remove the duplicated Aspire staging directory from the final image.
 - Cache target-architecture NuGet packages and skip the second restore during publish.
-- Keep browser-facing Dashboard navigation on the portal's same-origin `/monitor` surface.
+- Keep browser-facing Dashboard navigation on the portal's same-origin `/monitor` surface, with Resources canonical at `/monitor/resources`.
 
 ## Build validation
 
@@ -41,15 +41,17 @@ Results:
 - Compose configuration is valid.
 - `agent-context` and `agent-context-postgres` are healthy.
 - `GET http://localhost:8080/api/health` returns HTTP 200 with database `ok`.
-- `GET http://localhost:8080/monitor/` returns HTTP 200.
+- `GET http://localhost:8080/monitor/resources` returns HTTP 200.
 - `GET http://localhost:8080/monitor/metrics` returns HTTP 200.
 - `GET http://localhost:8080/?view=Parameters` is served by the Aspire Dashboard query route, while plain `GET http://localhost:8080/` remains the portal.
-- Dashboard HTML contains `<base href="/monitor/">` and `/navfix.js` on the prefixed surface.
-- Compose injects `DASHBOARD_URL=http://localhost:8080/monitor`.
+- Canonical Resources HTML contains `<base href="/monitor/resources/">`; sibling Dashboard pages use `<base href="/monitor/">` and all surfaces inject `/navfix.js`.
+- Compose injects `DASHBOARD_URL=http://localhost:8080/monitor/resources`.
 - Only portal port `8080` is published; Dashboard port `18888` remains container-internal.
 
 The navigation fixer now matches on URL pathnames and preserves query strings
 and fragments, so links such as metrics resource URLs remain under `/monitor`.
 Resources' `Parameters`/`Graph` tabs use root-query URLs; YARP matches those
 specific `view` queries and proxies them to Aspire without claiming the portal's
-plain root path.
+plain root path. The portal top navigation uses canonical client routes:
+`/knowledge`, `/review`, `/archived`, `/skills`, `/analytics`, `/health`, and
+`/settings`.

@@ -26,6 +26,17 @@ namespace AgentContext.Host.DashboardProxy;
 /// </summary>
 public sealed class DashboardBodyRewrite : ResponseTransform
 {
+    private readonly string basePath;
+    private readonly string navigationPrefix;
+
+    public DashboardBodyRewrite(
+        string basePath = DashboardProxySetup.PathPrefix,
+        string navigationPrefix = DashboardProxySetup.PathPrefix)
+    {
+        this.basePath = basePath.TrimEnd('/') + "/";
+        this.navigationPrefix = navigationPrefix.TrimEnd('/');
+    }
+
     public override async ValueTask ApplyAsync(ResponseTransformContext context)
     {
         var response = context.ProxyResponse;
@@ -61,16 +72,18 @@ public sealed class DashboardBodyRewrite : ResponseTransform
         response.Content = rewritten;
     }
 
-    private static string Rewrite(string mediaType, string text)
+    private string Rewrite(string mediaType, string text)
     {
         if (mediaType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
         {
-            text = text.Replace("<base href=\"/\"", $"<base href=\"{DashboardProxySetup.PathPrefix}/\"");
+            text = text.Replace("<base href=\"/\"", $"<base href=\"{basePath}\"");
             // The dashboard's nav links are hard-coded root paths that bypass
             // <base href>; navfix.js rewrites them to PathPrefix so Blazor
             // navigates in-place (no full-page redirect / flash) and every
             // dashboard route stays under /monitor.
-            return text.Replace("</head>", "<script src=\"/navfix.js\"></script></head>");
+            return text.Replace(
+                "</head>",
+                $"<script src=\"/navfix.js?v=2\" data-dashboard-prefix=\"{navigationPrefix}\"></script></head>");
         }
 
         // JavaScript: only rewrite root-relative Blazor asset/circuit paths.

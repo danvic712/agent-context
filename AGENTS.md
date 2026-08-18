@@ -58,7 +58,7 @@ Root `CODING_STANDARDS.md` documents the repo's C# conventions (notably: interfa
 - **Build**: `dotnet build` (SPA target rebuilds the React UI into `wwwroot`). Skip with `-p:SkipSpaBuild=true` after `cd web && npm ci && npm run build`. Docker builds use BuildKit npm and target-architecture NuGet caches; Aspire RID packages are staged into the runtime cache outside `/app` to avoid duplicate image content.
 - **Test**: `dotnet test` — needs Docker (Testcontainers spins up a real pgvector Postgres). Two seams: application-service seam tests + thin adapter tests (REST/MCP HTTP via the host, plus OTel and web-host smoke tests). Baseline **191/191 green**.
 - **CI**: [`.github/workflows/build.yml`](.github/workflows/build.yml) runs on every push/PR (web build → dotnet build/test, one retry for Testcontainers flakiness); [`.github/workflows/release.yml`](.github/workflows/release.yml) builds the multi-arch GHCR image + GitHub Release on `v*` tags.
-- **Local stack**: `docker compose up -d` → AppHost image with portal :8080, in-process Aspire dashboard at `/monitor` (raw :18888 stays container-internal), and external Postgres :5432. Use `docker compose up -d --build` to rebuild the image.
+- **Local stack**: `docker compose up -d` → AppHost image with portal :8080, in-process Aspire dashboard at `/monitor/resources` (raw :18888 stays container-internal), and external Postgres :5432. Use `docker compose up -d --build` to rebuild the image.
 
 ## Engineering gotchas
 

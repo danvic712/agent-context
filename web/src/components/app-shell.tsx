@@ -7,12 +7,11 @@ import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillManager } from '@/components/skill-manager'
+import { appTabs, getTabFromPath, getTabPath, type AppTab } from '@/lib/app-routes'
 import { getDashboardUrl, getHealth } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-type Tab = 'knowledge' | 'review' | 'archived' | 'skills' | 'analytics' | 'health' | 'settings'
-
-const icons: Record<Tab, React.ReactNode> = {
+const icons: Record<AppTab, React.ReactNode> = {
   knowledge: <BookOpenIcon className="size-3.5" />,
   review: <FolderSearchIcon className="size-3.5" />,
   archived: <FolderArchiveIcon className="size-3.5" />,
@@ -24,7 +23,7 @@ const icons: Record<Tab, React.ReactNode> = {
 
 export function AppShell() {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<Tab>('knowledge')
+  const [tab, setTab] = useState<AppTab>(() => getTabFromPath(window.location.pathname))
   const [healthy, setHealthy] = useState<boolean | null>(null)
   const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
 
@@ -49,15 +48,33 @@ export function AppShell() {
     }
   }, [])
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'knowledge', label: t('appShell.tabs.knowledge') },
-    { id: 'review', label: t('appShell.tabs.review') },
-    { id: 'archived', label: t('appShell.tabs.archived') },
-    { id: 'skills', label: t('appShell.tabs.skills') },
-    { id: 'analytics', label: t('appShell.tabs.analytics') },
-    { id: 'health', label: t('appShell.tabs.health') },
-    { id: 'settings', label: t('appShell.tabs.settings') },
-  ]
+  const tabs = appTabs.map((item) => ({ ...item, label: t(`appShell.tabs.${item.id}`) }))
+
+  useEffect(() => {
+    const syncTabFromLocation = () => {
+      const nextTab = getTabFromPath(window.location.pathname)
+      const canonicalPath = getTabPath(nextTab)
+
+      // Make the root and trailing-slash variants share one canonical URL while
+      // preserving query/hash state for future deep links.
+      if (window.location.pathname !== canonicalPath) {
+        window.history.replaceState(null, '', `${canonicalPath}${window.location.search}${window.location.hash}`)
+      }
+      setTab(nextTab)
+    }
+
+    window.addEventListener('popstate', syncTabFromLocation)
+    syncTabFromLocation()
+    return () => window.removeEventListener('popstate', syncTabFromLocation)
+  }, [])
+
+  const navigateToTab = (nextTab: AppTab) => {
+    const path = getTabPath(nextTab)
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path)
+    }
+    setTab(nextTab)
+  }
 
   const page =
     tab === 'skills' ? (
@@ -99,10 +116,16 @@ export function AppShell() {
           {/* Nav pills */}
           <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
             {tabs.map((item) => (
-              <button
+              <a
                 key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
+                href={item.path}
+                onClick={(event) => {
+                  // Keep normal browser behaviour for new-tab, modified-click,
+                  // and accessibility-assisted navigation.
+                  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  event.preventDefault()
+                  navigateToTab(item.id)
+                }}
                 aria-current={tab === item.id ? 'page' : undefined}
                 className={cn(
                   'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all duration-150',
@@ -114,7 +137,7 @@ export function AppShell() {
               >
                 {icons[item.id]}
                 {item.label}
-              </button>
+              </a>
             ))}
           </nav>
 

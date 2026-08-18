@@ -44,7 +44,7 @@ Both run styles use the same AppHost code path:
 
 | | `docker compose up` | `dotnet run` (default) |
 |---|---|---|
-| Dashboard | in-process, portal `/monitor` (internal :18888) | in-process, dynamic port |
+| Dashboard | in-process, portal `/monitor/resources` (internal :18888) | in-process, dynamic port |
 | Resources view | **yes** | **yes** |
 | Portal | child process, :8080 | child process, :8080 |
 | Postgres | external Compose service | Aspire-managed container |

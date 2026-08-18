@@ -14,7 +14,7 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 - **Analytics** — sessions / tokens / cost by workspace, domain and agent; maintained model pricing table.
 - **Settings** — LLM endpoint, platform language (`en-US` / `zh-CN`), and color theme (`light` / `dark` / `system`), all persisted in the DB and applied without restart.
 - **Localization** — full platform UI + backend errors in the configured language, one JSON store per locale (ADR 0008).
-- **Observability** — OpenTelemetry logs + traces + metrics exported to the in-app [Aspire dashboard](http://localhost:8080/monitor) by default; `service.name=agent-context`.
+- **Observability** — OpenTelemetry logs + traces + metrics exported to the in-app [Aspire dashboard](http://localhost:8080/monitor/resources) by default; `service.name=agent-context`.
 
 ## Quick start
 
@@ -27,7 +27,7 @@ This starts everything with no manual steps:
 | Service | Address | Notes |
 |---|---|---|
 | Agent Context image | http://localhost:8080 | AppHost container with portal UI + REST API + Streamable HTTP MCP at `/mcp`; applies EF Core migrations at startup |
-| Aspire dashboard | http://localhost:8080/monitor | In-process dashboard with Resources, logs, traces and metrics; raw :18888 stays container-internal |
+| Aspire dashboard | http://localhost:8080/monitor/resources | In-process dashboard with Resources, logs, traces and metrics; raw :18888 stays container-internal |
 | Postgres (pgvector) | localhost:5432 | `agent_context` / `agent_context`; external to the application image |
 
 Open http://localhost:8080 and the **first-run wizard** creates your admin account

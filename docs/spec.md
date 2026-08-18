@@ -59,8 +59,8 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 ### 2.12 AppHost mode + dashboard menu + CI/CD (T13/T15 follow-ups)
 - **Default (no args)**: the same binary runs as an Aspire DistributedApplication (portal + dashboard resources). Postgres is Aspire-managed locally, while the Docker image receives `ConnectionStrings__Default` and models Postgres as an external resource (`docs/guides/apphost-mode.md`).
-- The Docker image exposes the portal on `:8080`; the in-process dashboard is reached at `/monitor` through the portal, while its `:18888` listener remains container-internal.
-- UI topbar "Dashboard" entry uses `DASHBOARD_URL` (`GET /api/health/dashboard`); Compose points it at the reachable dashboard surface.
+- The Docker image exposes the portal on `:8080`; the in-process dashboard is reached at `/monitor/resources` through the portal, while its `:18888` listener remains container-internal.
+- UI topbar "Dashboard" entry uses `DASHBOARD_URL` (`GET /api/health/dashboard`); Compose points it at `/monitor/resources`, the canonical Resources surface.
 - The Dockerfile carries target-architecture Aspire DCP/Dashboard RID packages into the runtime NuGet cache because `dotnet publish` omits them from `deps.json`; temporary staging stays outside `/app` to avoid duplicate image content.
 - **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
 
