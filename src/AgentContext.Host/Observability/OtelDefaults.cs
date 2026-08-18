@@ -31,9 +31,9 @@ public static class OtelDefaults
     }
 
     /// <summary>
-    /// Standalone default OTLP/gRPC endpoint. Matches the compose host mapping of
-    /// the aspire-dashboard service (host 4317 → container 18889); docker-compose
-    /// overrides the endpoint to the in-network dashboard address.
+    /// Standalone default OTLP/gRPC endpoint. AppHost injects the in-process
+    /// dashboard endpoint for local and container runs; this fallback remains for
+    /// a portal launched without AppHost wiring.
     /// </summary>
     public const string DefaultOtlpEndpoint = "http://localhost:4317";
 

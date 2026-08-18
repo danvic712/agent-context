@@ -56,7 +56,7 @@ services:
       # Browser-facing dashboard URL for the UI's "open dashboard" menu entry.
       # Keep navigation on the portal's same-origin proxy so the dashboard uses
       # the single-port /monitor surface instead of bypassing the portal.
-      DASHBOARD_URL: http://localhost:8080/monitor/resources
+      DASHBOARD_URL: /monitor/resources
       # OTLP export is injected by the AppHost's WithOtlpExporter() — the portal
       # child process gets OTEL_EXPORTER_OTLP_ENDPOINT pointing at the in-process
       # dashboard automatically (T13). No env surface needed here.

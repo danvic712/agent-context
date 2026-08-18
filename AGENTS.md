@@ -5,11 +5,11 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 - **Stack**: .NET 10 / ASP.NET Core / EF Core / Serilog on the backend; React 19 + Vite + TS + shadcn/ui + react-i18next + shiki on the frontend; PostgreSQL + pgvector.
 - **One public entrypoint** ([ADR 0006](docs/adr/0006-single-project-dual-mode.md)): running with no arguments starts the Aspire DistributedApplication, portal child process (REST API + UI + Streamable HTTP MCP at `/mcp`) and dashboard. Postgres is orchestrated locally when no external connection string is supplied; Docker Compose supplies it externally. All share one DI graph.
 - **Features**: Learning Engine (session → knowledge pipeline, T3) · retrieval with conflict groups (T4) · knowledge hygiene / review / archive (T5, T8) · versioned **skill packages** on the filesystem (T6, T12) · analytics + pricing (T7) · LLM endpoint + language + theme settings in DB (T10, T11, T12) · OTel logs/traces/metrics → Aspire dashboard (T13).
-- **Latest milestones**: T11 localization, T12 product-grade UI + Skill package model, T13 OpenTelemetry + dashboard, plus the AppHost dual-mode follow-up and the GitHub Actions build/release pipeline (all 2026-08-16).
+- **Latest milestones**: T11 localization, T12 product-grade UI + Skill package model, T13 OpenTelemetry + dashboard, T14 Streamable HTTP MCP + single-entrypoint startup, and the T15 complete-image/same-origin dashboard follow-up (2026-08-18).
 
 ## MCP surface
 
-The platform exposes five v1 tools over stdio (see [`McpStdioHost.cs`](src/AgentContext.Host/Mcp/McpStdioHost.cs)):
+The platform exposes five v1 tools over Streamable HTTP at `/mcp` (see the MCP registrations in `src/AgentContext.Host/Mcp/`):
 
 | Tool | Purpose |
 |---|---|

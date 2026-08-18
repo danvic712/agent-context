@@ -8,6 +8,7 @@
 - Remove the duplicated Aspire staging directory from the final image.
 - Cache target-architecture NuGet packages and skip the second restore during publish.
 - Keep browser-facing Dashboard navigation on the portal's same-origin `/monitor` surface, with Resources canonical at `/monitor/resources`.
+- Keep the raw dashboard listener (`18888`) internal; Compose exposes only portal `8080`.
 
 ## Build validation
 
@@ -43,15 +44,20 @@ Results:
 - `GET http://localhost:8080/api/health` returns HTTP 200 with database `ok`.
 - `GET http://localhost:8080/monitor/resources` returns HTTP 200.
 - `GET http://localhost:8080/monitor/metrics` returns HTTP 200.
-- `GET http://localhost:8080/?view=Parameters` is served by the Aspire Dashboard query route, while plain `GET http://localhost:8080/` remains the portal.
+- `GET http://localhost:8080/?view=Parameters` redirects to `/monitor/resources?view=Parameters`, while plain `GET http://localhost:8080/` remains the portal.
 - Canonical Resources HTML contains `<base href="/monitor/resources/">`; sibling Dashboard pages use `<base href="/monitor/">` and all surfaces inject `/navfix.js`.
-- Compose injects `DASHBOARD_URL=http://localhost:8080/monitor/resources`.
+- Compose injects the same-origin `DASHBOARD_URL=/monitor/resources`, so a domain-based portal does not send users to `localhost:8080`.
 - Only portal port `8080` is published; Dashboard port `18888` remains container-internal.
 
 The navigation fixer now matches on URL pathnames and preserves query strings
 and fragments, so links such as metrics resource URLs remain under `/monitor`.
-Resources' `Parameters`/`Graph` tabs use root-query URLs; YARP matches those
-specific `view` queries and proxies them to Aspire without claiming the portal's
-plain root path. The portal top navigation uses canonical client routes:
+Resources' `Parameters`/`Graph` tabs use root-query URLs internally; the portal
+redirects those requests to the canonical `/monitor/resources?...` surface so
+the browser URL keeps the proxy prefix. The portal top navigation uses
+React Router with canonical client routes:
 `/knowledge`, `/review`, `/archived`, `/skills`, `/analytics`, `/health`, and
 `/settings`.
+
+When running the UI with `npm run dev`, Vite proxies `/monitor` (including the
+dashboard websocket) and `/navfix.js` to the ASP.NET Core host, so the same
+relative `DASHBOARD_URL` works on the development origin as it does in Compose.

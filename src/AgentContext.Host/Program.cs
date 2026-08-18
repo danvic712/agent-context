@@ -121,16 +121,19 @@ using (var scope = app.Services.CreateScope())
 // final URL via history.pushState without a full-page reload — so component
 // navigations (e.g. the metrics page auto-selecting a resource) don't flash.
 // Link navigations are already rewritten to the prefix by navfix.js. The
-// Resources view's root query (`/?view=Parameters`) is handled by a dedicated
-// YARP query route in DashboardProxySetup, so it reaches Aspire instead of the
-// portal SPA fallback.
+// Resources view's root queries (`/?view=Parameters`, `/?view=Graph`, ...)
+// are also redirected here so the browser URL keeps the /monitor/resources
+// prefix instead of exposing the dashboard's upstream root path.
 app.Use(async (context, next) =>
 {
-    if (HttpMethods.IsGet(context.Request.Method) &&
-        DashboardProxySetup.TryGetDashboardPrefixPath(context.Request.Path, out var target))
+    if (HttpMethods.IsGet(context.Request.Method))
     {
-        context.Response.Redirect(target + context.Request.QueryString);
-        return;
+        if (DashboardProxySetup.TryGetDashboardPrefixPath(context.Request.Path, out var pageTarget) ||
+            DashboardProxySetup.TryGetDashboardQueryPath(context.Request.Path, context.Request.Query, out pageTarget))
+        {
+            context.Response.Redirect(pageTarget + context.Request.QueryString);
+            return;
+        }
     }
 
     await next();

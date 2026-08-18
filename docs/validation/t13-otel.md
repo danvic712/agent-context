@@ -5,6 +5,11 @@
 > configuration. What was checked, what the dashboard showed, and the port/protocol
 > reality that differs from the ticket's letter.
 
+> **Historical record:** this validation predates T15. It records the former
+> standalone `aspire-dashboard` Compose service and its port mappings. The current
+> topology is the complete AppHost image with an in-process dashboard behind the
+> portal's same-origin `/monitor` proxy; see [`t15-docker-build.md`](t15-docker-build.md).
+
 ## Setup
 
 - Stack: `docker compose up -d` with the rebuilt `portal` image (this change)

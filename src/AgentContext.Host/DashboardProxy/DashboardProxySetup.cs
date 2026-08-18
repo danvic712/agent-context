@@ -49,6 +49,8 @@ public static class DashboardProxySetup
     /// </summary>
     private static readonly string[] DashboardPagePrefixes = ["/resources", "/consolelogs", "/structuredlogs", "/traces", "/metrics", "/login"];
 
+    private static readonly string[] DashboardResourceViews = ["Parameters", "Resources", "Graph"];
+
     public const string RouteId = "dashboard-proxy";
     public const string ClusterId = "dashboard-cluster";
 
@@ -103,6 +105,30 @@ public static class DashboardProxySetup
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Maps Aspire's root-query Resources views (for example
+    /// <c>/?view=Parameters</c>) to the canonical prefixed Resources route.
+    /// Aspire uses the root path for these tabs, but exposing that root URL on
+    /// the portal drops the <see cref="PathPrefix"/> from the browser URL.
+    /// </summary>
+    public static bool TryGetDashboardQueryPath(PathString path, IQueryCollection query, out string target)
+    {
+        target = "";
+        if (path != "/" || !query.TryGetValue("view", out var values) || values.Count != 1)
+        {
+            return false;
+        }
+
+        var view = values[0];
+        if (!DashboardResourceViews.Contains(view, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        target = PathPrefix + DefaultPagePath;
+        return true;
     }
 
     /// <summary>
@@ -167,13 +193,13 @@ public static class DashboardProxySetup
                     ClusterId = ClusterId,
                     Match = new RouteMatch
                     {
-                        Path = "/{**catch-all}",
+                        Path = "/",
                         QueryParameters =
                         [
                             new RouteQueryParameter
                             {
                                 Name = "view",
-                                Values = ["Parameters", "Resources", "Graph"],
+                                Values = [..DashboardResourceViews],
                                 Mode = QueryParameterMatchMode.Exact,
                             },
                         ],

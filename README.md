@@ -76,7 +76,7 @@ Users (React UI / Craft Agents)
 # Full environment: portal + dashboard + local pgvector Postgres
 dotnet run --project src/AgentContext.Host
 
-# UI dev server with /api proxied to http://localhost:8080
+# UI dev server with /api, /monitor (including websockets), and /navfix.js proxied to http://localhost:8080
 cd web && npm run dev
 ```
 

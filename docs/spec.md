@@ -1,6 +1,6 @@
 # Agent Context — Platform Spec
 
-> **Current state (2026-08-16)**: T1–T13 delivered and closed (#2–#14), including the T13 follow-ups (AppHost mode + UI dashboard menu + CI/CD). Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0008` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
+> **Current state (2026-08-18)**: T1–T14 are delivered; T15's complete-image and same-origin dashboard implementation is present locally, with final Docker/full-loop validation pending. Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0008` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
 
 ## 1. Positioning & Scope
 
@@ -10,7 +10,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - **Four value axes**: Shared AI Context (foundation) · Continuous Learning (foundation, table stakes) · AI Capability Management (core) · AI Usage Intelligence (**differentiator**).
 - **Deployment**: self-hosted Docker Compose first (ADR 0002); SaaS later. One .NET binary, one entrypoint (ADR 0006).
 
-## 2. Delivered Capabilities (T1–T13)
+## 2. Delivered Capabilities (T1–T15)
 
 ### 2.1 Integration — MCP gateway (T2, T6, T9)
 - One project, one entrypoint: no-args startup runs the full environment — portal (REST API + React UI + MCP over Streamable HTTP at `/mcp`) + Aspire dashboard + postgres, as one DistributedApplication (ADR 0006). Craft Agents connect to the MCP toolset by URL; the legacy stdio server remains as an internal/test path.
@@ -77,8 +77,9 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 | T12 (#13) | Product-grade UI + DB theme + Skill package model | 2026-08-16 |
 | T13 (#14) | OpenTelemetry + Aspire dashboard | 2026-08-16 |
 | T13 follow-ups | AppHost mode · dashboard menu · CI/CD (GHCR + Actions) | 2026-08-16 |
+| T15 (#15) | Complete AppHost image, external PostgreSQL, in-process dashboard, same-origin `/monitor` proxy | 2026-08-18 locally; final Docker/full-loop validation pending |
 
-All validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs/validation/t12-ui-skill-package.md`, `docs/validation/t12-redesign-ui.md`, `docs/validation/t13-otel.md`.
+Earlier milestones were validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs/validation/t12-ui-skill-package.md`, `docs/validation/t12-redesign-ui.md`, `docs/validation/t13-otel.md`. Current T15 checks are recorded in `docs/validation/t15-docker-build.md`; the T13 Compose topology in that older record is historical.
 
 ## 4. Architecture
 
@@ -91,11 +92,11 @@ All validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs
         │   default: Aspire DistributedApp      │
         │   shared: EF Core / retrieval /       │
         │   learning / BackgroundService        │
-        │   OTel exporter → aspire-dashboard    │
-        └───────────────┬──────────┬────────────┘
-                        │          │
-      PostgreSQL (+ pgvector)  Aspire dashboard
-              (no Redis, no Hangfire)
+        │   in-process dashboard + /monitor     │
+        └───────────────────┬─────────────────┘
+                            │
+                 PostgreSQL (+ pgvector)
+                 (no Redis, no Hangfire)
 ```
 
 - Single project, one entrypoint — no-args startup runs the full 3-in-1 environment (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
