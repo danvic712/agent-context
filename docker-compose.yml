@@ -1,79 +1,95 @@
 services:
   postgres:
-    # Fixed container name (no compose -1 suffix): on OrbStack also reachable at
-    # agent-context-postgres.orb.local:5432.
+    # External dependency (issue #15): the image deliberately does NOT bundle
+    # postgres. Fixed container name (no compose -1 suffix): on OrbStack also
+    # reachable at agent-context-postgres.orb.local:5432.
     container_name: agent-context-postgres
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: agent_context
       POSTGRES_PASSWORD: agent_context
       POSTGRES_DB: agent_context
+      # Single shared data volume (T15 follow-up): postgres stores its data in a
+      # subdirectory of the /data mountpoint — the official image's recommended
+      # layout when the mount is a volume. Everything lives under the program
+      # name, so one directory holds the whole app's data.
+      PGDATA: /data/agent-context/postgres
     ports:
-      - "5432:5432"
+      # Loopback only: the app reaches postgres over the compose network; no
+      # need to expose it to the LAN.
+      - "127.0.0.1:5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - data:/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agent_context -d agent_context"]
       interval: 5s
       timeout: 5s
       retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
-  portal:
+  agent-context:
+    # T15 (issue #15): the image is COMPLETE — one container runs the full
+    # AppHost orchestration: the portal child process (React UI + REST + MCP
+    # /mcp) on :8080 and the in-process Aspire dashboard on :18888 (fixed port,
+    # with the AppHost-only Resources view). Postgres stays an external service
+    # above, wired via ConnectionStrings__Default; the dashboard no longer ships
+    # as a compose sibling (it lives inside the image).
     # Fixed container name (no compose -1 suffix): on OrbStack the UI is also
     # reachable at agent-context.orb.local (stable alias).
     container_name: agent-context
-    # Published by the release workflow (v* tags) as multi-arch linux/amd64 +
-    # linux/arm64; Docker picks the matching platform automatically. The local
-    # `build:` block is still available for `docker compose build`.
     image: ghcr.io/danvic712/agent-context:latest
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
-      # Learning Engine LLM endpoint (ADR 0003) is stored in the settings table
-      # (settings REST/UI is a later ticket) — no env surface for it in v1.
-      # Skill packages (T12) live on the filesystem under Skills:Directory.
-      Skills__Directory: /data/skills
-      # T13: OTLP export destination. In-network address of the aspire-dashboard
-      # service — the image listens on 18889 for OTLP/gRPC (host port 4317 is just
-      # a mapping); standalone runs default to http://localhost:4317 in code.
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+      # Skill packages (T12) live on the filesystem. Single shared data volume:
+      # everything under /data/agent-context (program name) — postgres owns the
+      # db subdirectory, this service owns skills. The AppHost passes the value
+      # straight to the portal child (T15 follow-up).
+      Skills__Directory: /data/agent-context/skills
       # Browser-facing dashboard URL for the UI's "open dashboard" menu entry.
-      DASHBOARD_URL: http://localhost:18888
-      # Listen on 80 (HTTP default) so OrbStack domains need no port.
-      # OrbStack proxies HTTPS automatically for .orb.local domains, so both of
-      # these work: http://portal.agent-context.orb.local and
-      # https://portal.agent-context.orb.local
-      ASPNETCORE_URLS: http://+:80
+      # Keep navigation on the portal's same-origin proxy so the dashboard uses
+      # the single-port /monitor surface instead of bypassing the portal.
+      DASHBOARD_URL: http://localhost:8080/monitor
+      # OTLP export is injected by the AppHost's WithOtlpExporter() — the portal
+      # child process gets OTEL_EXPORTER_OTLP_ENDPOINT pointing at the in-process
+      # dashboard automatically (T13). No env surface needed here.
     ports:
-      - "8080:80"
+      - "8080:8080"   # portal + same-origin dashboard proxy at /monitor
+      # Aspire dashboard listens on 18888 inside the container; it is intentionally
+      # not exposed separately so all browser navigation stays under the portal.
     volumes:
-      - skills-data:/data
+      - data:/data
     depends_on:
       postgres:
         condition: service_healthy
-      aspire-dashboard:
-        condition: service_started
-    restart: unless-stopped
-
-  aspire-dashboard:
-    # Global observability (T13): the default destination for the portal's OTLP
-    # export — a feature, not an opt-in. UI on 18888; OTLP ingest exposed on the
-    # standard host ports 4317 (gRPC) / 4318 (HTTP), mapped from the image's
-    # internal 18889/18890. Telemetry is in-memory (dev/diagnostics tool).
-    container_name: agent-context-dashboard
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
-    environment:
-      # Local development only: no login token / API key to view telemetry.
-      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
-    ports:
-      - "18888:18888" # dashboard UI
-      - "4317:18889"  # OTLP/gRPC
-      - "4318:18890"  # OTLP/HTTP
+    healthcheck:
+      # The aspnet image ships no curl/wget (noble-slim base), so probe with
+      # bash /dev/tcp. GET /api/health returns HTTP 200 only when the portal is
+      # up AND the database is reachable (HealthController). The AppHost needs
+      # time to start DCP + the dashboard + the portal child first.
+      test:
+        - CMD-SHELL
+        - 'bash -c ''exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /api/health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3'''
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
 volumes:
-  pgdata:
-  skills-data:
+  # Single data volume for the whole app: db (PGDATA=/data/agent-context/postgres)
+  # and skills (/data/agent-context/skills) share one mount, so backup, cleanup
+  # and inspection touch exactly one volume / one directory.
+  data:

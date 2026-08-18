@@ -54,16 +54,18 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 ### 2.11 Observability — OpenTelemetry + Aspire dashboard (T13)
 - Logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics, **enabled by default**; `service.name=agent-context`; resource attributes from `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
-- OTLP endpoint from `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://aspire-dashboard:18889` (compose in-network) / `localhost:4317` (standalone); `OTEL_SDK_DISABLED` as escape hatch; pipeline spans instrumented (`learning-pipeline.process`).
-- New compose service `aspire-dashboard` (UI 18888, OTLP/gRPC 4317, OTLP/HTTP 4318).
+- OTLP endpoint from `OTEL_EXPORTER_OTLP_ENDPOINT`; local Compose/AppHost wiring targets the in-process dashboard, while standalone configuration may use `localhost:4317`; `OTEL_SDK_DISABLED` is the escape hatch; pipeline spans are instrumented (`learning-pipeline.process`).
+- The dashboard is hosted by the AppHost in the current image; it is not a separate Compose service.
 
-### 2.12 AppHost mode + dashboard menu + CI/CD (T13 follow-ups)
-- **Default (no args)**: the same binary runs as an Aspire DistributedApplication (postgres + portal resources) so the dashboard gains the **Resources** view (`docs/guides/apphost-mode.md`).
-- UI topbar "Dashboard" entry opens the Aspire dashboard (`GET /api/health/dashboard`, `DASHBOARD_URL` env).
+### 2.12 AppHost mode + dashboard menu + CI/CD (T13/T15 follow-ups)
+- **Default (no args)**: the same binary runs as an Aspire DistributedApplication (portal + dashboard resources). Postgres is Aspire-managed locally, while the Docker image receives `ConnectionStrings__Default` and models Postgres as an external resource (`docs/guides/apphost-mode.md`).
+- The Docker image exposes the portal on `:8080`; the in-process dashboard is reached at `/monitor` through the portal, while its `:18888` listener remains container-internal.
+- UI topbar "Dashboard" entry uses `DASHBOARD_URL` (`GET /api/health/dashboard`); Compose points it at the reachable dashboard surface.
+- The Dockerfile carries target-architecture Aspire DCP/Dashboard RID packages into the runtime NuGet cache because `dotnet publish` omits them from `deps.json`; temporary staging stays outside `/app` to avoid duplicate image content.
 - **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
 
 ### 2.13 Ops
-- Auto-creates the database + applies migrations at startup; Docker Compose = portal + postgres(pgvector) + aspire-dashboard; 191/191 tests green (seam + adapter suites).
+- Auto-creates the database + applies migrations at startup; Docker Compose = AppHost image + external Postgres(pgvector), with the dashboard in-process; 191/191 tests green (seam + adapter suites).
 
 ## 3. Post-MVP Delivery Log
 

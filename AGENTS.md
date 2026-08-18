@@ -3,7 +3,7 @@
 A shared context layer for AI agents — manage skills, memory, sessions, and knowledge across personal, family, and team workspaces. Self-hosted, .NET + React, MCP-first.
 
 - **Stack**: .NET 10 / ASP.NET Core / EF Core / Serilog on the backend; React 19 + Vite + TS + shadcn/ui + react-i18next + shiki on the frontend; PostgreSQL + pgvector.
-- **One project, three entrypoints** ([ADR 0006](docs/adr/0006-single-project-dual-mode.md)): `--web` (REST API + UI), `--mcp-stdio` (MCP server over stdio), `--apphost` (Aspire DistributedApplication → dashboard Resources view). All share one DI graph.
+- **One public entrypoint** ([ADR 0006](docs/adr/0006-single-project-dual-mode.md)): running with no arguments starts the Aspire DistributedApplication, portal child process (REST API + UI + Streamable HTTP MCP at `/mcp`) and dashboard. Postgres is orchestrated locally when no external connection string is supplied; Docker Compose supplies it externally. All share one DI graph.
 - **Features**: Learning Engine (session → knowledge pipeline, T3) · retrieval with conflict groups (T4) · knowledge hygiene / review / archive (T5, T8) · versioned **skill packages** on the filesystem (T6, T12) · analytics + pricing (T7) · LLM endpoint + language + theme settings in DB (T10, T11, T12) · OTel logs/traces/metrics → Aspire dashboard (T13).
 - **Latest milestones**: T11 localization, T12 product-grade UI + Skill package model, T13 OpenTelemetry + dashboard, plus the AppHost dual-mode follow-up and the GitHub Actions build/release pipeline (all 2026-08-16).
 
@@ -55,15 +55,15 @@ Root `CODING_STANDARDS.md` documents the repo's C# conventions (notably: interfa
 
 ## Development & testing
 
-- **Build**: `dotnet build` (SPA target rebuilds the React UI into `wwwroot`). Skip with `-p:SkipSpaBuild=true` after `cd web && npm ci && npm run build`.
-- **Test**: `dotnet test` — needs Docker (Testcontainers spins up a real pgvector Postgres). Two seams: application-service seam tests + thin adapter tests (REST via `WebApplicationFactory`, MCP via a real stdio subprocess, plus OTel and web-host smoke tests). Baseline **191/191 green**.
+- **Build**: `dotnet build` (SPA target rebuilds the React UI into `wwwroot`). Skip with `-p:SkipSpaBuild=true` after `cd web && npm ci && npm run build`. Docker builds use BuildKit npm and target-architecture NuGet caches; Aspire RID packages are staged into the runtime cache outside `/app` to avoid duplicate image content.
+- **Test**: `dotnet test` — needs Docker (Testcontainers spins up a real pgvector Postgres). Two seams: application-service seam tests + thin adapter tests (REST/MCP HTTP via the host, plus OTel and web-host smoke tests). Baseline **191/191 green**.
 - **CI**: [`.github/workflows/build.yml`](.github/workflows/build.yml) runs on every push/PR (web build → dotnet build/test, one retry for Testcontainers flakiness); [`.github/workflows/release.yml`](.github/workflows/release.yml) builds the multi-arch GHCR image + GitHub Release on `v*` tags.
-- **Local stack**: `docker compose up -d` → portal :8080, Postgres :5432, Aspire dashboard :18888 (OTLP :4317/:4318).
+- **Local stack**: `docker compose up -d` → AppHost image with portal :8080, in-process Aspire dashboard at `/monitor` (raw :18888 stays container-internal), and external Postgres :5432. Use `docker compose up -d --build` to rebuild the image.
 
 ## Engineering gotchas
 
 - `.gitignore` anchors `/skills/` (macOS `core.ignoreCase` would otherwise shadow `src/**/Skills/` source files) — never widen it back to a bare `skills/` glob, and use `git add -f` if a real skill needs force-adding.
-- `--apphost` requires the Aspire.AppHost.SDK in the Host csproj; it forces `TreatProjectReferencesAsResources=false` + `IsPublishable=true` + a custom wwwroot copy target.
-- OpenTelemetry is **on by default**; `OTEL_SDK_DISABLED=true` (or an empty OTLP endpoint) is the escape hatch. Compose targets the dashboard's internal OTLP/gRPC port `18889` (`http://aspire-dashboard:18889`), not `4317`.
+- The no-args AppHost path requires the Aspire.AppHost.SDK in the Host csproj; it forces `TreatProjectReferencesAsResources=false` + `IsPublishable=true` + a custom wwwroot copy target. The Dockerfile also carries the SDK's DCP/Dashboard RID packages into the runtime NuGet cache because publish omits them from `deps.json`.
+- OpenTelemetry is **on by default**; `OTEL_SDK_DISABLED=true` (or an empty OTLP endpoint) is the escape hatch. In Docker, the portal child exports to the in-process dashboard configured by Aspire; the dashboard's internal OTLP ports are not the host-mapped UI port.
 - i18n lives in a **single JSON store** at the repo root (`i18n/{locale}.json`, ADR 0008) — embedded by the backend, imported by the Vite frontend (needs `server.fs.allow: ['..']`).
 - The MCP stdio subprocess is single-session; logs go to stderr to keep the JSON-RPC stream clean.

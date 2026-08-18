@@ -4,3 +4,9 @@
 **/wwwroot/
 .git/
 .gitignore
+# IDE + dev-only folders never copied by the Dockerfile — keep the build
+# context small (no NuGet.config lives under .config/).
+.idea/
+.config/
+docs/
+tests/

@@ -6,7 +6,7 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 
 ## Features
 
-- **MCP gateway** — five v1 tools over stdio for Craft Agents (`save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`) + `skill://{domain}/{slug}/{file}` resources.
+- **MCP gateway** — five v1 tools over Streamable HTTP at `/mcp` for Craft Agents (`save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`) + `skill://{domain}/{slug}/{file}` resources.
 - **Learning Engine** — a background pipeline turns agent session summaries into domain-scoped, confidence-scored Knowledge (Problem / Solution / Pattern) via a configurable OpenAI-compatible LLM endpoint; embeddings land in pgvector.
 - **Retrieval** — domain-scoped, cosine-ranked search with a Confidence threshold; conflict groups surfaced side by side.
 - **Knowledge management** — review / archive / restore, temporal decay hygiene, private markers, usage feedback (`rate_knowledge`).
@@ -14,7 +14,7 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 - **Analytics** — sessions / tokens / cost by workspace, domain and agent; maintained model pricing table.
 - **Settings** — LLM endpoint, platform language (`en-US` / `zh-CN`), and color theme (`light` / `dark` / `system`), all persisted in the DB and applied without restart.
 - **Localization** — full platform UI + backend errors in the configured language, one JSON store per locale (ADR 0008).
-- **Observability** — OpenTelemetry logs + traces + metrics exported to an [Aspire dashboard](http://localhost:18888) by default; `service.name=agent-context`.
+- **Observability** — OpenTelemetry logs + traces + metrics exported to the in-app [Aspire dashboard](http://localhost:8080/monitor) by default; `service.name=agent-context`.
 
 ## Quick start
 
@@ -26,10 +26,9 @@ This starts everything with no manual steps:
 
 | Service | Address | Notes |
 |---|---|---|
-| Web app (`--web`) | http://localhost:8080 | REST API + React UI (botanical blue theme, i18n); applies EF Core migrations at startup |
-| Postgres (pgvector) | localhost:5432 | `agent_context` / `agent_context` |
-| Aspire dashboard | http://localhost:18888 | OTel logs/traces/metrics viewer (OTLP on 4317/4318); added in T13 |
-| MCP server (`--mcp-stdio`) | stdio | used by Craft Agents as a local stdio source |
+| Agent Context image | http://localhost:8080 | AppHost container with portal UI + REST API + Streamable HTTP MCP at `/mcp`; applies EF Core migrations at startup |
+| Aspire dashboard | http://localhost:8080/monitor | In-process dashboard with Resources, logs, traces and metrics; raw :18888 stays container-internal |
+| Postgres (pgvector) | localhost:5432 | `agent_context` / `agent_context`; external to the application image |
 
 Open http://localhost:8080 and the **first-run wizard** creates your admin account
 and a Personal Workspace (language → account → optional LLM endpoint). Rerunning
@@ -38,49 +37,57 @@ the wizard is blocked once configured.
 Prebuilt images (`ghcr.io/danvic712/agent-context:latest`, multi-arch
 linux/amd64 + arm64) are published by the [release workflow](.github/workflows/release.yml)
 on every `v*` tag; `docker compose up -d` pulls them automatically. The local
-`build:` block is kept for source builds.
+`build:` block is kept for source builds. Add `--build` when validating Dockerfile
+changes locally.
 
 ## Architecture
 
-One .NET project, three entrypoints ([ADR 0006](docs/adr/0006-single-project-dual-mode.md)):
+One .NET project has one public startup contract: **run with no arguments**.
+It starts the complete environment as an Aspire DistributedApplication:
 
-- `dotnet run -- --web` (default) — ASP.NET Core host: REST API (`/api/*`), React UI, health at `/api/health`.
-- `dotnet run -- --mcp-stdio` — MCP server over stdio for Craft Agents.
-- `dotnet run -- --apphost` — Aspire DistributedApplication: models the platform
-  as postgres + portal resources, so the dashboard gains the **Resources** view
-  (see [`docs/guides/apphost-mode.md`](docs/guides/apphost-mode.md)).
+- portal child process — REST API (`/api/*`), React UI, health at `/api/health`, and Streamable HTTP MCP at `/mcp`;
+- in-process Aspire dashboard with the Resources view;
+- pgvector Postgres when no external `ConnectionStrings__Default` is supplied.
 
-All entrypoints share one DI graph (`AddApplicationServices`).
+In Docker Compose, Postgres is external to the image and is passed through
+`ConnectionStrings__Default`; the image still starts the portal and dashboard.
+`HOST_MODE=portal` is an internal child-process marker, not a user-facing mode.
+See [`docs/guides/apphost-mode.md`](docs/guides/apphost-mode.md).
+
+All processes share one DI graph (`AddApplicationServices`).
 
 ```
-Users (React UI, botanical theme)
-      │
-      ▼
-┌───────────────────────────────────────┐
-│  AgentContext (single .NET project)   │
-│  --web: REST API + UI                 │
-│  --mcp-stdio: MCP over stdio          │
-│  --apphost: Aspire DistributedApp     │
-│  shared: EF Core / services / Mcp     │
-└───────┬───────────────┬───────────────┘
-        │ OTLP          │ SQL
-        ▼               ▼
-  Aspire dashboard  PostgreSQL (+ pgvector)
-  (logs/traces/metrics)
+Users (React UI / Craft Agents)
+          │
+          ▼
+┌──────────────────────────────────────────┐
+│ AgentContext image / AppHost             │
+│  portal: UI + REST + MCP /mcp (:8080)   │
+│  dashboard: Resources + OTel (:18888)   │
+└──────────────┬───────────────────────────┘
+               │ SQL
+               ▼
+        PostgreSQL (+ pgvector)
 ```
 
 ## Development
 
 ```bash
-# API + UI (UI served from wwwroot; rebuilt by dotnet build via the SPA target)
-dotnet run --project src/AgentContext.Host -- --web
+# Full environment: portal + dashboard + local pgvector Postgres
+dotnet run --project src/AgentContext.Host
 
 # UI dev server with /api proxied to http://localhost:8080
 cd web && npm run dev
-
-# Aspire AppHost mode (dashboard with Resources view; requires Aspire SDK in the csproj)
-dotnet run --project src/AgentContext.Host -- --apphost
 ```
+
+### Docker build notes
+
+The [Dockerfile](Dockerfile) uses three stages: Node builds the React UI,
+.NET publishes the Host, and the `aspnet` runtime image runs the AppHost.
+BuildKit caches npm packages and target-architecture NuGet packages. Aspire's
+DCP and Dashboard RID packages are staged into the runtime NuGet cache because
+they are tooling packages omitted from `deps.json`; the temporary staging area
+is kept outside `/app` so the final image does not contain a duplicate copy.
 
 Tests run against a real Postgres with pgvector via Testcontainers (Docker required):
 
@@ -94,15 +101,15 @@ Testcontainers flake is retried once before failing. Suite baseline: **191/191 g
 
 ## Repository layout
 
-C# split into class libraries by system function, one host project (three-mode):
+C# split into class libraries by system function, one host project (single public entrypoint):
 
 ```
 src/AgentContext.Domain/        entities + enums (no dependencies beyond pgvector types)
 src/AgentContext.Infrastructure/ EF Core DbContext + migrations + design-time factory
 src/AgentContext.Application/   application services (primary test seam) + AddApplicationServices
                                 + localization resources (embedded i18n JSON)
-src/AgentContext.Host/          three-mode entrypoint: Program (--web / --mcp-stdio / --apphost),
-                                Controllers/ (REST), Mcp/ (stdio server + tools),
+src/AgentContext.Host/          single no-args entrypoint: Program (AppHost + portal child),
+                                Controllers/ (REST), Mcp/ (HTTP tools),
                                 Workers/ (session processing, knowledge hygiene),
                                 Observability/ (OTel), AppHost/ (Aspire), wwwroot (built UI)
 web/                            React UI (Vite + TS + shadcn/ui + react-i18next + shiki),
@@ -113,7 +120,7 @@ docs/                           spec, ADRs, guides, design exploration, validati
 tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)
                                 + adapter smoke tests (REST / MCP stdio / OTel / web host)
 AgentContext.slnx               solution (new XML format)
-Dockerfile · docker-compose.yml portal + Postgres(pgvector) + Aspire dashboard
+Dockerfile · docker-compose.yml AppHost image + Postgres(pgvector) + in-process Aspire dashboard
 .github/workflows/              build.yml (test) · release.yml (GHCR image + GitHub Release)
 ```
 
