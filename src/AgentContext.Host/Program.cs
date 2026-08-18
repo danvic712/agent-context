@@ -1,6 +1,8 @@
+using System.Reflection;
 using AgentContext.Application;
 using AgentContext.Host;
 using AgentContext.Host.AppHost;
+using AgentContext.Host.DashboardProxy;
 using AgentContext.Host.Mcp;
 using AgentContext.Host.Observability;
 using AgentContext.Host.Workers;
@@ -18,13 +20,21 @@ using OtlpProtocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol;
 // startup flags: running the binary starts the complete environment — postgres
 // + portal (UI + REST API + MCP /mcp) + Aspire dashboard — orchestrated as one
 // DistributedApplication. The dashboard is useless alone, so it always comes up
-// together with the UI.
+// together with the UI. Postgres is orchestrated by Aspire only when no
+// ConnectionStrings__Default is present (bare local `dotnet run`); the
+// container image and compose rely on an external PostgreSQL (issue #15).
 //
-// The only conditional is the internal HOST_MODE=portal role marker injected
-// into the portal child process by the orchestrator (and set on the container
-// image): it makes that process serve the portal instead of re-orchestrating
-// (nested containers are impossible). It is not a user-facing mode or argument.
-if (Environment.GetEnvironmentVariable("HOST_MODE") != "portal")
+// The only conditionals are the internal HOST_MODE=portal role marker injected
+// into the portal child process by the orchestrator (it makes that process
+// serve the portal instead of re-orchestrating — nested containers are
+// impossible) and the entry-assembly check below. Neither is a user-facing mode
+// or argument: the AppHost orchestration only belongs to the standalone binary.
+// WebApplicationFactory (Mvc.Testing) launches this entrypoint from the test
+// assembly, which must run the portal host directly — not a nested
+// DistributedApplication (no DCP, and orchestrating containers from a unit
+// test host makes no sense).
+if (Environment.GetEnvironmentVariable("HOST_MODE") != "portal" &&
+    Assembly.GetEntryAssembly() == typeof(Program).Assembly)
 {
     return await AppHostRunner.RunAsync(args);
 }
@@ -73,6 +83,11 @@ builder.Services.AddAgentContextMcp()
 // the Aspire dashboard). Logs are wired through the Serilog sink above.
 builder.Services.AddOtelObservability(builder.Configuration);
 
+// Single-port model (issue #15): when AppHost orchestration injected
+// DASHBOARD_ORIGIN, reverse-proxy /monitor/* to the in-process Aspire
+// dashboard (YARP handles the Blazor websocket circuit + long-polling).
+builder.Services.AddDashboardProxy(builder.Configuration["DASHBOARD_ORIGIN"]);
+
 // Postgres-as-queue scheduler (ADR 0005): marks pending Sessions processed.
 builder.Services.AddHostedService<SessionProcessingWorker>();
 
@@ -102,6 +117,36 @@ app.MapControllers();
 // T14: Streamable HTTP MCP endpoint — the only MCP surface, one URL for
 // remote clients. Unauthenticated in MVP.
 app.MapMcp("/mcp");
+
+// Single-port model (issue #15): /monitor/* -> in-process Aspire dashboard.
+// UseWebSockets lets the proxy forward the Blazor interactive circuit
+// (websocket upgrade to /monitor/_blazor). Registered before the SPA
+// fallback so the proxy route wins.
+app.UseWebSockets();
+app.MapReverseProxy();
+
+// Dashboard page redirect (issue #15): the dashboard's nav links are hard-coded
+// root paths (/consolelogs, /metrics, ...). Those root-path page requests are
+// redirected to their /monitor-prefixed equivalent so every dashboard route
+// stays under /monitor while the portal keeps owning "/".
+//
+// A 302 (rather than a 200 + blazor-enhanced-nav-redirect-location header) is
+// used because Blazor's enhanced navigation follows the redirect and keeps the
+// final URL via history.pushState without a full-page reload — so component
+// navigations (e.g. the metrics page auto-selecting a resource) don't flash.
+// Link navigations are already rewritten to the prefix by navfix.js and never
+// reach this middleware.
+app.Use(async (context, next) =>
+{
+    if (HttpMethods.IsGet(context.Request.Method) &&
+        DashboardProxySetup.TryGetDashboardPrefixPath(context.Request.Path, out var target))
+    {
+        context.Response.Redirect(target + context.Request.QueryString);
+        return;
+    }
+
+    await next();
+});
 
 // Serve the React UI (built into wwwroot by the SPA target; see web/ and csproj).
 app.UseDefaultFiles();

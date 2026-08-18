@@ -21,16 +21,16 @@ graph LR
         P["/mcp Streamable HTTP<br/>stateless"] --> D[DI container]
         UI[REST API + React UI] --> D
     end
-    D --> PG[(Postgres)]
-    D --> SK[(skills-data)]
+    D --> PG[(Postgres<br/>data:/data/agent-context/postgres)]
+    D --> SK[(skills<br/>data:/data/agent-context/skills)]
 ```
 
 ## Run options (3-in-1 startup)
 
 | Style | Command | What comes up |
 |---|---|---|
-| Local / default | `dotnet run` (no args) | postgres + portal (UI+MCP on :8080) + dashboard (dynamic port) |
-| Docker compose | `docker compose up -d` | portal (UI+MCP) + postgres + aspire-dashboard (:18888) |
+| Local / default | `dotnet run` (no args) | Aspire-managed postgres + portal (UI+MCP on :8080) + dashboard (dynamic port) |
+| Docker compose | `docker compose up -d` | AppHost image with portal (UI+MCP on :8080, dashboard at `/monitor`, internal :18888) + external postgres — db and skills share one `data` volume under `/data/agent-context/` |
 
 ## Craft Agents source — config.json (URL mode)
 
@@ -53,7 +53,27 @@ graph LR
 
 Point `url` at the reachable surface: `http://localhost:8080/mcp` for a local
 no-args run, or `https://agent-context.orb.local/mcp` behind the compose
-proxy. No `env` needed — the process already carries its database connection.
+proxy. No `env` needed — the portal child already receives its database
+connection from the AppHost.
+
+## Docker image build
+
+The Dockerfile has three stages: Node builds the React UI, the .NET SDK
+publishes the Host, and the `aspnet` runtime image runs the AppHost. BuildKit
+caches npm packages and target-architecture NuGet packages:
+
+```bash
+docker compose up -d --build
+# or, for an explicit architecture:
+docker buildx build --platform linux/arm64 --load -t agent-context:local .
+```
+
+The Aspire AppHost SDK's DCP and Dashboard RID packages are tooling dependencies
+that `dotnet publish` omits from `deps.json`, so the build stages the selected
+packages into the runtime NuGet cache. The temporary staging directory is kept
+outside `/app`; otherwise the final image would contain a duplicate copy of
+roughly 229 MB. Missing RID packages fail the build instead of producing an
+image that only fails at AppHost startup.
 
 ## permissions.json — Explore-mode access
 

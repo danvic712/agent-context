@@ -28,6 +28,9 @@
     <!-- T14: Streamable HTTP MCP endpoint (/mcp) in web mode — remote clients (Craft Agents)
          connect by URL instead of spawning a local mcp-stdio process. -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+    <!-- Single-port dashboard proxy (issue #15): YARP reverse-proxies /dashboard/*
+         to the in-process Aspire dashboard (Blazor websocket + long-polling). -->
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <!-- OpenTelemetry (T13, issue #14): logs via Serilog.Sinks.OpenTelemetry (dual-write),
          traces + metrics via the OTel SDK, all exported over OTLP to the Aspire dashboard. -->

@@ -24,6 +24,7 @@
     <PackageReference Include="ModelContextProtocol" />
     <!-- T14: Streamable HTTP MCP transport — serves the v1 toolset over /mcp in web mode. -->
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="Yarp.ReverseProxy" />
     <PackageReference Include="Serilog.AspNetCore" />
     <!-- T13 (issue #14): OpenTelemetry — logs (Serilog dual-write) + traces + metrics on by default. -->
     <PackageReference Include="Serilog.Sinks.OpenTelemetry" />

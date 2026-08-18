@@ -37,7 +37,9 @@ rendering (shiki), file editing, upload and zip import.
   zip import, get_skill manifest + `skill://{domain}/{slug}/{file}` resource,
   theme round-trip + invalid 400).
 - Skills data directory is `Skills:Directory` (default `skills/`, gitignored);
-  compose mounts `skills-data:/data` and sets `Skills__Directory=/data/skills`.
+  compose mounts the single `data` volume at `/data` (T15 follow-up: db + skills
+  share it — postgres `PGDATA=/data/agent-context/postgres`, skills
+  `Skills__Directory=/data/agent-context/skills`).
 - Dockerfile now copies `i18n/` (the embedded localization store, ADR 0008) into
   the build context — the image could not build before this fix.
 - Browser automation cannot drive the native file picker or `confirm()` dialog;

@@ -1,11 +1,11 @@
 # Default startup — the full 3-in-1 environment (UI + MCP + dashboard)
 
 > The public entrypoint is one mode: **running the binary with no arguments
-> starts everything** — the Host runs as an Aspire DistributedApplication so
-> the dashboard gains the full Resources view (service list, states,
-> dependency graph, console logs) that the standalone (compose) dashboard
-> lacks, while the same T13 OTel stack keeps exporting all three signals to
-> it. There are no `--apphost` / `--web` / `--portal` flags to remember.
+> starts everything** — the Host runs as an Aspire DistributedApplication and
+> the dashboard provides the full Resources view (service list, states,
+> dependency graph, console logs) in both local and Docker Compose runs. The
+> same T13 OTel stack exports all three signals to it. There are no `--apphost`
+> / `--web` / `--portal` flags to remember.
 
 ## Run
 
@@ -38,27 +38,31 @@ What happens:
 - **控制台 (Console)**: per-resource stdout/stderr.
 - **结构化/跟踪/指标**: the T13 three-signal telemetry, same as compose.
 
-## Relationship to docker compose
+## Relationship to Docker Compose
 
-Both run styles are first-class:
+Both run styles use the same AppHost code path:
 
 | | `docker compose up` | `dotnet run` (default) |
 |---|---|---|
-| Dashboard | compose service, :18888 | in-process, dynamic port (token) |
-| Resources view | **no** (standalone) | **yes** (AppHost) |
-| Portal | container, :8080 | child process, :8080 |
-| Postgres | compose service | Aspire container (own volume) |
+| Dashboard | in-process, portal `/monitor` (internal :18888) | in-process, dynamic port |
+| Resources view | **yes** | **yes** |
+| Portal | child process, :8080 | child process, :8080 |
+| Postgres | external Compose service | Aspire-managed container |
 
-They share ports (8080/18888), so run one at a time. The container image is
-scoped to the portal host via the internal `HOST_MODE=portal` role marker
-(compose already provides postgres + dashboard as sibling services).
+They share the portal port 8080, so run one at a time. In Docker the
+Dashboard port 18888 is internal to the container. The Docker image receives
+`ConnectionStrings__Default`, so AppHost models Postgres as an external resource
+instead of trying to start a nested database container. The internal
+`HOST_MODE=portal` marker scopes only the child process; it is not a user-facing
+startup mode.
 
 ## Implementation notes
 
 - `src/AgentContext.Host/AppHost/AppHostRunner.cs` — the
   `DistributedApplication` model; the portal runs as a child process of the
   same binary, scoped to the portal role via the internal `HOST_MODE` env
-  (not a user-facing mode).
+  (not a user-facing mode). A supplied `ConnectionStrings__Default` makes
+  Postgres an external resource for the container image.
 - `AgentContext.Host.csproj` — SDK is
   `Microsoft.NET.Sdk.Web;Aspire.AppHost.Sdk/13.4.6` (the Aspire SDK ships the
   DCP + dashboard binaries via `Aspire.Dashboard.Sdk.<rid>` /
@@ -69,6 +73,11 @@ scoped to the portal host via the internal `HOST_MODE=portal` role marker
   SDK's StaticWebAssets ordering otherwise breaks.
 - `WithOtlpExporter()` is required for `AddExecutable` resources — automatic
   OTLP env injection targets `AddProject` only.
+- The Dockerfile stages `Aspire.Hosting.Orchestration.<rid>` and
+  `Aspire.Dashboard.Sdk.<rid>` into the runtime NuGet cache. The packages are
+  required by DCP/dashboard startup but are not emitted into `deps.json` by
+  `dotnet publish`; the staging directory remains outside `/app` to avoid
+  duplicating roughly 229 MB in the final image.
 - `OTEL_SERVICE_NAME` now wins over the `agent-context` default
   (`OtelDefaults.GetServiceName`) so the Serilog OTLP sink and the OTel SDK
   attribute telemetry to the same name; compose (no override) keeps

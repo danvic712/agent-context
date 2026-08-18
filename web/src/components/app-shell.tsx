@@ -123,7 +123,20 @@ export function AppShell() {
             {dashboardUrl && (
               <button
                 type="button"
-                onClick={() => window.open(dashboardUrl, '_blank', 'noopener,noreferrer')}
+                // Single-port model: when DASHBOARD_URL points at the portal's
+                // own prefix (same origin, e.g. /monitor), navigate in-place;
+                // an external dashboard URL opens in a new window instead.
+                onClick={() => {
+                  const dash = new URL(dashboardUrl, window.location.href)
+                  const inPlace = dash.origin === window.location.origin && dash.pathname !== '/'
+                  if (inPlace) {
+                    // Preserve any dashboard query/hash state while keeping the
+                    // navigation on the portal's same-origin surface.
+                    window.location.href = `${dash.pathname}${dash.search}${dash.hash}`
+                  } else {
+                    window.open(dash.href, '_blank', 'noopener,noreferrer')
+                  }
+                }}
                 title={dashboardUrl}
                 className="flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11.5px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground"
                 style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}
