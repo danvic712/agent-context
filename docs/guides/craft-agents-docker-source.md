@@ -30,7 +30,7 @@ graph LR
 | Style | Command | What comes up |
 |---|---|---|
 | Local / default | `dotnet run` (no args) | Aspire-managed postgres + portal (UI+MCP on :8080) + dashboard (dynamic port) |
-| Docker compose | `docker compose up -d` | AppHost image with portal (UI+MCP on :8080, dashboard at `/monitor`, internal :18888) + external postgres — db and skills share one `data` volume under `/data/agent-context/` |
+| Docker compose | `docker compose up -d` | AppHost image with portal (UI+MCP on :8080, dashboard at `/monitor/resources`, internal :18888) + external postgres — db and skills share one `data` volume under `/data/agent-context/` |
 
 ## Craft Agents source — config.json (URL mode)
 

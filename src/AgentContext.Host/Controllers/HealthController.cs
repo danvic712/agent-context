@@ -27,7 +27,7 @@ public sealed class HealthController(AgentContextDbContext db, IConfiguration co
     /// The observability dashboard URL for the UI's "open dashboard" entry — the
     /// portal doesn't know it (it only has the OTLP endpoint), so the deploy
     /// surface injects it: Compose sets the same-origin
-    /// <c>DASHBOARD_URL=http://localhost:8080/monitor</c>, while AppHost mode
+    /// <c>DASHBOARD_URL=http://localhost:8080/monitor/resources</c>, while AppHost mode
     /// injects the in-process dashboard surface.
     /// </summary>
     [HttpGet("dashboard")]

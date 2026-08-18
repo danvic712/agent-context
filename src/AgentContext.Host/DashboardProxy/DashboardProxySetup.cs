@@ -39,6 +39,9 @@ public static class DashboardProxySetup
     /// <summary>URL prefix the dashboard is served under on the portal.</summary>
     public const string PathPrefix = "/monitor";
 
+    /// <summary>Canonical browser route for Aspire's Resources view.</summary>
+    public const string DefaultPagePath = "/resources";
+
     /// <summary>
     /// Root-path dashboard pages whose nav links (e.g. the dashboard home link
     /// <c>href="/"</c>) navigate back to <c>/</c>; used to tell dashboard-
@@ -133,6 +136,27 @@ public static class DashboardProxySetup
 
         var routes = new[]
             {
+                // The Dashboard renders its Resources view from upstream "/",
+                // but its canonical browser URL is /resources. Keep that public
+                // path while translating only this route to the upstream root.
+                new RouteConfig
+                {
+                    RouteId = RouteId + "-resources",
+                    Order = -200,
+                    ClusterId = ClusterId,
+                    Match = new RouteMatch { Path = PathPrefix + DefaultPagePath },
+                    Transforms = DefaultPageTransforms(),
+                },
+                // Relative assets requested below /monitor/resources/ still need
+                // to reach their original root-relative Dashboard paths.
+                new RouteConfig
+                {
+                    RouteId = RouteId + "-resources-catchall",
+                    Order = -100,
+                    ClusterId = ClusterId,
+                    Match = new RouteMatch { Path = PathPrefix + DefaultPagePath + "/{**catch-all}" },
+                    Transforms = ResourceChildTransforms(),
+                },
                 // Aspire's Resources tabs use root-query URLs such as
                 // /?view=Parameters instead of /resources/.... Match only the
                 // known Dashboard views so the portal's plain / remains intact.
@@ -155,8 +179,9 @@ public static class DashboardProxySetup
                         ],
                     },
                     // Keep the upstream root base href for this root-query
-                    // surface; its root asset routes are proxied below.
-                    Transforms = RootPathTransforms(),
+                    // surface, but inject navfix so its sidebar links still use
+                    // the portal's /monitor routes.
+                    Transforms = RootQueryTransforms(),
                 },
                 // The prefix itself (no trailing segment): the prefix removal
                 // leaves an empty path, which the HttpClient normalizes to "/".
@@ -205,6 +230,29 @@ public static class DashboardProxySetup
         new Dictionary<string, string> { ["DashboardBodyRewrite"] = "true" },
     ];
 
+    private static IReadOnlyList<IReadOnlyDictionary<string, string>> DefaultPageTransforms() =>
+    [
+        // /monitor/resources -> upstream / (the Dashboard's Resources view).
+        // PathSet is used instead of removing the prefix so the upstream always
+        // receives an explicit slash rather than an empty path.
+        new Dictionary<string, string> { ["PathSet"] = "/" },
+        ..SharedTransforms,
+        new Dictionary<string, string> { ["DashboardBodyRewrite"] = "resources" },
+    ];
+
+    private static IReadOnlyList<IReadOnlyDictionary<string, string>> ResourceChildTransforms() =>
+    [
+        new Dictionary<string, string> { ["PathRemovePrefix"] = PathPrefix + DefaultPagePath },
+        ..SharedTransforms,
+        new Dictionary<string, string> { ["DashboardBodyRewrite"] = "resources" },
+    ];
+
+    private static IReadOnlyList<IReadOnlyDictionary<string, string>> RootQueryTransforms() =>
+    [
+        ..SharedTransforms,
+        new Dictionary<string, string> { ["DashboardBodyRewrite"] = "root" },
+    ];
+
     private static IReadOnlyList<IReadOnlyDictionary<string, string>> RootPathTransforms() =>
     [
         ..SharedTransforms,
@@ -227,9 +275,16 @@ public sealed class DashboardBodyRewriteFactory : ITransformFactory
 
     public bool Build(TransformBuilderContext context, IReadOnlyDictionary<string, string> transformValues)
     {
-        if (transformValues.TryGetValue("DashboardBodyRewrite", out _))
+        if (transformValues.TryGetValue("DashboardBodyRewrite", out var mode))
         {
-            context.ResponseTransforms.Add(new DashboardBodyRewrite());
+            var isResources = string.Equals(mode, "resources", StringComparison.OrdinalIgnoreCase);
+            var isRoot = string.Equals(mode, "root", StringComparison.OrdinalIgnoreCase);
+            var basePath = isResources
+                ? DashboardProxySetup.PathPrefix + DashboardProxySetup.DefaultPagePath
+                : isRoot ? "/" : DashboardProxySetup.PathPrefix;
+            context.ResponseTransforms.Add(new DashboardBodyRewrite(
+                basePath,
+                DashboardProxySetup.PathPrefix));
             return true;
         }
 

@@ -88,7 +88,7 @@ public static class AppHostRunner
             // entry: the portal's own reverse-proxy prefix, so both the UI and
             // the dashboard share one URL (:8080). The raw dashboard port stays
             // container-internal (single-port model).
-            dashboardUrl = $"http://localhost:8080{DashboardProxySetup.PathPrefix}";
+            dashboardUrl = $"http://localhost:8080{DashboardProxySetup.PathPrefix}{DashboardProxySetup.DefaultPagePath}";
         }
 
         // Issue #15: when a connection string is already provided (container /
