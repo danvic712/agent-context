@@ -91,12 +91,13 @@ image that only fails at AppHost startup.
 
 - **Setup**: a fresh database needs the first-run wizard first
   (`POST /api/setup`) — `save_session` and friends require a workspace.
-- **LLM endpoint**: `search_memory`, `find_similar_solution` and the Learning
-  Engine need an OpenAI-compatible endpoint in the `settings` table
-  (`PUT /api/settings/llm-options` with `baseUrl` / `apiKey` / `model` /
-  `embeddingModel`, or the Settings page). Takes effect immediately; reads only
-  return a `maskedApiKey` — never commit real credentials to source control,
-  prefer environment variables (e.g. `$AZURE_OPENAI_API_KEY`).
+- **Inference configuration**: `search_memory`, `find_similar_solution` and the
+  Learning Engine need one validated Chat route and one validated Embedding
+  route. Configure them through the first-run wizard or Settings, or use
+  `PUT /api/inference/configuration` with provider connections and route
+  bindings. Test an unsaved draft with
+  `POST /api/inference/configuration/verify`. Reads return only masked/key
+  configured state; never commit real credentials to source control.
 
 ## Validate
 
@@ -118,11 +119,11 @@ five v1 tools:
 ## Troubleshooting
 
 - **`save_session` fails on a fresh database** — no workspace yet; run setup first.
-- **`search_memory` returns "LLM 端点尚未配置"** — LLM options not saved (per-call
-  resolution, no restart needed).
+- **`search_memory` returns an inference-not-configured error** — both inference
+  routes are not saved or no longer resolve to valid protected provider keys;
+  configuration is resolved per call, so no restart is needed.
 - **`get_skill` returns "skill 不存在"** — empty skills volume / unregistered
   slug; normal data state, not a connection failure.
 - **`An error occurred invoking '…'`** — the MCP wrapper swallows inner
   exceptions; real stacks go to the process stderr (`docker logs` in compose,
   the terminal in a local run).
-

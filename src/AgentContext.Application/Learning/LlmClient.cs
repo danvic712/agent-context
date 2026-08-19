@@ -30,7 +30,8 @@ namespace AgentContext.Application.Learning;
 public sealed class LlmClient(
     ISettingsAppService settings,
     ITranslationService translations,
-    HttpClient? httpClient = null) : ILlmClient
+    HttpClient? httpClient = null,
+    IInferenceConfigurationAppService? inference = null) : ILlmClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -40,12 +41,18 @@ public sealed class LlmClient(
     public async Task<IReadOnlyList<KnowledgeExtraction>> ExtractKnowledgeAsync(
         string sessionSummaryJson, CancellationToken cancellationToken = default)
     {
-        var options = ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken));
+        var runtime = inference is null
+            ? null
+            : await inference.GetRuntimeOptionsAsync(cancellationToken);
+        var options = runtime?.Chat;
+        var legacy = options is null
+            ? ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken))
+            : null;
         var locale = await settings.GetLanguageAsync(cancellationToken);
 
         // MAF structured output: RunAsync<T> deserializes the agent's JSON reply.
         // (session: null → a fresh one-off run; options: null → agent defaults.)
-        var response = await CreateAgent(options, locale).RunAsync<ExtractionEnvelope>(
+        var response = await CreateAgent(options, legacy, locale).RunAsync<ExtractionEnvelope>(
             sessionSummaryJson, null, JsonOptions, null, cancellationToken);
 
         return response.Result?.KnowledgeItems ?? [];
@@ -53,9 +60,15 @@ public sealed class LlmClient(
 
     public async Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
     {
-        var options = ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken));
+        var runtime = inference is null
+            ? null
+            : await inference.GetRuntimeOptionsAsync(cancellationToken);
+        var options = runtime?.Embedding;
+        var legacy = options is null
+            ? ResolveOptions(await settings.GetLlmOptionsAsync(cancellationToken))
+            : null;
 
-        var generated = await CreateGenerator(options).GenerateAsync([text], cancellationToken: cancellationToken);
+        var generated = await CreateGenerator(options, legacy).GenerateAsync([text], cancellationToken: cancellationToken);
         var vector = generated[0].Vector;
 
         if (vector.Length != LearningPipelineDefaults.EmbeddingDimensions)
@@ -72,12 +85,16 @@ public sealed class LlmClient(
     private static LlmOptions ResolveOptions(LlmOptions? options) =>
         options ?? throw new LocalizedException(HttpStatusCode.InternalServerError, ErrorCodes.Llm.NotConfigured);
 
-    private AIAgent CreateAgent(LlmOptions options, string locale)
+    private AIAgent CreateAgent(InferenceRuntimeRoute? route, LlmOptions? legacy, string locale)
     {
-        var openAiOptions = CreateClientOptions(options.BaseUrl);
-        var credential = new ApiKeyCredential(options.ApiKey);
+        var fallback = legacy ?? throw new InvalidOperationException("Inference route is not configured.");
+        var baseUrl = route?.BaseUrl ?? fallback.BaseUrl;
+        var apiKey = route?.ApiKey ?? fallback.ApiKey;
+        var model = route?.Model ?? fallback.Model;
+        var openAiOptions = CreateClientOptions(baseUrl);
+        var credential = new ApiKeyCredential(apiKey);
         return new OpenAIClient(credential, openAiOptions)
-            .GetChatClient(options.Model)
+            .GetChatClient(model)
             .AsAIAgent(instructions: BuildExtractionPrompt(locale), name: "learning-engine");
     }
 
@@ -89,15 +106,21 @@ public sealed class LlmClient(
     /// </summary>
     private string BuildExtractionPrompt(string locale) => translations.Get("prompts.extraction", locale);
 
-    private IEmbeddingGenerator<string, Embedding<float>> CreateGenerator(LlmOptions options)
+    private IEmbeddingGenerator<string, Embedding<float>> CreateGenerator(
+        InferenceRuntimeRoute? route,
+        LlmOptions? legacy)
     {
-        var openAiOptions = CreateClientOptions(options.BaseUrl);
-        var credential = new ApiKeyCredential(options.ApiKey);
+        var fallback = legacy ?? throw new InvalidOperationException("Inference route is not configured.");
+        var baseUrl = route?.BaseUrl ?? fallback.BaseUrl;
+        var apiKey = route?.ApiKey ?? fallback.ApiKey;
+        var model = route?.Model ?? fallback.EffectiveEmbeddingModel;
+        var openAiOptions = CreateClientOptions(baseUrl);
+        var credential = new ApiKeyCredential(apiKey);
         // Pass the schema's fixed dimension explicitly: the OpenAI-compatible
         // endpoint must return vector(1536). Some deployments (e.g. Azure
         // text-embedding-3-large) default to a different size and only honor
         // the requested dimension when told (T9 integration fix).
-        return new OpenAI.Embeddings.EmbeddingClient(options.EffectiveEmbeddingModel, credential, openAiOptions)
+        return new OpenAI.Embeddings.EmbeddingClient(model, credential, openAiOptions)
             .AsIEmbeddingGenerator(LearningPipelineDefaults.EmbeddingDimensions);
     }
 

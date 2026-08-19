@@ -27,7 +27,8 @@ public sealed class LearningPipelineAppService(
     AgentContextDbContext db,
     ILlmClient llm,
     ISettingsAppService settings,
-    ILogger<LearningPipelineAppService> logger) : ILearningPipelineAppService
+    ILogger<LearningPipelineAppService> logger,
+    IInferenceConfigurationAppService? inference = null) : ILearningPipelineAppService
 {
     public async Task<LearningPipelineResult> ProcessNextAsync(CancellationToken cancellationToken = default)
     {
@@ -48,13 +49,15 @@ public sealed class LearningPipelineAppService(
 
     public async Task<LearningPipelineResult> ProcessAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
-        // The endpoint is stored in the database (spec: settings REST is a later
-        // ticket, the seam isn't). Without it the pipeline idles and Sessions stay
-        // Pending — never failing them for a configuration gap.
-        if (await settings.GetLlmOptionsAsync(cancellationToken) is null)
+        // Without a complete inference configuration the pipeline idles and
+        // Sessions stay Pending — never failing them for a configuration gap.
+        var configured = inference is null
+            ? await settings.GetLlmOptionsAsync(cancellationToken) is not null
+            : await inference.GetRuntimeOptionsAsync(cancellationToken) is not null;
+        if (!configured)
         {
             logger.LogInformation(
-                "LLM endpoint is not configured; session {SessionId} stays pending.", sessionId);
+                "Inference routes are not configured; session {SessionId} stays pending.", sessionId);
             return new LearningPipelineResult(null, PipelineOutcome.Idle);
         }
 

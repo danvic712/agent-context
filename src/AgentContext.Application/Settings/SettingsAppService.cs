@@ -10,9 +10,9 @@ namespace AgentContext.Application.Settings;
 
 /// <inheritdoc cref="ISettingsAppService"/>
 /// <summary>
-/// Reads and writes platform settings in the <c>settings</c> key/value table.
-/// The LLM endpoint (ADR 0003) is stored as four keys; a missing/invalid set
-/// reads back as <c>null</c> so the Learning Engine idles until configured.
+/// Reads and writes platform preferences in the <c>settings</c> key/value table.
+/// The legacy LlmOptions methods remain as a compatibility seam for existing
+/// application-service callers; production inference uses the dedicated tables.
 /// The platform language (T11) is a single key resolved per call.
 /// </summary>
 public sealed class SettingsAppService(AgentContextDbContext db) : ISettingsAppService

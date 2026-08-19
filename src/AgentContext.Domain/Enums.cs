@@ -46,3 +46,10 @@ public enum KnowledgeStatus
     Review = 1,
     Archived = 2,
 }
+
+/// <summary>The model capability served by an inference route.</summary>
+public enum InferenceCapability
+{
+    Chat = 0,
+    Embedding = 1,
+}

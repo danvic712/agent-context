@@ -27,6 +27,26 @@ public static class ErrorCodes
         public const string NotConfigured = "llm.notConfigured";
     }
 
+    public static class Inference
+    {
+        public const string NameRequired = "inference.nameRequired";
+        public const string ProviderRequired = "inference.providerRequired";
+        public const string ConfigurationRequired = "inference.configurationRequired";
+        public const string ProviderIdRequired = "inference.providerIdRequired";
+        public const string ProviderIdDuplicate = "inference.providerIdDuplicate";
+        public const string ProviderNameRequired = "inference.providerNameRequired";
+        public const string ProviderTypeUnsupported = "inference.providerTypeUnsupported";
+        public const string BaseUrlInvalid = "inference.baseUrlInvalid";
+        public const string ApiKeyRequired = "inference.apiKeyRequired";
+        public const string RoutesRequired = "inference.routesRequired";
+        public const string CapabilitiesRequired = "inference.capabilitiesRequired";
+        public const string RouteIdRequired = "inference.routeIdRequired";
+        public const string RouteIdDuplicate = "inference.routeIdDuplicate";
+        public const string ProviderNotFound = "inference.providerNotFound";
+        public const string ModelRequired = "inference.modelRequired";
+        public const string ValidationFailed = "inference.validationFailed";
+    }
+
     public static class Skill
     {
         public const string SlugExists = "skill.slugExists";

@@ -6,11 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Localization;
+using AgentContext.Application.Settings;
 
 namespace AgentContext.Application.Setup;
 
 /// <inheritdoc cref="ISetupAppService"/>
-public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
+public sealed class SetupAppService(
+    AgentContextDbContext db,
+    IInferenceConfigurationAppService? inference = null) : ISetupAppService
 {
     public async Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
@@ -22,6 +25,11 @@ public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
     {
         ArgumentNullException.ThrowIfNull(request);
         Validate(request);
+
+        if (request.InferenceConfiguration is null)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ConfigurationRequired);
+        }
 
         if (await db.Users.AnyAsync(cancellationToken))
         {
@@ -57,7 +65,22 @@ public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
             CreatedAtUtc = now,
         });
 
+        LocalizationDefaults.TryNormalize(request.Language, out var language);
+        db.AppSettings.Add(new AppSetting { Key = SettingKeys.Language, Value = language });
+
         await db.SaveChangesAsync(cancellationToken);
+        if (request.InferenceConfiguration is not null)
+        {
+            if (inference is null)
+            {
+                throw new InvalidOperationException("Inference configuration service is not available.");
+            }
+
+            // The inference service joins the current transaction, so account,
+            // workspace, membership, and model configuration are all-or-nothing.
+            await inference.SaveAsync(request.InferenceConfiguration, cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
 
         return new SetupResult(user.Id, workspace.Id, workspace.Name);
@@ -78,6 +101,11 @@ public sealed class SetupAppService(AgentContextDbContext db) : ISetupAppService
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Setup.PasswordTooShort);
+        }
+
+        if (!LocalizationDefaults.TryNormalize(request.Language, out _))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Settings.UnsupportedLanguage, request.Language);
         }
     }
 }
