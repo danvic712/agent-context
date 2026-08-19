@@ -73,22 +73,20 @@ PascalCase/camelCase identifiers.
   before they are merged. Existing legacy tables are not renamed as part of
   an MVP feature unless the ticket explicitly includes that migration.
 
-## Configuration — platform settings live in the database
+## Configuration — platform preferences and inference live in the database
 
-Platform settings (the LLM endpoint for the Learning Engine, ADR 0003, and
-future settings) are **stored in the `settings` table**, not in
-`appsettings.json`, environment variables, or compose config. The platform is
-setter-uppable at runtime: a settings change applies without a restart.
+Platform preferences (language and theme) are stored in the `settings` table,
+while Learning Engine inference configuration follows ADR 0009 and is stored
+in `inference_configurations`, `inference_routes`, and `inference_providers`.
+Neither belongs in `appsettings.json`, environment variables, or compose config
+as the runtime source of truth. Changes apply without a restart.
 
-- The `AppSetting` entity (`Domain/Entities`) is a key/value row; keys are
-  declared in `Application/Settings/SettingKeys.cs` (`llm.baseUrl`, …).
-- Settings are read/written through the `ISettingsAppService`
-  (`Application/Contracts`) seam, implemented by `SettingsAppService`
-  (`Application/Settings`). Validation happens on write
-  (`SaveLlmOptionsAsync` throws on invalid input); a missing or invalid store
-  reads back as `null` so consumers can idle instead of failing.
-- Services that depend on settings resolve them per call (e.g. `LlmClient`
-  re-reads the endpoint on every extraction/embedding call) — never cache
-  settings at construction time.
-- The settings REST/UI surface is a later ticket; do not reintroduce app
-  configuration as the source of truth.
+- The `AppSetting` entity (`Domain/Entities`) is a key/value row for preferences;
+  keys are declared in `Application/Settings/SettingKeys.cs`.
+- Inference contracts and DTOs live in `Application/Contracts` and
+  `Application/Dtos`; persistence and verification are implemented in the
+  `Application/Inference` feature folder and exposed under `/api/inference`.
+- Provider API keys are protected before persistence and are write-only at the
+  REST boundary. Reads return configured/masked state only.
+- Services resolve the active inference routes per call; do not cache provider
+  credentials or route configuration at construction time.

@@ -41,5 +41,5 @@ A record of token consumption and cost attached to a Session, broken down by mod
 _Avoid_: billing record, telemetry
 
 **Learning Engine**:
-The background pipeline that turns session summaries into knowledge — deduplication, LLM extraction, conflict detection, embedding, and vector storage — running on the platform's configured LLM endpoint.
+The background pipeline that turns session summaries into knowledge — deduplication, chat extraction, conflict detection, embedding, and vector storage — running on the platform's configured inference routes.
 _Avoid_: extraction pipeline, knowledge worker

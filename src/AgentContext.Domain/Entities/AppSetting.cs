@@ -1,9 +1,9 @@
 namespace AgentContext.Domain.Entities;
 
 /// <summary>
-/// A platform setting stored in the database (spec: "settings (LLM endpoint)").
-/// Key/value rows; the Learning Engine's LLM endpoint configuration lives here
-/// (ADR 0003) so it is setter-uppable at runtime instead of via app config.
+/// A platform preference stored in the database.
+/// Key/value rows; language and theme live here. Inference connections use
+/// dedicated tables so provider routes can be configured independently.
 /// </summary>
 public sealed class AppSetting
 {

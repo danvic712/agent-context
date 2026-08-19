@@ -22,9 +22,9 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - `Usage` records per session; cost computed from token counts × maintained model pricing table (T7).
 
 ### 2.3 Learning Engine (T3)
-- BackgroundService polls pending Sessions → pipeline: dedup → LLM extraction (OpenAI-compatible endpoint from the settings table, ADR 0003) → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding (`vector(1536)`) → pgvector.
+- BackgroundService polls pending Sessions → pipeline: dedup → chat extraction through the configured inference route → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding through the configured embedding route (`vector(1536)`) → pgvector.
 - Confidence (initial): 0.4×self-assessment + 0.2×field-completeness, cap 0.6. Conflict detection: similarity ≥0.9 corroborates, [0.6,0.9) forms/shared conflict groups; retrieval shows both sides.
-- Retries: `NextAttemptAtUtc = now + 30s×2^n` (cap 1h, budget 5); exhausted budget stays `Failed`, visible, never deleted. **Pipeline idles (never fails Sessions) while the LLM endpoint is unconfigured.**
+- Retries: `NextAttemptAtUtc = now + 30s×2^n` (cap 1h, budget 5); exhausted budget stays `Failed`, visible, never deleted. **Pipeline idles (never fails Sessions) while the inference routes are unconfigured.**
 - Extraction output follows the **configured platform language** (T11), preserving identifiers / technical terms / original snippets.
 
 ### 2.4 Retrieval (T4)
@@ -41,8 +41,12 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 ### 2.7 Analytics (T7)
 - Session overview: sessions / tokens / cost by workspace / domain / agent; maintained model pricing table; report page.
 
-### 2.8 LLM endpoint configuration (T10)
-- Settings stored in the `settings` table (DB, per-call resolution — no restart). `GET/PUT /api/settings/llm-options` (API key masked); first-run wizard step (skippable, Learning Engine idles until configured); settings page.
+### 2.8 Inference configuration (T14, issue #16)
+- Platform-level inference configuration is stored across three PostgreSQL tables: `inference_configurations` (configuration identity and timestamps), `inference_routes` (one Chat and one Embedding binding), and `inference_providers` (reusable OpenAI-compatible connection data and protected API-key secret material). `inference_providers` has no reverse configuration foreign key.
+- Chat and Embedding routes may use different providers and models. The MVP supports OpenAI-compatible Chat Completions and Embeddings only; embedding validation and runtime require `1536` dimensions.
+- REST endpoints are outside Settings: `GET/PUT /api/inference/configuration` and `POST /api/inference/configuration/verify`. Verification probes the unsaved draft and has no session, usage, or persistence side effects; save/create requires both route checks to pass.
+- Settings and first-run Setup share the same contract. Setup has exactly three steps: Account & preferences, Model service, Review & create. Account, preferences, workspace, providers and routes are committed atomically.
+- API keys are write-only at the REST boundary: reads return only configured/masked state. Changes apply immediately without a restart; the platform scope remains global in this MVP.
 
 ### 2.9 Localization (T11)
 - Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **single JSON resource store** shared by frontend and backend (`i18n/{locale}.json`, namespaces `ui` + `errors`, ADR 0008 — no .resx, one file per locale).
@@ -73,6 +77,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 |---|---|---|
 | T9 (#10) | Craft Agents integration + guide skill + full-loop validation | 2026-08-16 |
 | T10 (#11) | LLM endpoint configuration | 2026-08-16 |
+| T14 (#16) | Platform inference configuration: three tables, multi-provider routes, connection validation, and three-step setup | 2026-08-19 |
 | T11 (#12) | Platform localization (en-US/zh-CN, single JSON store) | 2026-08-16 |
 | T12 (#13) | Product-grade UI + DB theme + Skill package model | 2026-08-16 |
 | T13 (#14) | OpenTelemetry + Aspire dashboard | 2026-08-16 |
@@ -101,7 +106,7 @@ Earlier milestones were validated end-to-end — see `docs/validation/t11-locali
 
 - Single project, one entrypoint — no-args startup runs the full 3-in-1 environment (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
 - Background processing: `BackgroundService` + Postgres-as-queue (ADR 0005); hygiene on `PeriodicTimer`.
-- Platform settings live in the `settings` table (ADR 0003); localization resources in one JSON store (ADR 0008).
+- Language and theme preferences live in the `settings` table; inference configuration lives in the three inference tables (ADR 0009, superseding ADR 0003); localization resources live in one JSON store (ADR 0008).
 
 ## 5. Tech Stack
 
@@ -119,7 +124,7 @@ Workspace ──┬── Domain ──┬── Knowledge (Type/Content/Confide
             └── Session ──┬── Agent
                           ├── Usage (tokens/cost by model)
                           └── ⟶ Knowledge (distilled into)
-AppSetting (platform settings: LLM endpoint, language, theme) · ModelPricing (cost table)
+AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider · ModelPricing (cost table)
 ```
 
 ## 7. Workspace & Visibility
@@ -133,12 +138,13 @@ AppSetting (platform settings: LLM endpoint, language, theme) · ModelPricing (c
 |---|---|
 | 0001 | Sessions reported by agents over MCP; no traffic proxy |
 | 0002 | Self-hosted Docker Compose first; SaaS later |
-| 0003 | Platform LLM via configurable OpenAI-compatible endpoint (settings table) |
+| 0003 | Historical single OpenAI-compatible endpoint decision (superseded by 0009) |
 | 0004 | MVP scope = learning loop + thin skills + session overview; explicit no-list |
 | 0005 | BackgroundService + Postgres-as-queue; Hangfire deferred |
 | 0006 | One project, one entrypoint (no-args = full 3-in-1 environment) |
 | 0007 | Redis deferred from MVP stack |
 | 0008 | Localization resources in one JSON file per locale, shared frontend/backend |
+| 0009 | Platform inference via configurable OpenAI-compatible providers and capability routes |
 
 ## 9. Testing
 

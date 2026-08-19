@@ -3,10 +3,10 @@ using AgentContext.Application.Learning;
 namespace AgentContext.Application.Contracts;
 
 /// <summary>
-/// Platform settings, stored in the database (spec: "settings (LLM endpoint)")
-/// so the Learning Engine's LLM endpoint is configurable at runtime instead of
-/// through app configuration. The settings REST surface is a later ticket; the
-/// seam keeps read/write available to setup flows and tests.
+/// Platform preferences stored in the database. Language and theme are the
+/// public Settings surface. The legacy LlmOptions methods remain as a
+/// compatibility seam for older application-service callers and tests; the
+/// production Learning Engine resolves the dedicated inference tables.
 /// </summary>
 public interface ISettingsAppService
 {

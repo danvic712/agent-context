@@ -1,6 +1,7 @@
 using AgentContext.Application.Analytics;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Hygiene;
+using AgentContext.Application.Inference;
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Localization;
@@ -35,14 +36,24 @@ public static class ServiceCollectionExtensions
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();
 
+        // Platform inference configuration (three-table model). Provider API keys
+        // are encrypted with the ASP.NET Core data-protection key ring and the
+        // validation client is deliberately limited to OpenAI-compatible routes.
+        services.AddDataProtection();
+        services.AddHttpClient("inference-validation", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddScoped<IInferenceSecretProtector, InferenceSecretProtector>();
+        services.AddScoped<IInferenceConfigurationAppService, InferenceConfigurationAppService>();
+
         // Session recording (T2)
         services.AddScoped<ISaveSessionAppService, SaveSessionAppService>();
 
-        // Learning Engine (T3, issue #4): the OpenAI-compatible LLM endpoint (ADR 0003)
-        // is stored in the settings table (ISettingsAppService) and resolved per call,
-        // so the platform is configurable at runtime. Scoped because it depends on the
-        // DbContext. The worker schedules via ILearningPipelineAppService.ProcessNextAsync;
-        // tests drive ProcessAsync directly.
+        // Learning Engine (T3, issue #4): inference routes are stored in the
+        // dedicated three-table configuration and resolved per call. The
+        // legacy settings seam remains available only for older application
+        // service tests and compatibility fallback.
         services.AddScoped<ISettingsAppService, SettingsAppService>();
         services.AddScoped<ILlmClient, LlmClient>();
         services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();

@@ -23,6 +23,86 @@ export interface SetupResult {
   workspaceName: string
 }
 
+export type InferenceCapability = 'Chat' | 'Embedding'
+
+export interface InferenceProvider {
+  id: string
+  name: string
+  providerType: string
+  baseUrl: string
+  apiKeyConfigured: boolean
+  maskedApiKey: string | null
+  createdAtUtc: string
+  updatedAtUtc: string
+}
+
+export interface InferenceRoute {
+  id: string
+  capability: InferenceCapability
+  providerId: string
+  model: string
+}
+
+export interface InferenceConfiguration {
+  configured: boolean
+  id: string | null
+  name: string | null
+  providers: InferenceProvider[]
+  routes: InferenceRoute[]
+  updatedAtUtc: string | null
+}
+
+export interface InferenceProviderInput {
+  id: string
+  name: string
+  providerType: string
+  baseUrl: string
+  apiKey: string
+}
+
+export interface InferenceRouteInput {
+  id: string
+  capability: InferenceCapability
+  providerId: string
+  model: string
+}
+
+export interface InferenceConfigurationInput {
+  name: string
+  providers: InferenceProviderInput[]
+  routes: InferenceRouteInput[]
+}
+
+export interface InferenceValidationCheck {
+  capability: InferenceCapability
+  valid: boolean
+  message: string | null
+}
+
+export interface InferenceValidationResult {
+  valid: boolean
+  checks: InferenceValidationCheck[]
+}
+
+export async function getInferenceConfiguration(): Promise<InferenceConfiguration> {
+  const { data } = await http.get<InferenceConfiguration>('/inference/configuration')
+  return data
+}
+
+export async function verifyInferenceConfiguration(
+  input: InferenceConfigurationInput,
+): Promise<InferenceValidationResult> {
+  const { data } = await http.post<InferenceValidationResult>('/inference/configuration/verify', input)
+  return data
+}
+
+export async function saveInferenceConfiguration(
+  input: InferenceConfigurationInput,
+): Promise<InferenceConfiguration> {
+  const { data } = await http.put<InferenceConfiguration>('/inference/configuration', input)
+  return data
+}
+
 export interface HealthStatus {
   status: string
   database: string
@@ -34,31 +114,6 @@ export interface DashboardUrlDto {
 
 export async function getDashboardUrl(): Promise<DashboardUrlDto> {
   const { data } = await http.get<DashboardUrlDto>('/health/dashboard')
-  return data
-}
-
-export interface LlmOptionsDto {
-  configured: boolean
-  baseUrl: string | null
-  maskedApiKey: string | null
-  model: string | null
-  embeddingModel: string | null
-}
-
-export interface LlmOptionsInput {
-  baseUrl: string
-  apiKey: string
-  model: string
-  embeddingModel?: string | null
-}
-
-export async function getLlmOptions(): Promise<LlmOptionsDto> {
-  const { data } = await http.get<LlmOptionsDto>('/settings/llm-options')
-  return data
-}
-
-export async function saveLlmOptions(input: LlmOptionsInput): Promise<LlmOptionsDto> {
-  const { data } = await http.put<LlmOptionsDto>('/settings/llm-options', input)
   return data
 }
 
@@ -119,8 +174,16 @@ export async function postSetup(
   displayName: string,
   email: string,
   password: string,
+  language: string,
+  inferenceConfiguration: InferenceConfigurationInput,
 ): Promise<SetupResult> {
-  const { data } = await http.post<SetupResult>('/setup', { displayName, email, password })
+  const { data } = await http.post<SetupResult>('/setup', {
+    displayName,
+    email,
+    password,
+    language,
+    inferenceConfiguration,
+  })
   return data
 }
 
@@ -322,4 +385,3 @@ export async function runHygiene(): Promise<HygieneResult> {
   const { data } = await http.post<HygieneResult>('/knowledge/hygiene/run')
   return data
 }
-

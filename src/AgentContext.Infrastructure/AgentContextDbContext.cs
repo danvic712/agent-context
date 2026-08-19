@@ -6,7 +6,7 @@ namespace AgentContext.Infrastructure;
 
 /// <summary>
 /// EF Core schema for the confirmed MVP data model
-/// (Workspace/Domain/User/Membership/Session/Knowledge/Skill/Usage).
+/// (Workspace/Domain/User/Membership/Session/Knowledge/Skill/Usage/Inference).
 /// Postgres + pgvector; the vector extension and HNSW index are created by migration.
 /// Entity mappings live in <c>AgentContext.Infrastructure.Configurations</c>
 /// (fluent <c>IEntityTypeConfiguration&lt;T&gt;</c> classes, discovered by assembly scan).
@@ -23,6 +23,9 @@ public sealed class AgentContextDbContext(DbContextOptions<AgentContextDbContext
     public DbSet<Usage> Usage => Set<Usage>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();
+    public DbSet<InferenceConfiguration> InferenceConfigurations => Set<InferenceConfiguration>();
+    public DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
+    public DbSet<InferenceProvider> InferenceProviders => Set<InferenceProvider>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -37,7 +37,7 @@ Market research ([competitive-landscape.md](./research/competitive-landscape.md)
 |---|---|---|
 | Ingestion | Sessions reported by agents over MCP (push); **no traffic proxy** | [0001](./adr/0001-session-ingestion-via-mcp-push.md) |
 | Deployment | Self-hosted Docker Compose first; SaaS later | [0002](./adr/0002-self-hosted-first-deployment.md) |
-| Platform LLM | Configurable OpenAI-compatible endpoint, extraction + embedding | [0003](./adr/0003-platform-llm-via-openai-compatible-endpoint.md) |
+| Platform inference | Configurable OpenAI-compatible providers with independent Chat/Embedding routes | [0009](./adr/0009-platform-inference-configuration.md) |
 | MVP scope | Learning loop + thin skills + session overview; explicit no-list | [0004](./adr/0004-mvp-scope-and-no-list.md) |
 | Background | BackgroundService + Postgres-as-queue; Hangfire deferred | [0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md) |
 | Hosting | One project, one entrypoint: no-args startup runs the full 3-in-1 environment (portal UI/REST/MCP + Aspire dashboard + postgres) | [0006](./adr/0006-single-project-dual-mode.md) |
@@ -136,7 +136,7 @@ Workspace ──┬── Domain ──┬── Knowledge (confidence, source s
 
 ## 9. MVP Scope
 
-**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), session overview, platform localization, LLM/theme/language settings, OTel observability + Aspire dashboard, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
+**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), session overview, platform localization, inference/theme/language settings, OTel observability + Aspire dashboard, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
 
 **Out (no-list)**: skill marketplace, enterprise SSO/audit, auto memory injection, git-synced skills, per-item ACL, built-in chat UI, traffic proxy, SaaS hosting.
 
