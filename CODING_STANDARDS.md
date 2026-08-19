@@ -43,6 +43,36 @@ seam (the `AddApplicationServices` boundary) stays visible in one place.
 
 - Application services end in `AppService` (`SetupAppService`, not `SetupService`).
 
+## PostgreSQL persistence naming
+
+All new PostgreSQL schema introduced by a feature must use unquoted lowercase
+`snake_case` identifiers. This rule applies to tables, columns, sequences,
+primary keys, foreign keys, indexes, unique constraints, and check constraints;
+do not rely on EF Core's default CLR-name conversion or introduce quoted
+PascalCase/camelCase identifiers.
+
+- Table names are plural nouns (`inference_configurations`,
+  `inference_routes`, `inference_providers`).
+- Primary keys use `id`; foreign-key columns use the referenced entity name
+  plus `_id` (`inference_configuration_id`, `provider_id`).
+- Timestamp columns use the UTC suffix (`created_at_utc`, `updated_at_utc`).
+- Indexes use `ix_<table>_<columns>`; unique constraints use
+  `uq_<table>_<columns>`; foreign keys use
+  `fk_<dependent_table>_<principal_table>_<column>`; check constraints use
+  `ck_<table>_<purpose>`.
+- EF Core mappings must explicitly set the database names with `ToTable`,
+  `HasColumnName`, `HasIndex`, and `HasConstraintName` (or equivalent
+  conventions) so generated migrations and the live PostgreSQL schema are
+  visibly compliant.
+- The three-table Inference implementation must use these exact persistence
+  names: `inference_configurations`, `inference_routes`, and
+  `inference_providers`. Route bindings belong in
+  `inference_routes`; `inference_providers` must not contain a reverse
+  `inference_configuration_id` foreign key.
+- New migrations must be reviewed for lowercase `snake_case` identifiers
+  before they are merged. Existing legacy tables are not renamed as part of
+  an MVP feature unless the ticket explicitly includes that migration.
+
 ## Configuration — platform settings live in the database
 
 Platform settings (the LLM endpoint for the Learning Engine, ADR 0003, and
