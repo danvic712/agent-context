@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LanguagesIcon, SettingsIcon } from 'lucide-react'
+import { LanguagesIcon, MonitorIcon, MoonIcon, SunIcon } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   createInferenceDraft,
@@ -21,7 +19,7 @@ import {
   type InferenceValidationResult,
 } from '@/lib/api'
 import i18n from '@/i18n'
-import { useTheme } from '@/theme'
+import { useTheme, type ThemeMode } from '@/theme'
 
 export function SettingsPage() {
   const { t } = useTranslation()
@@ -100,108 +98,106 @@ export function SettingsPage() {
     }
   }
 
+  const themeChoices: Array<[ThemeMode, string, React.ReactNode]> = [
+    ['light', t('settings.themeLight'), <SunIcon key="light" />],
+    ['dark', t('settings.themeDark'), <MoonIcon key="dark" />],
+    ['system', t('settings.themeSystem'), <MonitorIcon key="system" />],
+  ]
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <SettingsIcon className="size-4 text-muted-foreground" />
-              {t('settings.theme')}
-            </CardTitle>
-            <CardDescription>{t('settings.themeDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div role="radiogroup" aria-label={t('settings.theme')} className="flex flex-wrap gap-2">
-              {(
-                [
-                  ['light', t('settings.themeLight')],
-                  ['dark', t('settings.themeDark')],
-                  ['system', t('settings.themeSystem')],
-                ] as const
-              ).map(([value, label]) => (
+    <div className="c-page">
+      <section className="c-hero">
+        <div className="c-hero__copy">
+          <div className="kicker c-kicker">{t('settings.pageKicker')}</div>
+          <h1 className="c-hero__title">{t('settings.pageTitle')}</h1>
+          <p className="c-hero__description">{t('settings.pageDescription')}</p>
+        </div>
+        <div className="c-hero__aside">
+          <span className="c-badge"><span className="c-dot" />{t('settings.platformBadge')}</span>
+          <span className="c-status-badge">{t('settings.noRestart')}</span>
+        </div>
+      </section>
+
+      <div className="c-preferences">
+        <section className="c-panel">
+          <div className="c-panel__header">
+            <div>
+              <div className="c-panel__title"><SunIcon /> {t('settings.theme')}</div>
+              <p className="c-panel__description">{t('settings.themeDescription')}</p>
+            </div>
+          </div>
+          <div className="c-preference__content">
+            <div role="radiogroup" aria-label={t('settings.theme')} className="c-segmented">
+              {themeChoices.map(([value, label, icon]) => (
                 <Button
                   key={value}
                   type="button"
                   role="radio"
                   aria-checked={mode === value}
-                  variant={mode === value ? 'default' : 'outline'}
+                  variant="ghost"
+                  className="c-segmented__item"
                   onClick={() => void setMode(value)}
                 >
+                  {icon}
                   {label}
                 </Button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <LanguagesIcon className="size-4 text-muted-foreground" />
-              {t('settings.language')}
-            </CardTitle>
-            <CardDescription>{t('settings.languageDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Field>
-              <FieldLabel htmlFor="settings-language">{t('settings.language')}</FieldLabel>
-              <FieldContent>
-                <select
-                  id="settings-language"
-                  value={language}
-                  onChange={(event) => void changeLanguage(event.target.value)}
-                  className="flex h-9 w-full items-center rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <option value="en-US">{t('settings.english')}</option>
-                  <option value="zh-CN">{t('settings.chinese')}</option>
-                </select>
-              </FieldContent>
-            </Field>
-          </CardContent>
-        </Card>
+        <section className="c-panel">
+          <div className="c-panel__header">
+            <div>
+              <div className="c-panel__title"><LanguagesIcon /> {t('settings.language')}</div>
+              <p className="c-panel__description">{t('settings.languageDescription')}</p>
+            </div>
+          </div>
+          <div className="c-preference__content">
+            <label className="c-field" htmlFor="settings-language">
+              <span className="c-field__label">{t('settings.language')}</span>
+              <select id="settings-language" className="c-select" value={language} onChange={(event) => void changeLanguage(event.target.value)}>
+                <option value="en-US">{t('settings.english')}</option>
+                <option value="zh-CN">{t('settings.chinese')}</option>
+              </select>
+            </label>
+          </div>
+        </section>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <SettingsIcon className="size-4 text-muted-foreground" />
-            {t('settings.inferenceTitle')}
-          </CardTitle>
-          <CardDescription>{t('settings.inferenceDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading || !draft ? (
-            <div className="flex flex-col gap-3" aria-busy="true">
-              <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          ) : (
-            <InferenceConfigForm
-              draft={draft}
-              onChange={(next) => {
-                setDraft(next)
-                setValidation(null)
-                setSaved(false)
-              }}
-              validation={validation}
-              validating={validating}
-              onValidate={() => void validate()}
-              onSave={() => void save()}
-              saving={saving}
-              saveDisabled={!validation?.valid}
-            />
-          )}
-          {saved && <p className="mt-3 text-sm text-muted-foreground">{t('settings.saved')}</p>}
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTitle>{t('settings.saveFailed')}</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+      {loading || !draft ? (
+        <div className="c-panel p-5" aria-busy="true">
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      ) : (
+        <InferenceConfigForm
+          draft={draft}
+          onChange={(next) => {
+            setDraft(next)
+            setValidation(null)
+            setSaved(false)
+          }}
+          validation={validation}
+          validating={validating}
+          onValidate={() => void validate()}
+          onSave={() => void save()}
+          onReset={() => void load()}
+          saving={saving}
+          saveDisabled={!validation?.valid}
+        />
+      )}
+
+      {saved && <p className="mt-3 text-xs text-ok">{t('settings.saved')}</p>}
+      {error && (
+        <Alert variant="destructive" className="c-validation-alert mt-4">
+          <AlertTitle>{t('settings.saveFailed')}</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 }

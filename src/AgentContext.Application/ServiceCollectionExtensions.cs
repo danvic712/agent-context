@@ -12,6 +12,7 @@ using AgentContext.Application.Settings;
 using AgentContext.Application.Skills;
 using AgentContext.Application.Setup;
 using AgentContext.Infrastructure;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,9 +38,22 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISetupAppService, SetupAppService>();
 
         // Platform inference configuration (three-table model). Provider API keys
-        // are encrypted with the ASP.NET Core data-protection key ring and the
-        // validation client is deliberately limited to OpenAI-compatible routes.
-        services.AddDataProtection();
+        // are encrypted with a stable, persisted ASP.NET Core data-protection key
+        // ring. The container deployment overrides the directory to a mounted
+        // volume; local development uses the user's persistent application-data
+        // directory instead of the build output directory.
+        var dataProtectionKeysDirectory = configuration["DataProtection:KeysDirectory"];
+        if (string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
+        {
+            var localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            dataProtectionKeysDirectory = string.IsNullOrWhiteSpace(localApplicationData)
+                ? Path.Combine(AppContext.BaseDirectory, "data-protection-keys")
+                : Path.Combine(localApplicationData, "agent-context", "data-protection-keys");
+        }
+
+        services.AddDataProtection()
+            .SetApplicationName("agent-context")
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysDirectory));
         services.AddHttpClient("inference-validation", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
@@ -51,9 +65,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISaveSessionAppService, SaveSessionAppService>();
 
         // Learning Engine (T3, issue #4): inference routes are stored in the
-        // dedicated three-table configuration and resolved per call. The
-        // legacy settings seam remains available only for older application
-        // service tests and compatibility fallback.
+        // dedicated three-table configuration and resolved per call.
         services.AddScoped<ISettingsAppService, SettingsAppService>();
         services.AddScoped<ILlmClient, LlmClient>();
         services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();

@@ -28,14 +28,17 @@ namespace AgentContext.Infrastructure.Migrations
                 {
                     b.Property<string>("Key")
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("key");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("value");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_settings");
 
                     b.ToTable("settings", (string)null);
                 });

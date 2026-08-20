@@ -26,7 +26,9 @@ What happens:
 - The portal runs as a child process of the same binary (internal
   `HOST_MODE=portal` role), bound to
   `http://localhost:8080` with `ConnectionStrings__Default` and
-  `Skills__Directory` injected by Aspire.
+  `Skills__Directory` injected by Aspire. The Data Protection key ring is
+  persisted under `/data/agent-context/data-protection-keys` in Docker Compose
+  so provider API keys remain decryptable after container recreation.
 - `WithOtlpExporter()` injects the OTLP endpoint + `OTEL_SERVICE_NAME` into the
   portal, so logs/traces/metrics land in the AppHost dashboard attributed to
   the **portal** resource (and `service.name` follows `OTEL_SERVICE_NAME`

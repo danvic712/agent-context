@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeftIcon, ArrowRightIcon, CheckCircle2Icon, SparklesIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckCircle2Icon,
+  CheckIcon,
+  LanguagesIcon,
+  LockKeyholeIcon,
+  SparklesIcon,
+  UserRoundIcon,
+} from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
   createInferenceDraft,
@@ -97,11 +103,10 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
 
   const submitModelService = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (await validate()) {
-      setStep(3)
-    }
+    if (await validate()) setStep(3)
   }
 
+  const pageTitle = step === 1 ? t('wizard.pageTitleAccount') : step === 2 ? t('wizard.pageTitleService') : t('wizard.pageTitleReview')
   const stepDescription =
     step === 1
       ? t('wizard.stepAccountPreferencesDescription')
@@ -110,190 +115,176 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
         : t('wizard.stepReviewDescription')
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/20 p-4">
-      <Card className="w-full max-w-3xl">
-        <CardHeader>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <Badge variant="outline">{t('wizard.stepCounter', { step })}</Badge>
-            <div className="flex items-center gap-1.5" aria-label={t('wizard.progressLabel')}>
-              {[1, 2, 3].map((item) => (
-                <span
-                  key={item}
-                  className={`h-1.5 w-12 rounded-full ${item <= step ? 'bg-primary' : 'bg-border'}`}
-                />
-              ))}
+    <div className="c-page c-page--setup">
+      <section className="c-hero">
+        <div className="c-hero__copy">
+          <div className="kicker c-kicker">{t('wizard.pageKicker')}</div>
+          <h1 className="c-hero__title">{pageTitle}</h1>
+          <p className="c-hero__description">{stepDescription}</p>
+        </div>
+        <div className="c-hero__aside">
+          <span className="c-badge"><span className="c-dot" />{t('wizard.firstSetup')}</span>
+          <span className="c-status-badge">{t('wizard.stepCounter', { step })}</span>
+        </div>
+      </section>
+
+      <div className="c-setup-progress" aria-label={t('wizard.progressLabel')}>
+        {[1, 2, 3].map((item, index) => {
+          const isDone = item < step
+          const isCurrent = item === step
+          return (
+            <span key={item} className="contents">
+              <button
+                type="button"
+                className={`c-progress-step ${isCurrent ? 'c-progress-step--current' : ''} ${isDone ? 'c-progress-step--done' : ''}`}
+                onClick={() => {
+                  if (item < step) setStep(item as 1 | 2 | 3)
+                }}
+              >
+                {isDone ? <CheckIcon size={14} /> : <span className="c-progress-number">{item}</span>}
+                {item === 1 ? t('wizard.stepAccountShort') : item === 2 ? t('wizard.stepServiceShort') : t('wizard.stepReviewShort')}
+              </button>
+              {index < 2 && <span className="c-progress-separator">/</span>}
+            </span>
+          )
+        })}
+      </div>
+
+      {step === 1 ? (
+        <form onSubmit={submitAccount}>
+          <div className="c-layout">
+            <aside className="c-readiness">
+              <div className="c-readiness__icon"><SparklesIcon size={21} /></div>
+              <h2 className="c-readiness__title">{t('wizard.accountAsideTitle')}</h2>
+              <p className="c-readiness__description">{t('wizard.accountAsideDescription')}</p>
+              <div className="c-account-aside__list">
+                <div className="c-account-aside__item"><UserRoundIcon />{t('wizard.accountAsideItemAccount')}</div>
+                <div className="c-account-aside__item"><LanguagesIcon />{t('wizard.accountAsideItemLanguage')}</div>
+                <div className="c-account-aside__item"><LockKeyholeIcon />{t('wizard.accountAsideItemProtected')}</div>
+              </div>
+            </aside>
+
+            <div className="c-stack">
+              <section className="c-panel">
+                <div className="c-panel__header">
+                  <div>
+                    <div className="c-panel__title"><UserRoundIcon /> {t('wizard.accountSummary')}</div>
+                    <p className="c-panel__description">{t('wizard.stepAccountDescription')}</p>
+                  </div>
+                  <span className="c-status-badge">{t('wizard.stepOneLabel')}</span>
+                </div>
+                <div className="c-panel__body c-form-grid">
+                  <div className="c-form-grid c-form-grid--two">
+                    <label className="c-field" htmlFor="display-name">
+                      <span className="c-field__label">{t('wizard.displayName')}</span>
+                      <Input id="display-name" className="c-input" value={account.displayName} onChange={(event) => setAccount({ ...account, displayName: event.target.value })} autoComplete="name" placeholder={t('wizard.displayNamePlaceholder')} />
+                    </label>
+                    <label className="c-field" htmlFor="email">
+                      <span className="c-field__label">{t('wizard.email')}</span>
+                      <Input id="email" className="c-input" type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} autoComplete="email" placeholder={t('wizard.emailPlaceholder')} />
+                    </label>
+                  </div>
+                  <label className="c-field" htmlFor="password">
+                    <span className="c-field__label">{t('wizard.password')}</span>
+                    <Input id="password" className="c-input" type="password" value={account.password} onChange={(event) => setAccount({ ...account, password: event.target.value })} autoComplete="new-password" placeholder={t('wizard.passwordPlaceholder')} />
+                  </label>
+                  <p className="c-form-help">{t('wizard.passwordHelp')}</p>
+                  <div className="c-field">
+                    <span className="c-field__label">{t('wizard.language')}</span>
+                    <div className="c-segmented">
+                      {languages.map((locale) => (
+                        <Button key={locale} type="button" variant="ghost" className="c-segmented__item" aria-pressed={language === locale} onClick={() => void chooseLanguage(locale)}>
+                          {locale === 'en-US' ? t('wizard.english') : t('wizard.chinese')}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+              {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+              <div className="c-actions">
+                <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.stepOneActionHint')}</div>
+                <div className="c-action-buttons"><Button type="submit" className="c-button c-button--primary">{t('wizard.continue')} <ArrowRightIcon /></Button></div>
+              </div>
             </div>
           </div>
-          <CardTitle className="flex items-center gap-2">
-            <SparklesIcon data-icon="inline-start" />
-            {t('wizard.welcome')}
-          </CardTitle>
-          <CardDescription>{stepDescription}</CardDescription>
-        </CardHeader>
-
-        {step === 1 ? (
-          <form onSubmit={submitAccount}>
-            <CardContent>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel>{t('wizard.language')}</FieldLabel>
-                  <FieldContent className="flex flex-row gap-2">
-                    {languages.map((locale) => (
-                      <Button
-                        key={locale}
-                        type="button"
-                        variant={language === locale ? 'default' : 'outline'}
-                        onClick={() => void chooseLanguage(locale)}
-                        className="flex-1"
-                      >
-                        {locale === 'en-US' ? t('wizard.english') : t('wizard.chinese')}
-                      </Button>
-                    ))}
-                  </FieldContent>
-                </Field>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="display-name">{t('wizard.displayName')}</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        id="display-name"
-                        value={account.displayName}
-                        onChange={(event) => setAccount({ ...account, displayName: event.target.value })}
-                        autoComplete="name"
-                        placeholder={t('wizard.displayNamePlaceholder')}
-                      />
-                    </FieldContent>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="email">{t('wizard.email')}</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={account.email}
-                        onChange={(event) => setAccount({ ...account, email: event.target.value })}
-                        autoComplete="email"
-                        placeholder={t('wizard.emailPlaceholder')}
-                      />
-                    </FieldContent>
-                  </Field>
-                </div>
-                <Field>
-                  <FieldLabel htmlFor="password">{t('wizard.password')}</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={account.password}
-                      onChange={(event) => setAccount({ ...account, password: event.target.value })}
-                      autoComplete="new-password"
-                      placeholder={t('wizard.passwordPlaceholder')}
-                    />
-                  </FieldContent>
-                </Field>
-              </FieldGroup>
-              {error && (
-                <Alert variant="destructive" className="mt-4">
-                  <AlertTitle>{t('wizard.setupFailed')}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full">
-                {t('wizard.continue')}
-                <ArrowRightIcon data-icon="inline-end" className="size-4" />
-              </Button>
-            </CardFooter>
-          </form>
-        ) : step === 2 ? (
-          <form onSubmit={(event) => void submitModelService(event)}>
-            <CardContent>
-              <InferenceConfigForm
-                draft={draft}
-                onChange={(next) => {
-                  setDraft(next)
-                  setValidation(null)
-                }}
-                validation={validation}
-                validating={validating}
-                onValidate={() => void validate()}
-                compact
-              />
-              {error && (
-                <Alert variant="destructive" className="mt-4">
-                  <AlertTitle>{t('wizard.setupFailed')}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={validating}>
-                <ArrowLeftIcon data-icon="inline-start" className="size-4" />
-                {t('wizard.back')}
-              </Button>
-              <Button type="submit" disabled={validating} className="flex-1">
-                {validating ? t('inference.verifying') : t('wizard.testAndReview')}
-                <ArrowRightIcon data-icon="inline-end" className="size-4" />
-              </Button>
-            </CardFooter>
-          </form>
-        ) : (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault()
-              void finish()
+        </form>
+      ) : step === 2 ? (
+        <form onSubmit={(event) => void submitModelService(event)}>
+          <InferenceConfigForm
+            draft={draft}
+            onChange={(next) => {
+              setDraft(next)
+              setValidation(null)
             }}
-          >
-            <CardContent className="space-y-5">
-              <div className="rounded-xl border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <CheckCircle2Icon className="size-4 text-primary" />
-                  <h3 className="font-medium">{t('wizard.accountSummary')}</h3>
-                </div>
-                <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                  <div><dt className="text-muted-foreground">{t('wizard.displayName')}</dt><dd>{account.displayName}</dd></div>
-                  <div><dt className="text-muted-foreground">{t('wizard.email')}</dt><dd>{account.email}</dd></div>
-                  <div><dt className="text-muted-foreground">{t('wizard.language')}</dt><dd>{language}</dd></div>
-                </dl>
+            validation={validation}
+            validating={validating}
+            onValidate={() => void validate()}
+            compact
+          />
+          {error && <Alert variant="destructive" className="c-validation-alert mt-4"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+          <div className="c-actions">
+            <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.stepTwoActionHint')}</div>
+            <div className="c-action-buttons">
+              <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(1)} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
+              <Button type="submit" className="c-button c-button--primary" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
+            </div>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={(event) => { event.preventDefault(); void finish() }}>
+          <div className="c-review-card">
+            <div>
+              <div className="kicker c-kicker">{t('wizard.stepReviewShort')}</div>
+              <h2 className="c-review-card__title">{t('wizard.reviewTitle')}</h2>
+              <p className="c-review-card__description">{t('wizard.reviewDescription')}</p>
+            </div>
+            <div className="c-review-grid">
+              <div className="c-review-item"><div className="c-review-item__label">{t('wizard.displayName')}</div><div className="c-review-item__value">{account.displayName}</div></div>
+              <div className="c-review-item"><div className="c-review-item__label">{t('wizard.language')}</div><div className="c-review-item__value">{language}</div></div>
+              <div className="c-review-item"><div className="c-review-item__label">{t('inference.providersTitle')}</div><div className="c-review-item__value">{t('wizard.providerCount', { count: draft.providers.length })}</div></div>
+            </div>
+          </div>
+          <div className="c-layout">
+            <aside className="c-readiness">
+              <div className="c-readiness__icon"><CheckCircle2Icon size={21} /></div>
+              <h2 className="c-readiness__title">{t('wizard.reviewAsideTitle')}</h2>
+              <p className="c-readiness__description">{t('wizard.atomicCreateHint')}</p>
+              <div className="c-checks">
+                <div className="c-check c-check--ok"><CheckIcon className="c-check__icon" /><div><div className="c-check__label">{t('wizard.accountSummary')}</div><div className="c-check__detail">{account.email}</div></div></div>
+                <div className="c-check c-check--ok"><CheckIcon className="c-check__icon" /><div><div className="c-check__label">{t('wizard.inferenceSummary')}</div><div className="c-check__detail">{t('wizard.verifiedBeforeCreate')}</div></div></div>
               </div>
-              <div className="rounded-xl border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <CheckCircle2Icon className="size-4 text-primary" />
-                  <h3 className="font-medium">{t('wizard.inferenceSummary')}</h3>
+            </aside>
+            <div className="c-stack">
+              <section className="c-panel">
+                <div className="c-panel__header"><div><div className="c-panel__title"><UserRoundIcon /> {t('wizard.accountSummary')}</div><p className="c-panel__description">{t('wizard.reviewAccountDescription')}</p></div></div>
+                <div className="c-panel__body c-review-grid">
+                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.displayName')}</div><div className="c-review-item__value">{account.displayName}</div></div>
+                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.email')}</div><div className="c-review-item__value">{account.email}</div></div>
+                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.language')}</div><div className="c-review-item__value">{language}</div></div>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
+              </section>
+              <section className="c-panel">
+                <div className="c-panel__header"><div><div className="c-panel__title"><SparklesIcon /> {t('wizard.inferenceSummary')}</div><p className="c-panel__description">{t('wizard.reviewInferenceDescription')}</p></div><span className="c-status-badge c-status-badge--ready"><span className="c-dot c-dot--ok" />{t('wizard.verifiedBeforeCreate')}</span></div>
+                <div className="c-panel__body c-route-grid">
                   {draft.routes.map((route) => {
                     const provider = draft.providers.find((item) => item.id === route.providerId)
-                    return (
-                      <div key={route.id} className="rounded-lg border bg-background p-3 text-sm">
-                        <p className="font-medium">{route.capability === 'Chat' ? t('inference.chatRoute') : t('inference.embeddingRoute')}</p>
-                        <p className="text-muted-foreground">{provider?.name || t('inference.provider')} · {route.model}</p>
-                      </div>
-                    )
+                    return <div key={route.id} className="c-review-item"><div className="c-review-item__label">{route.capability === 'Chat' ? t('inference.chatRoute') : t('inference.embeddingRoute')}</div><div className="c-review-item__value">{provider?.name || t('inference.provider')} · {route.model}</div></div>
                   })}
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">{t('wizard.atomicCreateHint')}</p>
+              </section>
+              {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+              <div className="c-actions">
+                <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.reviewActionHint')}</div>
+                <div className="c-action-buttons">
+                  <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(2)} disabled={submitting}><ArrowLeftIcon />{t('wizard.back')}</Button>
+                  <Button type="submit" className="c-button c-button--primary" disabled={submitting || !validation?.valid}>{submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}</Button>
+                </div>
               </div>
-              {error && (
-                <Alert variant="destructive">
-                  <AlertTitle>{t('wizard.setupFailed')}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setStep(2)} disabled={submitting}>
-                <ArrowLeftIcon data-icon="inline-start" className="size-4" />
-                {t('wizard.back')}
-              </Button>
-              <Button type="submit" disabled={submitting || !validation?.valid} className="flex-1">
-                {submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}
-              </Button>
-            </CardFooter>
-          </form>
-        )}
-      </Card>
+            </div>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

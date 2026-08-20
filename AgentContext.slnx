@@ -6,6 +6,6 @@
     <Project Path="src/AgentContext.Infrastructure/AgentContext.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/AgentContext.Tests/AgentContext.Tests.csproj" />
+    <Project Path="tests/AgentContext.Application.Tests/AgentContext.Application.Tests.csproj" />
   </Folder>
 </Solution>

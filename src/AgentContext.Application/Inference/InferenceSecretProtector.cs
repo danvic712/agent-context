@@ -12,6 +12,11 @@ public sealed class InferenceSecretProtector(IDataProtectionProvider provider) :
 
     public string? Unprotect(string protectedSecret)
     {
+        if (string.IsNullOrEmpty(protectedSecret))
+        {
+            return string.Empty;
+        }
+
         try
         {
             return protector.Unprotect(protectedSecret);

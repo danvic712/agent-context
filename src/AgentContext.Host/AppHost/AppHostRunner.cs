@@ -94,6 +94,12 @@ public static class AppHostRunner
             dashboardUrl = DashboardProxySetup.PathPrefix + DashboardProxySetup.DefaultPagePath;
         }
 
+        // The portal child must receive the deployment's shared key-ring path.
+        // Compose points this at the /data volume so provider API keys remain
+        // decryptable after the container is recreated. Local development can
+        // use the portal's persistent default path.
+        var dataProtectionKeysDirectory = Environment.GetEnvironmentVariable("DataProtection__KeysDirectory");
+
         // Issue #15: when a connection string is already provided (container /
         // compose), model postgres as an external resource instead of starting a
         // container — the portal child gets ConnectionStrings__Default injected.
@@ -146,6 +152,11 @@ public static class AppHostRunner
             // (the platform reads ConnectionStrings:Default, not the resource name).
             .WithReference(postgres, connectionName: "Default")
             .WithEnvironment("Skills__Directory", skillsDirectory);
+
+        if (!string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
+        {
+            portal.WithEnvironment("DataProtection__KeysDirectory", dataProtectionKeysDirectory);
+        }
 
         // Only the containerized postgres needs a readiness wait; an external
         // connection-string resource is already "there" by definition.

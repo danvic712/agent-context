@@ -162,6 +162,3 @@ app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
 return 0;
-
-/// <summary>Exposed so WebApplicationFactory integration tests can boot the web mode.</summary>
-public partial class Program { }

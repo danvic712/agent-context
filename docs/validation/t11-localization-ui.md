@@ -19,11 +19,11 @@ render in the configured language.
 | 1 | Fresh DB → wizard opens on the **language step** (default English, "Continue" button) | ✓ |
 | 2 | Click 中文 (简体) → `PUT /api/settings/language` + `changeLanguage` → wizard title/description/button immediately in Chinese ("欢迎使用 Agent Context … 继续"), no reload | ✓ |
 | 3 | Continue → account step renders in Chinese (显示名称 / 邮箱 / 密码) | ✓ |
-| 4 | Fill account → LLM step renders in Chinese (Base URL / API 密钥 / 模型 / 嵌入模型（可选）/ 稍后跳过?) | ✓ |
-| 5 | Skip LLM → app shell in Chinese (知识 / 复查 / 已归档 / 技能 / 分析 / 引擎 / 设置) | ✓ |
-| 6 | Settings tab → language dropdown shows 中文 (简体); switch to English → **whole UI re-renders in English without a reload** (tabs, LLM endpoint card, "not configured — engine idles", Save) | ✓ |
-| 7 | Enter invalid Base URL + Save → English error "Save failed / BaseUrl must be an absolute http(s) URL." (REST `{errorCode, message}` via the global filter) | ✓ |
-| 8 | Switch language dropdown back to 中文 → whole UI Chinese again; Save again → Chinese error "保存失败 / BaseUrl 必须是完整的 http(s) URL." | ✓ |
+| 4 | Fill account → inference step renders in Chinese (providers / Chat route / Embedding route / API key) | ✓ |
+| 5 | Skip inference → app shell in Chinese (知识 / 复查 / 已归档 / 技能 / 分析 / 引擎 / 设置) | ✓ |
+| 6 | Settings tab → language dropdown shows 中文 (简体); switch to English → **whole UI re-renders in English without a reload** (tabs, inference configuration card, route status, Save) | ✓ |
+| 7 | Enter an invalid provider endpoint + test → English inference validation error (REST `{errorCode, message}` via the global filter) | ✓ |
+| 8 | Switch language dropdown back to 中文 → whole UI Chinese again; test again → Chinese inference validation error | ✓ |
 | 9 | Knowledge / Skills / Analytics / Engine tabs all render in Chinese (empty states, badges, hygiene copy) | ✓ |
 
 ## REST spot-checks (curl)
@@ -32,8 +32,8 @@ render in the configured language.
 - `PUT /api/settings/language` `{"language":"fr-FR"}` → 400
   `{"errorCode":"settings.unsupportedLanguage","message":"Unsupported language \"fr-FR\". …"}`
 - `PUT /api/settings/language` `{"language":"zh-CN"}` → persists; subsequent
-  `PUT /api/settings/llm-options` (invalid) → `{"errorCode":"llm.baseUrlInvalid",
-  "message":"BaseUrl 必须是完整的 http(s) URL。"}`; back to `en-US` → English message
+  inference verification with an invalid provider endpoint →
+  `{"errorCode":"inference.baseUrlInvalid", ...}`; back to `en-US` → English message
 - `POST /api/setup` invalid email under zh-CN → `{"errorCode":"setup.emailInvalid",
   "message":"需要有效的邮箱地址。"}`
 

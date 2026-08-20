@@ -10,7 +10,7 @@ public interface ITranslationService
 {
     /// <summary>
     /// Returns the localized string for <paramref name="key"/> (a full dotted key,
-    /// e.g. <c>errors.llm.baseUrlRequired</c> or <c>prompts.extraction</c>) in the
+    /// e.g. <c>errors.inference.baseUrlInvalid</c> or <c>prompts.extraction</c>) in the
     /// requested locale. Falls back to en-US, then to the key. <paramref name="args"/>
     /// are interpolated as <c>{0}</c>/<c>{1}</c> positional placeholders.
     /// </summary>

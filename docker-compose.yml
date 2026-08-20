@@ -53,6 +53,10 @@ services:
       # db subdirectory, this service owns skills. The AppHost passes the value
       # straight to the portal child (T15 follow-up).
       Skills__Directory: /data/agent-context/skills
+      # Data Protection key ring for provider API-key encryption. It must live
+      # on the shared volume so database ciphertext remains decryptable after
+      # this container is recreated.
+      DataProtection__KeysDirectory: /data/agent-context/data-protection-keys
       # Browser-facing dashboard URL for the UI's "open dashboard" menu entry.
       # Keep navigation on the portal's same-origin proxy so the dashboard uses
       # the single-port /monitor surface instead of bypassing the portal.
