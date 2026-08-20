@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Localization;
@@ -19,6 +20,9 @@ namespace AgentContext.Application.Skills;
 /// </summary>
 public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore packages) : ISkillAppService
 {
+    private const int DefaultSkillPageSize = 20;
+    private const int MaxSkillPageSize = 100;
+
     private static readonly Regex SlugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     public async Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default)
@@ -59,29 +63,64 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         return await ToDetailAsync(skill, domain.Name, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SkillListItem>> ListAsync(CancellationToken cancellationToken = default)
+    public async Task<SkillListPage> ListAsync(
+        int? pageSize = null,
+        string? cursor = null,
+        CancellationToken cancellationToken = default)
     {
-        // Latest version per (domain, slug) — group by the identity, order by Version
-        // inside the group, then surface newest-updated first.
+        var effectivePageSize = pageSize ?? DefaultSkillPageSize;
+        if (effectivePageSize is < 1 or > MaxSkillPageSize)
+        {
+            throw new LocalizedException(
+                HttpStatusCode.BadRequest,
+                ErrorCodes.Skill.PageSizeInvalid,
+                DefaultSkillPageSize,
+                MaxSkillPageSize);
+        }
+
+        var decodedCursor = DecodeCursor(cursor);
         var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);
         if (workspaceId is null)
         {
-            return [];
+            return new SkillListPage(effectivePageSize, cursor, [], false, null);
         }
 
-        var rows = await db.Skills.AsNoTracking()
+        // Latest version per (domain, slug) — group by the identity, then order
+        // the page by update time and stable id/version tie-breakers.
+        var latest = db.Skills.AsNoTracking()
             .Where(s => s.WorkspaceId == workspaceId)
             .GroupBy(s => new { s.DomainId, s.Slug })
-            .Select(g => g.OrderByDescending(s => s.Version).First())
+            .Select(g => g
+                .OrderByDescending(s => s.Version)
+                .ThenByDescending(s => s.UpdatedAtUtc)
+                .ThenByDescending(s => s.Id)
+                .First());
+
+        if (decodedCursor is not null)
+        {
+            latest = latest.Where(s =>
+                s.UpdatedAtUtc < decodedCursor.UpdatedAtUtc
+                || (s.UpdatedAtUtc == decodedCursor.UpdatedAtUtc
+                    && (s.Id.CompareTo(decodedCursor.Id) < 0
+                        || (s.Id == decodedCursor.Id && s.Version < decodedCursor.Version))));
+        }
+
+        var rows = await latest
+            .OrderByDescending(s => s.UpdatedAtUtc)
+            .ThenByDescending(s => s.Id)
+            .ThenByDescending(s => s.Version)
+            .Take(effectivePageSize + 1)
             .ToListAsync(cancellationToken);
 
-        var domainIds = rows.Select(r => r.DomainId).Distinct().ToList();
+        var hasMore = rows.Count > effectivePageSize;
+        var pageRows = rows.Take(effectivePageSize).ToList();
+
+        var domainIds = pageRows.Select(r => r.DomainId).Distinct().ToList();
         var domainNames = await db.Domains.AsNoTracking()
             .Where(d => domainIds.Contains(d.Id))
             .ToDictionaryAsync(d => d.Id, d => d.Name, cancellationToken);
 
-        return rows
-            .OrderByDescending(s => s.UpdatedAtUtc)
+        var items = pageRows
             .Select(s => new SkillListItem(
                 s.Id,
                 domainNames.GetValueOrDefault(s.DomainId, "unknown"),
@@ -92,6 +131,12 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
                 s.CreatedAtUtc,
                 s.UpdatedAtUtc))
             .ToList();
+
+        var nextCursor = hasMore && pageRows.Count > 0
+            ? EncodeCursor(pageRows[^1])
+            : null;
+
+        return new SkillListPage(effectivePageSize, cursor, items, hasMore, nextCursor);
     }
 
     public async Task<SkillDetail> GetAsync(Guid id, CancellationToken cancellationToken = default)
@@ -329,4 +374,47 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugInvalid);
         }
     }
+
+    private static SkillListCursor? DecodeCursor(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
+        try
+        {
+            var base64 = cursor.Replace('-', '+').Replace('_', '/');
+            base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
+            var decoded = JsonSerializer.Deserialize<SkillListCursor>(Convert.FromBase64String(base64));
+            if (decoded is null || decoded.Id == Guid.Empty || decoded.Version < 1 || decoded.UpdatedAtUtc == default)
+            {
+                throw new JsonException("The cursor payload is incomplete.");
+            }
+
+            return decoded;
+        }
+        catch (FormatException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.CursorInvalid);
+        }
+        catch (JsonException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.CursorInvalid);
+        }
+    }
+
+    private static string EncodeCursor(Skill skill)
+    {
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new SkillListCursor(
+            skill.UpdatedAtUtc,
+            skill.Id,
+            skill.Version));
+        return Convert.ToBase64String(payload)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private sealed record SkillListCursor(DateTimeOffset UpdatedAtUtc, Guid Id, int Version);
 }

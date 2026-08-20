@@ -51,6 +51,8 @@ public static class ErrorCodes
         public const string FileNotFound = "skill.fileNotFound";
         public const string FileTooLarge = "skill.fileTooLarge";
         public const string ImportInvalid = "skill.importInvalid";
+        public const string PageSizeInvalid = "skill.pageSizeInvalid";
+        public const string CursorInvalid = "skill.cursorInvalid";
     }
 
     public static class Pricing

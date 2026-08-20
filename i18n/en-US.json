@@ -353,7 +353,9 @@
       "filePathInvalid": "The file path is invalid. Use a relative path inside the package, e.g. \"examples/tool.ts\".",
       "fileNotFound": "File \"{0}\" not found in the skill package.",
       "fileTooLarge": "File \"{0}\" exceeds the 10 MB limit.",
-      "importInvalid": "The uploaded archive is invalid or contains an unsafe path."
+      "importInvalid": "The uploaded archive is invalid or contains an unsafe path.",
+      "pageSizeInvalid": "Page size must be between {0} and {1}.",
+      "cursorInvalid": "The skill list cursor is invalid."
     },
     "pricing": {
       "modelRequired": "Model name is required.",
