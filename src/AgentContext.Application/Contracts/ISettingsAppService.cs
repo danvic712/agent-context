@@ -1,26 +1,12 @@
-using AgentContext.Application.Learning;
-
 namespace AgentContext.Application.Contracts;
 
 /// <summary>
 /// Platform preferences stored in the database. Language and theme are the
-/// public Settings surface. The legacy LlmOptions methods remain as a
-/// compatibility seam for older application-service callers and tests; the
-/// production Learning Engine resolves the dedicated inference tables.
+/// public Settings surface; inference connections are managed by
+/// <see cref="IInferenceConfigurationAppService"/>.
 /// </summary>
 public interface ISettingsAppService
 {
-    /// <summary>
-    /// Returns the stored LLM endpoint configuration when it is present and
-    /// valid; <c>null</c> when the endpoint is not configured (or the stored
-    /// values are incomplete) — the Learning Engine then stays idle instead of
-    /// failing Sessions.
-    /// </summary>
-    Task<LlmOptions?> GetLlmOptionsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>Validates and persists the LLM endpoint configuration (upsert).</summary>
-    Task SaveLlmOptionsAsync(LlmOptions options, CancellationToken cancellationToken = default);
-
     /// <summary>
     /// The platform language (T11): a supported BCP-47 locale from the settings
     /// table, falling back to <c>en-US</c> when missing or invalid. Resolved per

@@ -26,9 +26,8 @@ namespace AgentContext.Application.Learning;
 public sealed class LearningPipelineAppService(
     AgentContextDbContext db,
     ILlmClient llm,
-    ISettingsAppService settings,
     ILogger<LearningPipelineAppService> logger,
-    IInferenceConfigurationAppService? inference = null) : ILearningPipelineAppService
+    IInferenceConfigurationAppService inference) : ILearningPipelineAppService
 {
     public async Task<LearningPipelineResult> ProcessNextAsync(CancellationToken cancellationToken = default)
     {
@@ -51,9 +50,7 @@ public sealed class LearningPipelineAppService(
     {
         // Without a complete inference configuration the pipeline idles and
         // Sessions stay Pending — never failing them for a configuration gap.
-        var configured = inference is null
-            ? await settings.GetLlmOptionsAsync(cancellationToken) is not null
-            : await inference.GetRuntimeOptionsAsync(cancellationToken) is not null;
+        var configured = await inference.GetRuntimeOptionsAsync(cancellationToken) is not null;
         if (!configured)
         {
             logger.LogInformation(

@@ -18,17 +18,9 @@ public static class ErrorCodes
         public const string AlreadyConfigured = "setup.alreadyConfigured";
     }
 
-    public static class Llm
-    {
-        public const string BaseUrlRequired = "llm.baseUrlRequired";
-        public const string BaseUrlInvalid = "llm.baseUrlInvalid";
-        public const string ApiKeyRequired = "llm.apiKeyRequired";
-        public const string ModelRequired = "llm.modelRequired";
-        public const string NotConfigured = "llm.notConfigured";
-    }
-
     public static class Inference
     {
+        public const string NotConfigured = "inference.notConfigured";
         public const string NameRequired = "inference.nameRequired";
         public const string ProviderRequired = "inference.providerRequired";
         public const string ConfigurationRequired = "inference.configurationRequired";

@@ -4,7 +4,7 @@ namespace AgentContext.Application.Localization;
 
 /// <summary>
 /// A user-facing error carrying a stable <see cref="ErrorCode"/> (the translation
-/// key under the <c>errors</c> namespace, e.g. <c>llm.baseUrlRequired</c>) plus
+/// key under the <c>errors</c> namespace, e.g. <c>inference.baseUrlInvalid</c>) plus
 /// positional arguments for interpolation. Call sites throw this instead of a
 /// bare English <see cref="ArgumentException"/>; the REST surface renders the
 /// <c>message</c> in the configured language (T11) and MCP tools localize through

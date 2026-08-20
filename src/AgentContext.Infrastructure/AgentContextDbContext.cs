@@ -11,7 +11,7 @@ namespace AgentContext.Infrastructure;
 /// Entity mappings live in <c>AgentContext.Infrastructure.Configurations</c>
 /// (fluent <c>IEntityTypeConfiguration&lt;T&gt;</c> classes, discovered by assembly scan).
 /// </summary>
-public sealed class AgentContextDbContext(DbContextOptions<AgentContextDbContext> options) : DbContext(options)
+public class AgentContextDbContext(DbContextOptions<AgentContextDbContext> options) : DbContext(options)
 {
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<DomainEntity> Domains => Set<DomainEntity>();
@@ -21,11 +21,11 @@ public sealed class AgentContextDbContext(DbContextOptions<AgentContextDbContext
     public DbSet<Knowledge> Knowledge => Set<Knowledge>();
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Usage> Usage => Set<Usage>();
-    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public virtual DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();
-    public DbSet<InferenceConfiguration> InferenceConfigurations => Set<InferenceConfiguration>();
-    public DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
-    public DbSet<InferenceProvider> InferenceProviders => Set<InferenceProvider>();
+    public virtual DbSet<InferenceConfiguration> InferenceConfigurations => Set<InferenceConfiguration>();
+    public virtual DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
+    public virtual DbSet<InferenceProvider> InferenceProviders => Set<InferenceProvider>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

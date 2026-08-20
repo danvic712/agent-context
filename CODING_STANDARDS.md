@@ -73,6 +73,29 @@ PascalCase/camelCase identifiers.
   before they are merged. Existing legacy tables are not renamed as part of
   an MVP feature unless the ticket explicitly includes that migration.
 
+## Database initialization — EF Core migrations are the source of truth
+
+All database initialization must be implemented through EF Core migrations.
+This includes default, reference, and feature-introduced records. Prefer
+explicit `migrationBuilder.InsertData` calls; use `migrationBuilder.Sql` only
+when PostgreSQL-specific SQL or a conditional/idempotent insert is required.
+
+- Do not create initial data from `Program.cs`, application services, hosted
+  services, request handlers, or other runtime startup paths.
+- Migration data must use deterministic identifiers and explicit values so a
+  fresh database can be reproduced from the migration history alone.
+- Never place API keys, passwords, tokens, or other secrets in migrations.
+  Seed only credential-free records; secrets must be entered through the
+  configuration flow and protected before persistence.
+- When a migration adds defaults to a database that may already contain user
+  data, the migration must avoid duplicate rows and must not overwrite or
+  delete existing records. `Down` operations must be limited to rows owned by
+  that migration where possible.
+- Review the generated migration and confirm it appears in
+  `dotnet ef migrations list` before merging. The application may apply
+  pending migrations at startup, but it must not contain a second runtime data
+  initialization mechanism.
+
 ## Configuration — platform preferences and inference live in the database
 
 Platform preferences (language and theme) are stored in the `settings` table,

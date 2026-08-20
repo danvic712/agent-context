@@ -9,8 +9,14 @@ public sealed class AppSettingConfiguration : IEntityTypeConfiguration<AppSettin
     public void Configure(EntityTypeBuilder<AppSetting> builder)
     {
         builder.ToTable("settings");
-        builder.HasKey(s => s.Key);
-        builder.Property(s => s.Key).HasMaxLength(64);
-        builder.Property(s => s.Value).HasMaxLength(1024).IsRequired();
+        builder.HasKey(s => s.Key).HasName("pk_settings");
+        builder.Property(s => s.Key)
+            .HasColumnName("key")
+            .HasMaxLength(64)
+            .IsRequired();
+        builder.Property(s => s.Value)
+            .HasColumnName("value")
+            .HasMaxLength(1024)
+            .IsRequired();
     }
 }

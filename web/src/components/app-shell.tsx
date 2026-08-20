@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIcon, BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, WrenchIcon } from 'lucide-react'
+import { ActivityIcon, BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
@@ -63,10 +63,10 @@ export function AppShell() {
           {/* Brand */}
           <div className="flex shrink-0 items-center gap-2.5">
             <div
-              className="flex size-7 items-center justify-center rounded-[11px] text-[14px]"
-              style={{ background: 'var(--accent)', boxShadow: '0 4px 12px var(--accent-shadow)', border: '1px solid var(--line2)' }}
+              className="flex size-7 items-center justify-center rounded-[13px_17px_13px_17px] text-white"
+              style={{ background: 'linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--hi)))', boxShadow: '0 4px 12px var(--accent-shadow)', border: '1px solid var(--line2)', transform: 'rotate(-4deg)' }}
             >
-              🌿
+              <SparklesIcon className="size-4" />
             </div>
             <div className="hidden sm:block">
               <div className="serif text-[16px] font-semibold leading-none">{t('appShell.title')}</div>

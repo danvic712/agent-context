@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>模型服务配置 · 方案 C 原型</title>
+    <title>模型服务配置</title>
     <style>
       :root {
         --paper: #eef2f6;
@@ -271,11 +271,11 @@
         saved: false,
         providers: [
           { id: 'openai', name: 'OpenAI', providerType: 'openai-compatible', baseUrl: 'https://api.openai.com/v1', apiKeySet: true, keyDraft: '' },
-          { id: 'ollama', name: '本地 Ollama', providerType: 'openai-compatible', baseUrl: 'http://localhost:11434/v1', apiKeySet: true, keyDraft: '' }
+          { id: 'deepseek', name: 'DeepSeek', providerType: 'openai-compatible', baseUrl: 'https://api.deepseek.com/v1', apiKeySet: true, keyDraft: '' }
         ],
         routes: {
           chat: { providerId: 'openai', model: 'gpt-4o-mini' },
-          embedding: { providerId: 'ollama', model: 'nomic-embed-text' }
+          embedding: { providerId: 'openai', model: 'text-embedding-3-small' }
         }
       };
 
@@ -307,10 +307,10 @@
         const testPassed = state.testStatus === 'success';
         const canSave = allReady() && testPassed && !state.testing;
         const setupReview = state.surface === 'setup' && state.setupStep === 3;
-        const title = state.surface === 'setup' ? (setupReview ? '确认并创建工作区' : '配置模型服务') : '模型服务配置';
+        const title = state.surface === 'setup' ? (setupReview ? '确认并创建工作区' : '配置模型服务') : '平台设置';
         const description = state.surface === 'setup'
           ? (setupReview ? '最后确认本次 Setup 的模型服务和保存范围。点击创建后，User、Workspace 与 Inference 配置才会一起写入。' : '第 2 步：选择知识提取和检索所使用的服务。配置只保留在当前 Setup 向导，验证通过后进入 Review。')
-          : '在保存前确认每项能力都有可用的 Provider 与 Model。模型服务更新后无需重启。';
+          : '管理平台级外观、语言和模型服务配置。模型服务更新后无需重启。';
         const actionText = state.surface === 'setup'
           ? (setupReview ? '创建工作区' : '下一步：Review & create')
           : (state.saved ? '已保存' : '保存配置');
@@ -325,7 +325,7 @@
           <header class="topbar">
             <div class="brand">
               <div class="brand-mark">${icon('sparkles', 18)}</div>
-              <div><div class="brand-title">Agent Context</div><div class="brand-subtitle">INFERENCE SERVICE PROTOTYPE</div></div>
+              <div><div class="brand-title">Agent Context</div><div class="brand-subtitle">INFERENCE SERVICE</div></div>
             </div>
             <div class="surface-tabs" role="tablist" aria-label="页面入口">
               <button class="surface-tab ${state.surface === 'settings' ? 'active' : ''}" data-surface="settings" type="button">Settings</button>
@@ -335,7 +335,7 @@
           <main>
             <section class="hero">
               <div>
-                <div class="kicker">方案 C · Readiness checklist</div>
+                <div class="kicker">平台设置</div>
                 <h1 class="serif">${title}</h1>
                 <p>${description}</p>
               </div>
@@ -385,7 +385,7 @@
               </div>
             </div>
           </main>
-          <div class="footer-note">PROTOTYPE ONLY · 内存状态 · 不调用真实后端 · 独立 Inference 表 · 方案 C Readiness checklist</div>`;
+        `;
 
         const provider = providerFor(state.selectedProvider);
         const editor = document.getElementById('provider-editor');
@@ -436,11 +436,11 @@
         inferenceConfiguration: { id: 'platform-inference', name: 'Platform default' },
         routes: [
           { id: 'chat-route', inferenceConfigurationId: 'platform-inference', capability: 'chat', providerId: 'openai', model: 'gpt-4o-mini' },
-          { id: 'embedding-route', inferenceConfigurationId: 'platform-inference', capability: 'embedding', providerId: 'ollama', model: 'nomic-embed-text' }
+          { id: 'embedding-route', inferenceConfigurationId: 'platform-inference', capability: 'embedding', providerId: 'openai', model: 'text-embedding-3-small' }
         ],
         providers: [
           { id: 'openai', name: 'OpenAI', providerType: 'openai-compatible', baseUrl: 'https://api.openai.com/v1', apiKeySecretRef: '<write-only / masked>' },
-          { id: 'ollama', name: 'Local Ollama', providerType: 'openai-compatible', baseUrl: 'http://localhost:11434/v1', apiKeySecretRef: '<write-only / masked>' }
+          { id: 'deepseek', name: 'DeepSeek', providerType: 'openai-compatible', baseUrl: 'https://api.deepseek.com/v1', apiKeySecretRef: '<write-only / masked>' }
         ]
       }, null, 2);
       render();
