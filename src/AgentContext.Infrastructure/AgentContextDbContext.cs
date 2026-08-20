@@ -13,13 +13,13 @@ namespace AgentContext.Infrastructure;
 /// </summary>
 public class AgentContextDbContext(DbContextOptions<AgentContextDbContext> options) : DbContext(options)
 {
-    public DbSet<Workspace> Workspaces => Set<Workspace>();
-    public DbSet<DomainEntity> Domains => Set<DomainEntity>();
+    public virtual DbSet<Workspace> Workspaces => Set<Workspace>();
+    public virtual DbSet<DomainEntity> Domains => Set<DomainEntity>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Knowledge> Knowledge => Set<Knowledge>();
-    public DbSet<Skill> Skills => Set<Skill>();
+    public virtual DbSet<Skill> Skills => Set<Skill>();
     public DbSet<Usage> Usage => Set<Usage>();
     public virtual DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();

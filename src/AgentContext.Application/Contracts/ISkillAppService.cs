@@ -18,8 +18,16 @@ public interface ISkillAppService
     /// </summary>
     Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>All Skills in the platform, newest version per (domain, slug) first.</summary>
-    Task<IReadOnlyList<SkillListItem>> ListAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Returns one bounded page of the latest version per (domain, slug), ordered
+    /// by newest update with a stable cursor tie-breaker. When <paramref name="pageSize"/>
+    /// is omitted, the service uses the default page size of 20; values above 100
+    /// are rejected with a localized application error.
+    /// </summary>
+    Task<SkillListPage> ListAsync(
+        int? pageSize = null,
+        string? cursor = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// get_skill: the latest published version of the skill at (domain, slug),

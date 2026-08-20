@@ -24,10 +24,17 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
-    /// <summary>All Skills — the latest version of each (domain, slug), newest first.</summary>
+    /// <summary>
+    /// Returns a bounded page of the latest version of each (domain, slug), newest
+    /// first. The default page size is 20 and the maximum is 100. Pass the opaque
+    /// response cursor as <c>cursor</c> to continue scrolling.
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<SkillListItem>>> List(CancellationToken cancellationToken)
-        => Ok(await skills.ListAsync(cancellationToken));
+    public async Task<ActionResult<SkillListPage>> List(
+        [FromQuery] int? pageSize,
+        [FromQuery] string? cursor,
+        CancellationToken cancellationToken)
+        => Ok(await skills.ListAsync(pageSize, cursor, cancellationToken));
 
     /// <summary>
     /// get_skill over REST (AC3): resolves the latest version of a skill by
