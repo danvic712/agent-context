@@ -25,9 +25,26 @@ public sealed class Skill
     /// <summary>Monotonically increasing per (domain, slug); publish bumps it.</summary>
     public int Version { get; set; } = 1;
 
+    /// <summary>Id of the version this Skill was created from, when applicable.</summary>
+    public Guid? PreviousVersionId { get; set; }
+
+    /// <summary>How this Skill package entered the platform.</summary>
+    public string? SourceType { get; set; }
+
+    /// <summary>Remote source URL for catalog-backed Skills.</summary>
+    public string? SourceUrl { get; set; }
+
+    /// <summary>Remote source revision captured at download time.</summary>
+    public string? SourceRevision { get; set; }
+
+    /// <summary>Deterministic package digest captured at download time.</summary>
+    public string? SourceDigest { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public Workspace Workspace { get; set; } = null!;
     public Domain Domain { get; set; } = null!;
+    public Skill? PreviousVersion { get; set; }
+    public List<Skill> NextVersions { get; set; } = [];
 }
