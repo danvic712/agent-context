@@ -54,6 +54,7 @@ public static class ErrorCodes
         public const string ImportInvalid = "skill.importInvalid";
         public const string PageSizeInvalid = "skill.pageSizeInvalid";
         public const string CursorInvalid = "skill.cursorInvalid";
+        public const string SortInvalid = "skill.sortInvalid";
     }
 
     public static class Pricing

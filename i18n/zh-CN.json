@@ -236,7 +236,24 @@
       "visibleCount": "已显示 {{count}} 个",
       "installedKicker": "你的技能库",
       "installedDescription": "浏览工作区中每个 Skill 的最新版本。",
-      "filterInstalled": "筛选已安装的 Skills…",
+      "searchFiltersTitle": "查找已安装的 Skills",
+      "searchFiltersDescription": "按名称、别名和描述搜索，也可以按领域、来源筛选并自定义排序。",
+      "searchLabel": "关键词",
+      "searchPlaceholder": "名称、别名或描述…",
+      "domainFilterLabel": "领域",
+      "domainFilterPlaceholder": "所有领域",
+      "sourceFilterLabel": "来源",
+      "allSources": "所有来源",
+      "sortLabel": "排序方式",
+      "sort": {
+        "updated-desc": "最近更新",
+        "updated-asc": "最早更新",
+        "name-asc": "名称 A → Z",
+        "name-desc": "名称 Z → A",
+        "version-desc": "版本从高到低",
+        "version-asc": "版本从低到高"
+      },
+      "clearFilters": "清除筛选",
       "refresh": "刷新",
       "createSkill": "创建 Skill",
       "uploadSkill": "上传 ZIP",
@@ -413,7 +430,8 @@
       "packageTooLarge": "上传的技能包超过 50 MB 上限。",
       "importInvalid": "上传的归档无效或包含不安全的路径。",
       "pageSizeInvalid": "分页大小必须在 {0} 到 {1} 之间。",
-      "cursorInvalid": "技能列表游标无效。"
+      "cursorInvalid": "技能列表游标无效。",
+      "sortInvalid": "技能列表排序方式无效。"
     },
     "pricing": {
       "modelRequired": "需要填写模型名称。",

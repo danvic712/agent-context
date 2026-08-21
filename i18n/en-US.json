@@ -236,7 +236,24 @@
       "visibleCount": "{{count}} shown",
       "installedKicker": "YOUR LIBRARY",
       "installedDescription": "Browse the latest version of every Skill installed in this workspace.",
-      "filterInstalled": "Filter installed Skills…",
+      "searchFiltersTitle": "Find installed Skills",
+      "searchFiltersDescription": "Search across metadata, narrow by domain or source, and choose the order that works for you.",
+      "searchLabel": "Keyword",
+      "searchPlaceholder": "Name, slug, or description…",
+      "domainFilterLabel": "Domain",
+      "domainFilterPlaceholder": "Any domain",
+      "sourceFilterLabel": "Source",
+      "allSources": "All sources",
+      "sortLabel": "Sort by",
+      "sort": {
+        "updated-desc": "Recently updated",
+        "updated-asc": "Least recently updated",
+        "name-asc": "Name A → Z",
+        "name-desc": "Name Z → A",
+        "version-desc": "Version high → low",
+        "version-asc": "Version low → high"
+      },
+      "clearFilters": "Clear filters",
       "refresh": "Refresh",
       "createSkill": "Create skill",
       "uploadSkill": "Upload ZIP",
@@ -413,7 +430,8 @@
       "packageTooLarge": "The uploaded package exceeds the 50 MB limit.",
       "importInvalid": "The uploaded archive is invalid or contains an unsafe path.",
       "pageSizeInvalid": "Page size must be between {0} and {1}.",
-      "cursorInvalid": "The skill list cursor is invalid."
+      "cursorInvalid": "The skill list cursor is invalid.",
+      "sortInvalid": "The skill list sort is invalid."
     },
     "pricing": {
       "modelRequired": "Model name is required.",

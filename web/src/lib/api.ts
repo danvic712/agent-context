@@ -224,6 +224,15 @@ export interface SkillItem {
 
 export type SkillSourceType = 'manual' | 'zip' | 'skills_sh' | 'local_copy'
 
+export type SkillListSort = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc' | 'version-desc' | 'version-asc'
+
+export interface SkillListFilters {
+  search?: string
+  domain?: string
+  sourceType?: SkillSourceType
+  sort?: SkillListSort
+}
+
 export interface SkillFileInfo {
   path: string
   size: number
@@ -262,9 +271,17 @@ export async function listSkills(
   pageSize = 20,
   cursor?: string | null,
   signal?: AbortSignal,
+  filters?: SkillListFilters,
 ): Promise<SkillListPage> {
   const { data } = await http.get<SkillListPage>('/skills', {
-    params: { pageSize, cursor: cursor ?? undefined },
+    params: {
+      pageSize,
+      cursor: cursor ?? undefined,
+      search: filters?.search || undefined,
+      domain: filters?.domain || undefined,
+      sourceType: filters?.sourceType || undefined,
+      sort: filters?.sort || undefined,
+    },
     signal,
   })
   return data
