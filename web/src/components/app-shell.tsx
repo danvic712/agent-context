@@ -7,7 +7,9 @@ import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
-import { SkillManager } from '@/components/skill-manager'
+import { SkillEditorRoutePlaceholder } from '@/components/skills/skill-editor-route-placeholder'
+import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
+import { SkillUploadPage } from '@/components/skills/skill-upload-page'
 import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
 import { getDashboardUrl, getHealth } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -82,7 +84,7 @@ export function AppShell() {
               <NavLink
                 key={item.id}
                 to={item.path}
-                end
+                end={item.id !== 'skills'}
                 className={({ isActive }) => cn(
                   'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all duration-150',
                   isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground',
@@ -142,7 +144,9 @@ export function AppShell() {
           <Route path="/knowledge" element={<KnowledgeManager mode="all" />} />
           <Route path="/review" element={<KnowledgeManager mode="review" />} />
           <Route path="/archived" element={<KnowledgeManager mode="archived" />} />
-          <Route path="/skills" element={<SkillManager />} />
+          <Route path="/skills" element={<SkillsLibraryPage />} />
+          <Route path="/skills/upload" element={<SkillUploadPage />} />
+          <Route path="/skills/editor/:id?" element={<SkillEditorRoutePlaceholder />} />
           <Route path="/analytics" element={<AnalyticsOverview />} />
           <Route path="/health" element={<EngineHealthView />} />
           <Route path="/settings" element={<SettingsPage />} />

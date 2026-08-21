@@ -219,8 +219,10 @@ export interface SkillItem {
   version: number
   createdAtUtc: string
   updatedAtUtc: string
-  sourceType: string | null
+  sourceType: SkillSourceType | null
 }
+
+export type SkillSourceType = 'manual' | 'zip' | 'skills_sh' | 'local_copy'
 
 export interface SkillFileInfo {
   path: string
@@ -232,6 +234,14 @@ export interface SkillDetail extends SkillItem {
   manifest: SkillFileInfo[]
 }
 
+export interface SkillListPage {
+  pageSize: number
+  cursor: string | null
+  items: SkillItem[]
+  hasMore: boolean
+  nextCursor: string | null
+}
+
 export interface SkillInput {
   domain: string
   slug: string
@@ -240,8 +250,44 @@ export interface SkillInput {
   instructions: string
 }
 
-export async function listSkills(): Promise<SkillItem[]> {
-  const { data } = await http.get<SkillItem[]>('/skills')
+export interface SkillUploadInput {
+  domain: string
+  slug: string
+  name: string
+  description: string
+  archive: File
+}
+
+export async function listSkills(
+  pageSize = 20,
+  cursor?: string | null,
+  signal?: AbortSignal,
+): Promise<SkillListPage> {
+  const { data } = await http.get<SkillListPage>('/skills', {
+    params: { pageSize, cursor: cursor ?? undefined },
+    signal,
+  })
+  return data
+}
+
+export async function uploadSkill(
+  input: SkillUploadInput,
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal,
+): Promise<SkillDetail> {
+  const form = new FormData()
+  form.append('domain', input.domain)
+  form.append('slug', input.slug)
+  form.append('name', input.name)
+  form.append('description', input.description)
+  form.append('archive', input.archive, input.archive.name)
+
+  const { data } = await http.post<SkillDetail>('/skills/upload', form, {
+    signal,
+    onUploadProgress: (event) => {
+      if (event.total) onProgress?.(Math.round((event.loaded / event.total) * 100))
+    },
+  })
   return data
 }
 
