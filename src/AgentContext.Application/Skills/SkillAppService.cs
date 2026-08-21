@@ -1,4 +1,5 @@
 using System.Net;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
@@ -37,6 +38,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
     ];
 
     private static readonly Regex SlugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> VersionLocks = new(StringComparer.Ordinal);
 
     public async Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default)
     {
@@ -87,7 +89,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             throw;
         }
 
-        return await ToDetailAsync(skill, domain.Name, cancellationToken);
+        return await ToDetailAsync(skill, domain.Name, isLatest: true, cancellationToken);
     }
 
     public async Task<SkillDetail> CreateFromZipAsync(
@@ -141,7 +143,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             await db.SaveChangesAsync(cancellationToken);
             packageCreated = false;
 
-            return await ToDetailAsync(skill, domain.Name, cancellationToken);
+            return await ToDetailAsync(skill, domain.Name, isLatest: true, cancellationToken);
         }
         catch
         {
@@ -262,7 +264,8 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
-        return await ToDetailAsync(skill.s, skill.DomainName ?? "unknown", cancellationToken);
+        var latestId = await LatestIdAsync(skill.s, cancellationToken);
+        return await ToDetailAsync(skill.s, skill.DomainName ?? "unknown", skill.s.Id == latestId, cancellationToken);
     }
 
     public async Task<SkillDetail> GetBySlugAsync(string domainName, string slug, CancellationToken cancellationToken = default)
@@ -273,24 +276,56 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         var skill = await FindLatestAsync(domainName, slug, cancellationToken)
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.SlugNotFound, slug, domainName);
 
-        return await ToDetailAsync(skill, domainName, cancellationToken);
+        return await ToDetailAsync(skill, domainName, true, cancellationToken);
     }
 
     public async Task<SkillDetail> PublishAsync(Guid id, PublishSkillRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        return await PublishVersionAsync(
+            id,
+            new PublishSkillVersionRequest(request.Name, request.Description, request.Instructions),
+            cancellationToken);
+    }
+
+    public async Task<SkillDetail> PublishVersionAsync(
+        Guid id,
+        PublishSkillVersionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var current = await db.Skills
             .Include(s => s.Domain)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
-        // The next version is current-max + 1; the existing row stays as history.
-        var maxVersion = await db.Skills
+        var lockKey = $"{current.WorkspaceId:N}:{current.DomainId:N}:{current.Slug}";
+        var versionLock = VersionLocks.GetOrAdd(lockKey, static _ => new SemaphoreSlim(1, 1));
+        await versionLock.WaitAsync(cancellationToken);
+        try
+        {
+        // Re-read inside the per-lineage lock so concurrent requests in this
+        // process resolve the new latest row before staging a package.
+        current = await db.Skills
+            .Include(s => s.Domain)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+
+        var latest = await db.Skills
             .Where(s => s.WorkspaceId == current.WorkspaceId
                 && s.DomainId == current.DomainId
                 && s.Slug == current.Slug)
-            .MaxAsync(s => (int?)s.Version, cancellationToken) ?? 0;
+            .OrderByDescending(s => s.Version)
+            .FirstAsync(cancellationToken);
+        if (latest.Id != current.Id)
+        {
+            throw VersionConflict(latest);
+        }
+
+        ValidateName(request.Name);
 
         var now = DateTimeOffset.UtcNow;
         var next = new Skill
@@ -301,22 +336,85 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             Name = request.Name.Trim(),
             Description = request.Description.Trim(),
             Instructions = request.Instructions.Trim(),
-            Version = maxVersion + 1,
+            Version = latest.Version + 1,
+            PreviousVersionId = current.Id,
             SourceType = current.SourceType,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
         };
-        db.Skills.Add(next);
-        await db.SaveChangesAsync(cancellationToken);
 
-        // The new version inherits the whole package (all files), with SKILL.md
-        // overridden by the edited instructions.
-        packages.CopyPackage(
-            current.Domain.Name, current.Slug, current.Version,
-            current.Domain.Name, next.Slug, next.Version,
-            request.Instructions.Trim());
+        // Materialize only the current package when a legacy row has no package.
+        // Historical packages are never materialized as a side effect of reads.
+        var sourcePackageExisted = packages.PackageExists(current.Domain.Name, current.Slug, current.Version);
+        var packagePublished = false;
+        try
+        {
+            packages.EnsurePackage(current.Domain.Name, current.Slug, current.Version, current.Instructions);
+            packages.PublishPackage(
+                current.Domain.Name,
+                current.Slug,
+                current.Version,
+                current.Domain.Name,
+                next.Slug,
+                next.Version,
+                next.Instructions,
+                request,
+                cancellationToken);
+            packagePublished = true;
 
-        return await ToDetailAsync(next, current.Domain.Name, cancellationToken);
+            db.Skills.Add(next);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            if (packagePublished)
+            {
+                packages.DeletePackage(current.Domain.Name, next.Slug, next.Version);
+            }
+
+            if (!sourcePackageExisted)
+            {
+                packages.DeletePackage(current.Domain.Name, current.Slug, current.Version);
+            }
+
+            throw;
+        }
+
+        return await ToDetailAsync(next, current.Domain.Name, true, cancellationToken);
+        }
+        finally
+        {
+            versionLock.Release();
+        }
+    }
+
+    public async Task<SkillHistory> GetHistoryAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var target = await db.Skills.AsNoTracking()
+            .Where(s => s.Id == id)
+            .Select(s => new { s.WorkspaceId, s.DomainId, s.Slug })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+
+        var versions = await db.Skills.AsNoTracking()
+            .Where(s => s.WorkspaceId == target.WorkspaceId
+                && s.DomainId == target.DomainId
+                && s.Slug == target.Slug)
+            .OrderByDescending(s => s.Version)
+            .ToListAsync(cancellationToken);
+        var latest = versions[0];
+        return new SkillHistory(
+            latest.Id,
+            versions.Select(version => new SkillVersionSummary(
+                version.Id,
+                version.PreviousVersionId,
+                version.Version,
+                version.Name,
+                version.Description,
+                version.CreatedAtUtc,
+                version.UpdatedAtUtc,
+                version.SourceType,
+                version.Id == latest.Id)).ToList());
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -381,32 +479,33 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
 
         return new SkillPackage(
             skill.Id, domain, skill.Slug, skill.Name, skill.Description, skill.Version,
-            skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, files);
+            skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, files,
+            packages.ListFolders(domain, skill.Slug, skill.Version));
     }
 
     public async Task<byte[]> ReadFileAsync(Guid id, string path, CancellationToken cancellationToken = default)
     {
-        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, false, cancellationToken);
         return packages.ReadFile(domainName, slug, version, path);
     }
 
     public async Task<SkillDetail> WriteFileAsync(Guid id, string path, byte[] content, CancellationToken cancellationToken = default)
     {
-        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, true, cancellationToken);
         packages.WriteFile(domainName, slug, version, path, content);
         return await GetAsync(id, cancellationToken);
     }
 
     public async Task<SkillDetail> DeleteFileAsync(Guid id, string path, CancellationToken cancellationToken = default)
     {
-        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, true, cancellationToken);
         packages.DeleteFile(domainName, slug, version, path);
         return await GetAsync(id, cancellationToken);
     }
 
     public async Task<SkillDetail> ImportZipAsync(Guid id, Stream zipStream, CancellationToken cancellationToken = default)
     {
-        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, true, cancellationToken);
         await packages.ImportZipAsync(domainName, slug, version, zipStream, cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
@@ -428,11 +527,13 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
     }
 
     private async Task<(string DomainName, string Slug, int Version)> ResolvePackageLocationAsync(
-        Guid id, CancellationToken cancellationToken)
+        Guid id,
+        bool requireLatest,
+        CancellationToken cancellationToken)
     {
         var skill = await db.Skills.AsNoTracking()
             .Where(s => s.Id == id)
-            .Select(s => new { s.Slug, s.Version, DomainName = s.Domain != null ? s.Domain.Name : null })
+            .Select(s => new { s.WorkspaceId, s.DomainId, s.Slug, s.Version, DomainName = s.Domain != null ? s.Domain.Name : null })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
 
@@ -441,20 +542,66 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
         }
 
+        if (requireLatest)
+        {
+            var latest = await db.Skills
+                .Where(s => s.WorkspaceId == skill.WorkspaceId
+                    && s.DomainId == skill.DomainId
+                    && s.Slug == skill.Slug)
+                .OrderByDescending(s => s.Version)
+                .FirstAsync(cancellationToken);
+            if (latest.Version != skill.Version)
+            {
+                throw new LocalizedException(
+                    HttpStatusCode.Conflict,
+                    ErrorCodes.Skill.VersionReadOnly,
+                    skill.Version);
+            }
+        }
+
         return (skill.DomainName, skill.Slug, skill.Version);
     }
 
-    private async Task<SkillDetail> ToDetailAsync(Skill skill, string domainName, CancellationToken cancellationToken)
+    private async Task<SkillDetail> ToDetailAsync(
+        Skill skill,
+        string domainName,
+        bool isLatest,
+        CancellationToken cancellationToken)
     {
-        // Lazy migration (T12 AC5): a package missing its directory is seeded from
-        // the legacy Instructions column — idempotent, so nothing is lost.
-        packages.EnsurePackage(domainName, skill.Slug, skill.Version, skill.Instructions);
+        // Lazy migration (T12 AC5) is only allowed for the latest row. A
+        // historical read must not create or otherwise mutate its package.
+        if (isLatest)
+        {
+            packages.EnsurePackage(domainName, skill.Slug, skill.Version, skill.Instructions);
+        }
+
         var manifest = packages.ListFiles(domainName, skill.Slug, skill.Version);
+        var folders = packages.ListFolders(domainName, skill.Slug, skill.Version);
 
         return new SkillDetail(
-            skill.Id, domainName, skill.Slug, skill.Name, skill.Description,
-            skill.Version, skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, skill.SourceType);
+            skill.Id, skill.PreviousVersionId, domainName, skill.Slug, skill.Name, skill.Description,
+            skill.Version, skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, skill.SourceType, isLatest, folders);
     }
+
+    private async Task<Guid> LatestIdAsync(Skill skill, CancellationToken cancellationToken)
+        => await db.Skills
+            .Where(candidate => candidate.WorkspaceId == skill.WorkspaceId
+                && candidate.DomainId == skill.DomainId
+                && candidate.Slug == skill.Slug)
+            .OrderByDescending(candidate => candidate.Version)
+            .Select(candidate => candidate.Id)
+            .FirstAsync(cancellationToken);
+
+    private static LocalizedException VersionConflict(Skill latest)
+        => new(
+            HttpStatusCode.Conflict,
+            ErrorCodes.Skill.VersionConflict,
+            new Dictionary<string, object?>
+            {
+                ["latestId"] = latest.Id,
+                ["latestVersion"] = latest.Version,
+            },
+            latest.Version);
 
     private async Task<DomainEntity> ResolveDomainAsync(string name, CancellationToken cancellationToken)
     {

@@ -19,11 +19,17 @@ public interface ISkillPackageStore
     /// </summary>
     string EnsurePackage(string domainName, string slug, int version, string? fallbackMarkdown = null);
 
+    /// <summary>Returns whether a concrete version directory already exists.</summary>
+    bool PackageExists(string domainName, string slug, int version);
+
     /// <summary>Creates a fresh package (used by create/publish) with SKILL.md from the input markdown.</summary>
     void CreatePackage(string domainName, string slug, int version, string? initialMarkdown);
 
     /// <summary>All files in the package, relative paths, ordered by name.</summary>
     IReadOnlyList<SkillFileInfo> ListFiles(string domainName, string slug, int version);
+
+    /// <summary>All persistent folders, including folders without files.</summary>
+    IReadOnlyList<string> ListFolders(string domainName, string slug, int version);
 
     /// <summary>Reads a file's raw bytes.</summary>
     byte[] ReadFile(string domainName, string slug, int version, string path);
@@ -42,6 +48,21 @@ public interface ISkillPackageStore
         string sourceDomain, string sourceSlug, int sourceVersion,
         string targetDomain, string targetSlug, int targetVersion,
         string? overrideMain = null);
+
+    /// <summary>
+    /// Builds and atomically installs a new package directory from a source
+    /// version plus staged changes. The source package is never modified.
+    /// </summary>
+    bool PublishPackage(
+        string sourceDomain,
+        string sourceSlug,
+        int sourceVersion,
+        string targetDomain,
+        string targetSlug,
+        int targetVersion,
+        string instructions,
+        PublishSkillVersionRequest changes,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Deletes the whole package directory (used by Skill deletion).</summary>
     void DeletePackage(string domainName, string slug, int version);

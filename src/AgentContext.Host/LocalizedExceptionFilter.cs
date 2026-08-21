@@ -25,11 +25,20 @@ public sealed class LocalizedExceptionFilter(
 
         var locale = await settings.GetLanguageAsync(context.HttpContext.RequestAborted);
 
-        context.Result = new ObjectResult(new
+        var body = new Dictionary<string, object?>
         {
-            errorCode = ex.ErrorCode,
-            message = translations.GetError(ex.ErrorCode, locale, ex.Args),
-        })
+            ["errorCode"] = ex.ErrorCode,
+            ["message"] = translations.GetError(ex.ErrorCode, locale, ex.Args),
+        };
+        if (ex.Details is not null)
+        {
+            foreach (var detail in ex.Details)
+            {
+                body[detail.Key] = detail.Value;
+            }
+        }
+
+        context.Result = new ObjectResult(body)
         {
             StatusCode = (int)ex.StatusCode,
         };

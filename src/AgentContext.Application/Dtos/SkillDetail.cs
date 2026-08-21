@@ -8,6 +8,7 @@ namespace AgentContext.Application.Dtos;
 /// </summary>
 public sealed record SkillDetail(
     Guid Id,
+    Guid? PreviousVersionId,
     string DomainName,
     string Slug,
     string Name,
@@ -16,4 +17,6 @@ public sealed record SkillDetail(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
     IReadOnlyList<SkillFileInfo> Manifest,
-    string? SourceType = null);
+    string? SourceType = null,
+    bool IsLatest = true,
+    IReadOnlyList<string>? Folders = null);

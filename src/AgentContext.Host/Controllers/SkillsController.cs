@@ -90,6 +90,22 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
         Guid id, [FromBody] PublishSkillRequest request, CancellationToken cancellationToken)
         => Ok(await skills.PublishAsync(id, request, cancellationToken));
 
+    /// <summary>
+    /// Atomically publishes staged metadata and package changes as a new
+    /// immutable version. A stale base returns 409 with latestId/latestVersion.
+    /// </summary>
+    [HttpPost("{id:guid}/versions")]
+    public async Task<ActionResult<SkillDetail>> PublishVersion(
+        Guid id,
+        [FromBody] PublishSkillVersionRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await skills.PublishVersionAsync(id, request, cancellationToken));
+
+    /// <summary>Returns all versions for a Skill lineage, newest first.</summary>
+    [HttpGet("{id:guid}/history")]
+    public async Task<ActionResult<SkillHistory>> History(Guid id, CancellationToken cancellationToken)
+        => Ok(await skills.GetHistoryAsync(id, cancellationToken));
+
     /// <summary>Delete the skill — every version of its (domain, slug) (AC4).</summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

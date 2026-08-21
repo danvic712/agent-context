@@ -38,6 +38,9 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         return dir;
     }
 
+    public bool PackageExists(string domainName, string slug, int version)
+        => Directory.Exists(PackageDirectory(domainName, slug, version));
+
     public void CreatePackage(string domainName, string slug, int version, string? initialMarkdown)
     {
         var dir = PackageDirectory(domainName, slug, version);
@@ -64,6 +67,21 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
                 new FileInfo(file).Length,
                 IsBinary(file)))
             .OrderBy(f => f.Path, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    public IReadOnlyList<string> ListFolders(string domainName, string slug, int version)
+    {
+        var dir = PackageDirectory(domainName, slug, version);
+        if (!Directory.Exists(dir))
+        {
+            return [];
+        }
+
+        return Directory.EnumerateDirectories(dir, "*", SearchOption.AllDirectories)
+            .Select(folder => Path.GetRelativePath(dir, folder).Replace(Path.DirectorySeparatorChar, '/'))
+            .Where(path => path.Length > 0)
+            .OrderBy(path => path, StringComparer.Ordinal)
             .ToList();
     }
 
@@ -132,6 +150,57 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         if (overrideMain is not null)
         {
             File.WriteAllText(Path.Combine(target, MainFile), overrideMain);
+        }
+    }
+
+    public bool PublishPackage(
+        string sourceDomain,
+        string sourceSlug,
+        int sourceVersion,
+        string targetDomain,
+        string targetSlug,
+        int targetVersion,
+        string instructions,
+        PublishSkillVersionRequest changes,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var source = PackageDirectory(sourceDomain, sourceSlug, sourceVersion);
+        if (!Directory.Exists(source))
+        {
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, MainFile);
+        }
+
+        var target = PackageDirectory(targetDomain, targetSlug, targetVersion);
+        var staging = CreateStagingDirectory();
+        try
+        {
+            CopyDirectory(source, staging, cancellationToken);
+            ApplyDraft(staging, instructions, changes, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            try
+            {
+                Directory.Move(staging, target);
+                staging = string.Empty;
+                return true;
+            }
+            catch (IOException) when (Directory.Exists(target))
+            {
+                throw new LocalizedException(
+                    HttpStatusCode.Conflict,
+                    ErrorCodes.Skill.PackageExists,
+                    targetDomain,
+                    targetSlug,
+                    targetVersion);
+            }
+        }
+        finally
+        {
+            DeleteStagingDirectory(staging);
         }
     }
 
@@ -456,6 +525,139 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         }
 
         return full;
+    }
+
+    private void ApplyDraft(
+        string staging,
+        string instructions,
+        PublishSkillVersionRequest changes,
+        CancellationToken cancellationToken)
+    {
+        foreach (var rename in changes.Renames ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var from = NormalizePath(rename.From);
+            var to = NormalizePath(rename.To);
+            var source = ResolveDraftPath(staging, from);
+            var target = ResolveDraftPath(staging, to);
+            if (from == to || (Directory.Exists(source) && to.StartsWith(from + "/", StringComparison.Ordinal)))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+            }
+
+            if (!File.Exists(source) && !Directory.Exists(source))
+            {
+                throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, from);
+            }
+
+            if (File.Exists(target) || Directory.Exists(target))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            if (Directory.Exists(source))
+            {
+                Directory.Move(source, target);
+            }
+            else
+            {
+                File.Move(source, target);
+            }
+        }
+
+        foreach (var pathValue in changes.DeletedPaths ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var path = NormalizePath(pathValue);
+            var target = ResolveDraftPath(staging, path);
+            if (Directory.Exists(target))
+            {
+                Directory.Delete(target, recursive: true);
+            }
+            else if (File.Exists(target))
+            {
+                File.Delete(target);
+            }
+        }
+
+        foreach (var folderValue in changes.Folders ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var folder = NormalizePath(folderValue);
+            var target = ResolveDraftPath(staging, folder);
+            if (File.Exists(target))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+            }
+
+            Directory.CreateDirectory(target);
+        }
+
+        foreach (var file in changes.Files ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var path = NormalizePath(file.Path);
+            byte[] content;
+            try
+            {
+                content = Convert.FromBase64String(file.ContentBase64);
+            }
+            catch (FormatException)
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+            }
+
+            if (content.Length > MaxFileBytes)
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FileTooLarge, path);
+            }
+
+            var target = ResolveDraftPath(staging, path);
+            if (Directory.Exists(target))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.WriteAllBytes(target, content);
+        }
+
+        var mainPath = ResolveDraftPath(staging, MainFile);
+        Directory.CreateDirectory(Path.GetDirectoryName(mainPath)!);
+        File.WriteAllText(mainPath, instructions);
+    }
+
+    private static string ResolveDraftPath(string root, string relative)
+    {
+        var full = Path.GetFullPath(Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)));
+        if (!IsWithinDirectory(root, full))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+        }
+
+        return full;
+    }
+
+    private static void CopyDirectory(string source, string target, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(target);
+        foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories)
+                     .OrderBy(path => path.Length))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relative = Path.GetRelativePath(source, directory);
+            Directory.CreateDirectory(Path.Combine(target, relative));
+        }
+
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relative = Path.GetRelativePath(source, file);
+            var destination = Path.Combine(target, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(file, destination, overwrite: false);
+        }
     }
 
     private string PackageDirectory(string domainName, string slug, int version)

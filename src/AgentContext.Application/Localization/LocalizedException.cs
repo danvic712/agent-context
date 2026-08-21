@@ -21,11 +21,24 @@ public sealed class LocalizedException : Exception
     /// <summary>Positional arguments interpolated into the localized template.</summary>
     public object?[] Args { get; }
 
+    /// <summary>Additional structured fields rendered by the REST adapter.</summary>
+    public IReadOnlyDictionary<string, object?>? Details { get; }
+
     public LocalizedException(HttpStatusCode statusCode, string errorCode, params object?[] args)
         : base(errorCode)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
         Args = args;
+    }
+
+    public LocalizedException(
+        HttpStatusCode statusCode,
+        string errorCode,
+        IReadOnlyDictionary<string, object?> details,
+        params object?[] args)
+        : this(statusCode, errorCode, args)
+    {
+        Details = details;
     }
 }

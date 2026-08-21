@@ -354,6 +354,167 @@ public sealed class SkillAppServiceTests
             service.ListAsync(20, null, cancellation.Token));
     }
 
+    [Fact]
+    public async Task Publish_version_creates_a_new_id_and_links_it_to_the_latest_base()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var current = Skill("versioned", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.PackageExists("dev", "versioned", 1)).Returns(true);
+        packages.Setup(store => store.ListFiles("dev", "versioned", 2))
+            .Returns([new SkillFileInfo("SKILL.md", 10, false)]);
+        packages.Setup(store => store.ListFolders("dev", "versioned", 2)).Returns([]);
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [current]).Object,
+            packages.Object);
+
+        var result = await service.PublishVersionAsync(
+            current.Id,
+            new PublishSkillVersionRequest(
+                "Versioned 2",
+                "Updated",
+                "# Updated",
+                [new SkillFileChange("assets/logo.bin", Convert.ToBase64String([0, 1, 255]))],
+                ["empty"],
+                [new SkillPathRename("old", "new")],
+                ["obsolete.txt"]));
+
+        Assert.NotEqual(current.Id, result.Id);
+        Assert.Equal(2, result.Version);
+        Assert.Equal(current.Id, result.PreviousVersionId);
+        Assert.True(result.IsLatest);
+        packages.Verify(store => store.PublishPackage(
+            "dev",
+            "versioned",
+            1,
+            "dev",
+            "versioned",
+            2,
+            "# Updated",
+            It.Is<PublishSkillVersionRequest>(request => request.Folders!.Single() == "empty"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Publish_version_rejects_a_stale_base_with_latest_coordinates()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var first = Skill("versioned", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var latest = Skill("versioned", 2, domain, Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(1));
+        latest.PreviousVersionId = first.Id;
+        var packages = new Mock<ISkillPackageStore>();
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [first, latest]).Object,
+            packages.Object);
+
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() => service.PublishVersionAsync(
+            first.Id,
+            new PublishSkillVersionRequest("Stale", "Stale", "# Stale")));
+
+        Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.VersionConflict, exception.ErrorCode);
+        Assert.Equal(latest.Id, exception.Details!["latestId"]);
+        Assert.Equal(2, exception.Details["latestVersion"]);
+        packages.Verify(store => store.PublishPackage(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<PublishSkillVersionRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task History_accepts_any_version_id_and_marks_only_the_latest_version()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var first = Skill("history", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var latest = Skill("history", 2, domain, Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(1));
+        latest.PreviousVersionId = first.Id;
+        var service = CreateService(workspace, domain, [first, latest]);
+
+        var result = await service.GetHistoryAsync(first.Id);
+
+        Assert.Equal(latest.Id, result.LatestId);
+        Assert.Equal([2, 1], result.Versions.Select(version => version.Version));
+        Assert.True(result.Versions[0].IsLatest);
+        Assert.False(result.Versions[1].IsLatest);
+        Assert.Equal(first.Id, result.Versions[0].PreviousVersionId);
+    }
+
+    [Fact]
+    public async Task Historical_version_is_readable_but_all_package_writes_are_rejected()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var first = Skill("readonly", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var latest = Skill("readonly", 2, domain, Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(1));
+        latest.PreviousVersionId = first.Id;
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.ListFiles("dev", "readonly", 1)).Returns([]);
+        packages.Setup(store => store.ListFolders("dev", "readonly", 1)).Returns([]);
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [first, latest]).Object,
+            packages.Object);
+
+        var detail = await service.GetAsync(first.Id);
+        Assert.False(detail.IsLatest);
+        Assert.Equal(latest.Id, (await service.GetHistoryAsync(first.Id)).LatestId);
+
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() =>
+            service.WriteFileAsync(first.Id, "new.txt", Encoding.UTF8.GetBytes("blocked")));
+
+        Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.VersionReadOnly, exception.ErrorCode);
+        packages.Verify(store => store.EnsurePackage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
+        packages.Verify(store => store.WriteFile(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<byte[]>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Database_failure_removes_the_new_package_and_keeps_the_version_unpublished()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var current = Skill("atomic", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.PackageExists("dev", "atomic", 1)).Returns(true);
+        var context = MockSkillDbContext.Create([workspace], [domain], [current]);
+        context.Setup(db => db.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("db failed"));
+        var service = new SkillAppService(context.Object, packages.Object);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.PublishVersionAsync(
+            current.Id,
+            new PublishSkillVersionRequest("Atomic", "Atomic", "# Atomic")));
+
+        packages.Verify(store => store.DeletePackage("dev", "atomic", 2), Times.Once);
+    }
+
+    [Fact]
+    public async Task Publish_version_honors_cancellation_before_staging_the_package()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var current = Skill("cancelled", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var packages = new Mock<ISkillPackageStore>();
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [current]).Object,
+            packages.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.PublishVersionAsync(
+            current.Id,
+            new PublishSkillVersionRequest("Cancelled", "Cancelled", "# Cancelled"),
+            cancellation.Token));
+
+        packages.Verify(store => store.PackageExists(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+        packages.Verify(store => store.PublishPackage(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<PublishSkillVersionRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private static ISkillAppService CreateService(
         Workspace workspace,
         DomainEntity? domain = null,

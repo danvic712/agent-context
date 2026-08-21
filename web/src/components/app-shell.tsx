@@ -7,7 +7,7 @@ import { AnalyticsOverview } from '@/components/analytics-overview'
 import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
-import { SkillEditorRoutePlaceholder } from '@/components/skills/skill-editor-route-placeholder'
+import { SkillEditorPage } from '@/components/skills/skill-editor-page'
 import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
 import { SkillUploadPage } from '@/components/skills/skill-upload-page'
 import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
@@ -146,7 +146,7 @@ export function AppShell() {
           <Route path="/archived" element={<KnowledgeManager mode="archived" />} />
           <Route path="/skills" element={<SkillsLibraryPage />} />
           <Route path="/skills/upload" element={<SkillUploadPage />} />
-          <Route path="/skills/editor/:id?" element={<SkillEditorRoutePlaceholder />} />
+          <Route path="/skills/editor/:id?" element={<SkillEditorPage />} />
           <Route path="/analytics" element={<AnalyticsOverview />} />
           <Route path="/health" element={<EngineHealthView />} />
           <Route path="/settings" element={<SettingsPage />} />
