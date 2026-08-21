@@ -166,16 +166,16 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             return new SkillListPage(effectivePageSize, cursor, [], false, null);
         }
 
-        // Latest version per (domain, slug) — group by the identity, then order
-        // the page by update time and stable id/version tie-breakers.
+        // Latest version per (domain, slug). A correlated MAX(version) predicate
+        // keeps this query translatable by PostgreSQL while still letting the
+        // database apply the cursor and page bounds before materialization.
         var latest = db.Skills.AsNoTracking()
             .Where(s => s.WorkspaceId == workspaceId)
-            .GroupBy(s => new { s.DomainId, s.Slug })
-            .Select(g => g
-                .OrderByDescending(s => s.Version)
-                .ThenByDescending(s => s.UpdatedAtUtc)
-                .ThenByDescending(s => s.Id)
-                .First());
+            .Where(s => s.Version == db.Skills
+                .Where(candidate => candidate.WorkspaceId == s.WorkspaceId
+                    && candidate.DomainId == s.DomainId
+                    && candidate.Slug == s.Slug)
+                .Max(candidate => candidate.Version));
 
         if (decodedCursor is not null)
         {

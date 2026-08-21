@@ -18,5 +18,7 @@ export function getTabPath(tab: AppTab): string {
 
 export function getTabFromPath(pathname: string): AppTab {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
-  return appTabs.find((item) => item.path === normalizedPath)?.id ?? defaultTab
+  return appTabs.find((item) =>
+    item.path === normalizedPath || normalizedPath.startsWith(`${item.path}/`),
+  )?.id ?? defaultTab
 }
