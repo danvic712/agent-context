@@ -258,6 +258,7 @@
       "createSkill": "创建 Skill",
       "uploadSkill": "上传 ZIP",
       "editSkill": "打开编辑器",
+      "openEditorFor": "在编辑器中打开 {{name}}",
       "continueEditing": "继续编辑",
       "dismissNotice": "关闭成功提示",
       "sourceManual": "手动创建",
