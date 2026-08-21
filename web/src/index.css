@@ -245,6 +245,8 @@ html *::after {
 .md-view pre code, .md-view .md-shiki pre code, .md-view .md-plain { font-family: var(--font-mono); font-size: 12px; line-height: 1.7; color: var(--code-ink); }
 .md-view .shiki { background: transparent !important; }
 .md-view .md-plain { display: block; padding: 12px 14px; }
+.skill-code-preview .shiki { background: transparent !important; margin: 0; }
+.skill-code-preview .shiki pre, .skill-code-preview > pre { margin: 0; min-width: max-content; }
 .md-view hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
 .md-view table { border-collapse: collapse; margin: 10px 0; font-size: 12.5px; }
 .md-view th, .md-view td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }

@@ -1,40 +1,5 @@
-import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
-import { codeToHtml } from 'shiki'
-
-/**
- * Renders a Skill's SKILL.md as markdown (T12). Code blocks are highlighted with
- * shiki's `codeToHtml` (lazy-loaded per language), bound to the Direction D
- * palette through the --shiki-light / --shiki-dark CSS variables.
- */
-function HighlightedCode({ language, code }: { language: string; code: string }) {
-  const [html, setHtml] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    codeToHtml(code, {
-      lang: language || 'text',
-      // The code block surface is always the dark --code-bg panel, so the
-      // highlight tokens stay light in both day and night themes (readability).
-      theme: 'github-dark',
-    })
-      .then((result) => {
-        if (!cancelled) setHtml(result)
-      })
-      .catch(() => {
-        // Fall back to plain text when a language fails to load.
-        if (!cancelled) setHtml('')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [code, language])
-
-  if (!html) {
-    return <pre className="md-plain"><code>{code}</code></pre>
-  }
-  return <div className="md-shiki" dangerouslySetInnerHTML={{ __html: html }} />
-}
+import { CodePreview } from '@/components/code-preview'
 
 export function MarkdownView({ content }: { content: string }) {
   return (
@@ -46,7 +11,7 @@ export function MarkdownView({ content }: { content: string }) {
             const match = /language-(\w+)/.exec(className ?? '')
             const code = String(children).replace(/\n$/, '')
             if (match) {
-              return <HighlightedCode language={match[1]} code={code} />
+              return <CodePreview language={match[1]} content={code} />
             }
             return <code className={className}>{children}</code>
           },

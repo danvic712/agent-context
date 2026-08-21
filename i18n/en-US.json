@@ -258,6 +258,7 @@
       "createSkill": "Create skill",
       "uploadSkill": "Upload ZIP",
       "editSkill": "Open editor",
+      "openEditorFor": "Open {{name}} in the editor",
       "continueEditing": "Continue editing",
       "dismissNotice": "Dismiss success notice",
       "sourceManual": "manual",
