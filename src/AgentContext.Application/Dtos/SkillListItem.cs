@@ -12,4 +12,5 @@ public sealed record SkillListItem(
     string Description,
     int Version,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    string? SourceType = null);

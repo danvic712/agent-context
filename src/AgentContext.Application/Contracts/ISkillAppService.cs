@@ -19,6 +19,15 @@ public interface ISkillAppService
     Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Creates a Skill at version 1 from an uploaded ZIP package. The package is
+    /// validated and staged before metadata is persisted.
+    /// </summary>
+    Task<SkillDetail> CreateFromZipAsync(
+        CreateSkillFromZipRequest request,
+        Stream zipStream,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns one bounded page of the latest version per (domain, slug), ordered
     /// by newest update with a stable cursor tie-breaker. When <paramref name="pageSize"/>
     /// is omitted, the service uses the default page size of 20; values above 100

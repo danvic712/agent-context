@@ -50,6 +50,7 @@ public static class ErrorCodes
         public const string FilePathInvalid = "skill.filePathInvalid";
         public const string FileNotFound = "skill.fileNotFound";
         public const string FileTooLarge = "skill.fileTooLarge";
+        public const string PackageTooLarge = "skill.packageTooLarge";
         public const string ImportInvalid = "skill.importInvalid";
         public const string PageSizeInvalid = "skill.pageSizeInvalid";
         public const string CursorInvalid = "skill.cursorInvalid";
