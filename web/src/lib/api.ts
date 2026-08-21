@@ -219,6 +219,7 @@ export interface SkillItem {
   version: number
   createdAtUtc: string
   updatedAtUtc: string
+  sourceType: string | null
 }
 
 export interface SkillFileInfo {

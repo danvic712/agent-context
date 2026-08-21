@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using AgentContext.Application.Contracts;
@@ -22,45 +23,125 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
 {
     private const int DefaultSkillPageSize = 20;
     private const int MaxSkillPageSize = 100;
+    private const string ManualSourceType = "manual";
+    private const string ZipSourceType = "zip";
 
     private static readonly Regex SlugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     public async Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        ValidateSlug(request.Slug);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var slug = request.Slug.Trim();
+        ValidateSlug(slug);
+        ValidateName(request.Name);
 
         var domain = await ResolveDomainAsync(request.Domain, cancellationToken);
 
         var exists = await db.Skills.AnyAsync(
-            s => s.WorkspaceId == domain.WorkspaceId && s.DomainId == domain.Id && s.Slug == request.Slug,
+            s => s.WorkspaceId == domain.WorkspaceId && s.DomainId == domain.Id && s.Slug == slug,
             cancellationToken);
         if (exists)
         {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugExists, request.Slug, domain.Name);
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugExists, slug, domain.Name);
         }
 
+        var instructions = request.Instructions.Trim();
         var now = DateTimeOffset.UtcNow;
         var skill = new Skill
         {
             WorkspaceId = domain.WorkspaceId,
             DomainId = domain.Id,
-            Slug = request.Slug,
+            Slug = slug,
             Name = request.Name.Trim(),
             Description = request.Description.Trim(),
-            Instructions = request.Instructions.Trim(),
+            Instructions = instructions,
             Version = 1,
+            SourceType = ManualSourceType,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
         };
-        db.Skills.Add(skill);
-        await db.SaveChangesAsync(cancellationToken);
 
-        // The package is the source of truth for content: seed SKILL.md from the
-        // request's Instructions (legacy shape), then return the manifest.
-        packages.CreatePackage(domain.Name, skill.Slug, skill.Version, request.Instructions.Trim());
+        // Stage the filesystem package first so a package failure never leaves a
+        // database row pointing at content that was not created.
+        packages.CreatePackage(domain.Name, skill.Slug, skill.Version, instructions);
+        try
+        {
+            db.Skills.Add(skill);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            packages.DeletePackage(domain.Name, skill.Slug, skill.Version);
+            throw;
+        }
 
         return await ToDetailAsync(skill, domain.Name, cancellationToken);
+    }
+
+    public async Task<SkillDetail> CreateFromZipAsync(
+        CreateSkillFromZipRequest request,
+        Stream zipStream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(zipStream);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var slug = request.Slug.Trim();
+        ValidateSlug(slug);
+        ValidateName(request.Name);
+
+        var domain = await ResolveDomainAsync(request.Domain, cancellationToken);
+        var exists = await db.Skills.AnyAsync(
+            s => s.WorkspaceId == domain.WorkspaceId && s.DomainId == domain.Id && s.Slug == slug,
+            cancellationToken);
+        if (exists)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugExists, slug, domain.Name);
+        }
+
+        const int version = 1;
+        var packageCreated = false;
+        try
+        {
+            await packages.CreatePackageFromZipAsync(
+                domain.Name, slug, version, zipStream, cancellationToken);
+            packageCreated = true;
+
+            var instructions = Encoding.UTF8.GetString(
+                packages.ReadFile(domain.Name, slug, version, "SKILL.md"));
+            var now = DateTimeOffset.UtcNow;
+            var skill = new Skill
+            {
+                WorkspaceId = domain.WorkspaceId,
+                DomainId = domain.Id,
+                Slug = slug,
+                Name = request.Name.Trim(),
+                Description = request.Description.Trim(),
+                Instructions = instructions,
+                Version = version,
+                SourceType = ZipSourceType,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now,
+            };
+
+            db.Skills.Add(skill);
+            await db.SaveChangesAsync(cancellationToken);
+            packageCreated = false;
+
+            return await ToDetailAsync(skill, domain.Name, cancellationToken);
+        }
+        catch
+        {
+            if (packageCreated)
+            {
+                packages.DeletePackage(domain.Name, slug, version);
+            }
+
+            throw;
+        }
     }
 
     public async Task<SkillListPage> ListAsync(
@@ -129,7 +210,8 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
                 s.Description,
                 s.Version,
                 s.CreatedAtUtc,
-                s.UpdatedAtUtc))
+                s.UpdatedAtUtc,
+                s.SourceType))
             .ToList();
 
         var nextCursor = hasMore && pageRows.Count > 0
@@ -187,6 +269,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             Description = request.Description.Trim(),
             Instructions = request.Instructions.Trim(),
             Version = maxVersion + 1,
+            SourceType = current.SourceType,
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
         };
@@ -291,7 +374,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
     public async Task<SkillDetail> ImportZipAsync(Guid id, Stream zipStream, CancellationToken cancellationToken = default)
     {
         var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
-        packages.ImportZip(domainName, slug, version, zipStream);
+        await packages.ImportZipAsync(domainName, slug, version, zipStream, cancellationToken);
         return await GetAsync(id, cancellationToken);
     }
 
@@ -337,7 +420,7 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
 
         return new SkillDetail(
             skill.Id, domainName, skill.Slug, skill.Name, skill.Description,
-            skill.Version, skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest);
+            skill.Version, skill.CreatedAtUtc, skill.UpdatedAtUtc, manifest, skill.SourceType);
     }
 
     private async Task<DomainEntity> ResolveDomainAsync(string name, CancellationToken cancellationToken)
@@ -372,6 +455,14 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         if (!SlugPattern.IsMatch(slug))
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SlugInvalid);
+        }
+    }
+
+    private static void ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.NameRequired);
         }
     }
 

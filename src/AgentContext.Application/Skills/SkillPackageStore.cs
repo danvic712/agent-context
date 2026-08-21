@@ -17,6 +17,7 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
 {
     private const string MainFile = "SKILL.md";
     private const long MaxFileBytes = 10 * 1024 * 1024; // 10 MB
+    private const long MaxPackageBytes = 50 * 1024 * 1024; // 50 MB
 
     /// <summary>Resolved absolute root of the skills data directory.</summary>
     public string RootDirectory => _root;
@@ -154,44 +155,283 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         }
     }
 
-    public void ImportZip(string domainName, string slug, int version, Stream zipStream)
+    public async Task CreatePackageFromZipAsync(
+        string domainName,
+        string slug,
+        int version,
+        Stream zipStream,
+        CancellationToken cancellationToken = default)
     {
-        var dir = PackageDirectory(domainName, slug, version);
-        Directory.CreateDirectory(dir);
+        ArgumentNullException.ThrowIfNull(zipStream);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
+        var target = PackageDirectory(domainName, slug, version);
+        if (Directory.Exists(target))
+        {
+            throw new LocalizedException(HttpStatusCode.Conflict, ErrorCodes.Skill.PackageExists, domainName, slug, version);
+        }
+
+        var staging = CreateStagingDirectory();
+        try
+        {
+            await ExtractZipAsync(
+                staging,
+                zipStream,
+                normalizeWrapper: true,
+                enforceLimits: true,
+                seedMainFile: true,
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            try
+            {
+                Directory.Move(staging, target);
+                staging = string.Empty;
+            }
+            catch (IOException) when (Directory.Exists(target))
+            {
+                throw new LocalizedException(HttpStatusCode.Conflict, ErrorCodes.Skill.PackageExists, domainName, slug, version);
+            }
+        }
+        catch (LocalizedException)
+        {
+            throw;
+        }
+        catch (InvalidDataException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+        catch (IOException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+        finally
+        {
+            DeleteStagingDirectory(staging);
+        }
+    }
+
+    public async Task ImportZipAsync(
+        string domainName,
+        string slug,
+        int version,
+        Stream zipStream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(zipStream);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var target = PackageDirectory(domainName, slug, version);
+        var staging = CreateStagingDirectory();
+        try
+        {
+            await ExtractZipAsync(
+                staging,
+                zipStream,
+                normalizeWrapper: false,
+                enforceLimits: false,
+                seedMainFile: false,
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(target);
+
+            foreach (var source in Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var relative = Path.GetRelativePath(staging, source);
+                var destination = Path.Combine(target, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(source, destination, overwrite: true);
+            }
+
+            var mainPath = Path.Combine(target, MainFile);
+            if (!File.Exists(mainPath))
+            {
+                File.WriteAllText(mainPath, string.Empty);
+            }
+        }
+        catch (LocalizedException)
+        {
+            throw;
+        }
+        catch (InvalidDataException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+        catch (IOException)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+        finally
+        {
+            DeleteStagingDirectory(staging);
+        }
+    }
+
+    private async Task ExtractZipAsync(
+        string staging,
+        Stream zipStream,
+        bool normalizeWrapper,
+        bool enforceLimits,
+        bool seedMainFile,
+        CancellationToken cancellationToken)
+    {
+        using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
+        var files = new List<(ZipArchiveEntry Entry, string Path)>();
+
         foreach (var entry in archive.Entries)
         {
-            // Directories appear as entries ending in '/' — skip them.
-            if (entry.FullName.EndsWith('/'))
-            {
-                continue;
-            }
-
+            cancellationToken.ThrowIfCancellationRequested();
             var relative = NormalizePath(entry.FullName);
-            if (relative.Length == 0)
+            if (relative.Length == 0 || entry.FullName.EndsWith("/", StringComparison.Ordinal)
+                || entry.FullName.EndsWith("\\", StringComparison.Ordinal))
             {
                 continue;
             }
 
-            // Zip-slip guard: the resolved target must stay inside the package.
-            var target = Path.GetFullPath(Path.Combine(dir, relative));
-            if (!target.StartsWith(dir, StringComparison.Ordinal))
+            files.Add((entry, relative));
+        }
+
+        var wrapper = normalizeWrapper ? DetectWrapperDirectory(files.Select(file => file.Path)) : null;
+        var normalizedPaths = new HashSet<string>(StringComparer.Ordinal);
+        var normalizedEntries = new List<(ZipArchiveEntry Entry, string Path)>();
+
+        foreach (var (entry, originalPath) in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var path = wrapper is not null && originalPath.StartsWith(wrapper, StringComparison.Ordinal)
+                ? originalPath[wrapper.Length..]
+                : originalPath;
+            if (path.Length == 0 || (enforceLimits && !normalizedPaths.Add(path)))
             {
                 throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            using var entryStream = entry.Open();
-            using var output = File.Create(target);
-            entryStream.CopyTo(output);
+            normalizedEntries.Add((entry, path));
         }
 
-        // A package must carry SKILL.md; create an empty one when the zip omits it.
-        var mainPath = Path.Combine(dir, MainFile);
-        if (!File.Exists(mainPath))
+        if (enforceLimits)
         {
-            File.WriteAllText(mainPath, string.Empty);
+            ValidateNoConflictingPaths(normalizedEntries.Select(item => item.Path));
+        }
+        long packageBytes = 0;
+        foreach (var (entry, path) in normalizedEntries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var destination = Path.GetFullPath(Path.Combine(staging, path.Replace('/', Path.DirectorySeparatorChar)));
+            if (!IsWithinDirectory(staging, destination))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            await CopyEntryAsync(entry, destination, path, packageBytes, enforceLimits, cancellationToken);
+            packageBytes += new FileInfo(destination).Length;
+            if (enforceLimits && packageBytes > MaxPackageBytes)
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.PackageTooLarge);
+            }
+        }
+
+        if (seedMainFile && !File.Exists(Path.Combine(staging, MainFile)))
+        {
+            File.WriteAllText(Path.Combine(staging, MainFile), string.Empty);
+        }
+    }
+
+    private static async Task CopyEntryAsync(
+        ZipArchiveEntry entry,
+        string destination,
+        string path,
+        long packageBytes,
+        bool enforceLimits,
+        CancellationToken cancellationToken)
+    {
+        if (enforceLimits && entry.Length > MaxFileBytes)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FileTooLarge, path);
+        }
+
+        if (enforceLimits && packageBytes > MaxPackageBytes - entry.Length)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.PackageTooLarge);
+        }
+
+        await using var input = entry.Open();
+        await using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+        var buffer = new byte[64 * 1024];
+        long fileBytes = 0;
+        while (true)
+        {
+            var read = await input.ReadAsync(buffer, cancellationToken);
+            if (read == 0)
+            {
+                break;
+            }
+
+            fileBytes += read;
+            if (enforceLimits && fileBytes > MaxFileBytes)
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FileTooLarge, path);
+            }
+
+            if (enforceLimits && packageBytes > MaxPackageBytes - fileBytes)
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.PackageTooLarge);
+            }
+
+            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+        }
+    }
+
+    private static string? DetectWrapperDirectory(IEnumerable<string> paths)
+    {
+        var pathList = paths.ToList();
+        if (pathList.Count == 0 || pathList.Any(path => !path.Contains('/')))
+        {
+            return null;
+        }
+
+        var firstSegments = pathList
+            .Select(path => path[..path.IndexOf('/', StringComparison.Ordinal)])
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        // Without a root SKILL.md there is no reliable way to distinguish a
+        // wrapper from a legitimate top-level folder such as examples. Preserve
+        // that structure and seed the missing main file instead.
+        var wrapper = firstSegments.Count == 1 ? firstSegments[0] + "/" : null;
+        return wrapper is not null && pathList.Contains(wrapper + MainFile, StringComparer.Ordinal)
+            ? wrapper
+            : null;
+    }
+
+    private static void ValidateNoConflictingPaths(IEnumerable<string> paths)
+    {
+        var ordered = paths.OrderBy(path => path, StringComparer.Ordinal).ToList();
+        for (var index = 0; index < ordered.Count - 1; index++)
+        {
+            if (ordered[index + 1].StartsWith(ordered[index] + "/", StringComparison.Ordinal))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+            }
+        }
+    }
+
+    private string CreateStagingDirectory()
+    {
+        var stagingRoot = Path.Combine(_root, ".staging");
+        Directory.CreateDirectory(stagingRoot);
+        var staging = Path.Combine(stagingRoot, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(staging);
+        return staging;
+    }
+
+    private static void DeleteStagingDirectory(string? staging)
+    {
+        if (!string.IsNullOrEmpty(staging) && Directory.Exists(staging))
+        {
+            Directory.Delete(staging, recursive: true);
         }
     }
 
@@ -209,8 +449,8 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
         }
 
-        var full = Path.GetFullPath(Path.Combine(dir, relative));
-        if (!full.StartsWith(dir, StringComparison.Ordinal))
+        var full = Path.GetFullPath(Path.Combine(dir, relative.Replace('/', Path.DirectorySeparatorChar)));
+        if (!IsWithinDirectory(dir, full))
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
         }
@@ -247,13 +487,31 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
     {
         var raw = (path ?? string.Empty).Trim().Replace('\\', '/');
 
-        // Reject traversal and rooted/absolute paths before trimming a leading '/'.
-        if (raw.Length == 0 || raw.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(raw))
+        // Reject traversal and rooted/absolute paths before normalizing separators.
+        if (raw.Length == 0
+            || raw.Contains('\0')
+            || raw.StartsWith("/", StringComparison.Ordinal)
+            || Path.IsPathRooted(raw)
+            || (raw.Length >= 2 && char.IsLetter(raw[0]) && raw[1] == ':'))
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
         }
 
-        return raw.TrimStart('/').Trim();
+        var segments = raw.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0 || segments.Any(segment => segment is "." or ".."))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
+        }
+
+        return string.Join('/', segments);
+    }
+
+    private static bool IsWithinDirectory(string root, string path)
+    {
+        var relative = Path.GetRelativePath(root, path);
+        return relative != ".."
+            && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+            && !Path.IsPathRooted(relative);
     }
 
     private static bool IsBinary(string file)

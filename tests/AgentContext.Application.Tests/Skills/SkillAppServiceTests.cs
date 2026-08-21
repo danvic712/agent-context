@@ -1,5 +1,7 @@
 using System.Net;
+using System.Text;
 using AgentContext.Application.Contracts;
+using AgentContext.Application.Dtos;
 using AgentContext.Application.Localization;
 using AgentContext.Application.Skills;
 using AgentContext.Application.Tests.TestSupport;
@@ -11,6 +13,117 @@ namespace AgentContext.Application.Tests.Skills;
 
 public sealed class SkillAppServiceTests
 {
+    [Fact]
+    public async Task Create_starts_a_manual_skill_at_version_one_and_seeds_the_main_file()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.EnsurePackage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()))
+            .Returns(string.Empty);
+        packages.Setup(store => store.ListFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            .Returns([new SkillFileInfo("SKILL.md", 12, false)]);
+        var context = MockSkillDbContext.Create([workspace], [domain]);
+        var service = new SkillAppService(context.Object, packages.Object);
+
+        var result = await service.CreateAsync(new CreateSkillRequest(
+            "dev", "manual-guide", "Manual Guide", "A manual skill", "# Instructions"));
+
+        Assert.Equal(1, result.Version);
+        Assert.Equal("manual", result.SourceType);
+        Assert.Equal("SKILL.md", Assert.Single(result.Manifest).Path);
+        packages.Verify(store => store.CreatePackage("dev", "manual-guide", 1, "# Instructions"), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_from_zip_creates_a_zip_skill_and_uses_the_imported_main_file()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.CreatePackageFromZipAsync(
+                "dev", "uploaded-guide", 1, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        packages.Setup(store => store.ReadFile("dev", "uploaded-guide", 1, "SKILL.md"))
+            .Returns(Encoding.UTF8.GetBytes("# Uploaded"));
+        packages.Setup(store => store.EnsurePackage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()))
+            .Returns(string.Empty);
+        packages.Setup(store => store.ListFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            .Returns([new SkillFileInfo("SKILL.md", 10, false)]);
+        var context = MockSkillDbContext.Create([workspace], [domain]);
+        var service = new SkillAppService(context.Object, packages.Object);
+
+        var result = await service.CreateFromZipAsync(
+            new CreateSkillFromZipRequest("dev", "uploaded-guide", "Uploaded Guide", "Imported package"),
+            new MemoryStream([1, 2, 3]));
+
+        Assert.Equal(1, result.Version);
+        Assert.Equal("zip", result.SourceType);
+        packages.Verify(store => store.CreatePackageFromZipAsync(
+            "dev", "uploaded-guide", 1, It.IsAny<Stream>(), It.IsAny<CancellationToken>()), Times.Once);
+        packages.Verify(store => store.ReadFile("dev", "uploaded-guide", 1, "SKILL.md"), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_from_zip_honors_cancellation_before_resolving_the_domain()
+    {
+        var workspace = Workspace("workspace");
+        var packages = new Mock<ISkillPackageStore>();
+        var context = MockSkillDbContext.Create([workspace]);
+        var service = new SkillAppService(context.Object, packages.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CreateFromZipAsync(
+            new CreateSkillFromZipRequest("dev", "uploaded-guide", "Uploaded Guide", "Imported package"),
+            new MemoryStream(),
+            cancellation.Token));
+
+        packages.Verify(store => store.CreatePackageFromZipAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_from_zip_rejects_a_slug_that_already_exists_without_writing_a_package()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var existing = Skill("uploaded-guide", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var packages = new Mock<ISkillPackageStore>();
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [existing]).Object,
+            packages.Object);
+
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() => service.CreateFromZipAsync(
+            new CreateSkillFromZipRequest("dev", "uploaded-guide", "Uploaded Guide", "Duplicate"),
+            new MemoryStream()));
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.SlugExists, exception.ErrorCode);
+        packages.Verify(store => store.CreatePackageFromZipAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_rejects_a_slug_that_already_exists_without_writing_a_package()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var existing = Skill("manual-guide", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var packages = new Mock<ISkillPackageStore>();
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [existing]).Object,
+            packages.Object);
+
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() => service.CreateAsync(
+            new CreateSkillRequest("dev", "manual-guide", "Manual Guide", "Duplicate", "# Instructions")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.SlugExists, exception.ErrorCode);
+        packages.Verify(store => store.CreatePackage(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
+    }
+
     [Fact]
     public async Task List_returns_latest_version_only_and_first_page_in_stable_order()
     {

@@ -15,4 +15,5 @@ public sealed record SkillDetail(
     int Version,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
-    IReadOnlyList<SkillFileInfo> Manifest);
+    IReadOnlyList<SkillFileInfo> Manifest,
+    string? SourceType = null);

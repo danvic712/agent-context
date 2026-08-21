@@ -21,6 +21,8 @@ internal static class MockSkillDbContext
             .Returns(MockDbSetFactory.Create(domains ?? []));
         context.SetupGet(db => db.Skills)
             .Returns(MockDbSetFactory.Create(skills ?? []));
+        context.Setup(db => db.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
         return context;
     }
 }

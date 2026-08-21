@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace AgentContext.Host.Controllers;
 
 /// <summary>
-/// Skill surface (T6, issue #7 + T12 package model): CRUD over the latest
-/// version, publish-new-version, get_skill over REST, plus per-file operations
-/// (read / write / delete / bulk upload / zip import) against the filesystem
-/// package. Thin adapters over the application seam.
+    /// Skill surface (T6, issue #7 + T12 package model): CRUD over the latest
+    /// version, publish-new-version, get_skill over REST, plus per-file operations
+    /// (read / write / delete / bulk upload / zip import) against the filesystem
+    /// package. Thin adapters over the application seam.
 /// </summary>
 [ApiController]
 [Route("api/skills")]
@@ -21,6 +21,29 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
     public async Task<ActionResult<SkillDetail>> Create([FromBody] CreateSkillRequest request, CancellationToken cancellationToken)
     {
         var created = await skills.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
+    /// <summary>Creates a new Skill from a multipart ZIP package (T18).</summary>
+    [HttpPost("upload")]
+    public async Task<ActionResult<SkillDetail>> Upload(
+        [FromForm] string domain,
+        [FromForm] string slug,
+        [FromForm] string name,
+        [FromForm] string description,
+        [FromForm] IFormFile? archive,
+        CancellationToken cancellationToken)
+    {
+        if (archive is null || archive.Length == 0)
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+
+        using var stream = archive.OpenReadStream();
+        var created = await skills.CreateFromZipAsync(
+            new CreateSkillFromZipRequest(domain, slug, name, description),
+            stream,
+            cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 

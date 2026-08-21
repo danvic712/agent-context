@@ -46,6 +46,19 @@ public interface ISkillPackageStore
     /// <summary>Deletes the whole package directory (used by Skill deletion).</summary>
     void DeletePackage(string domainName, string slug, int version);
 
-    /// <summary>Extracts a zip archive into the package (import).</summary>
-    void ImportZip(string domainName, string slug, int version, Stream zipStream);
+    /// <summary>Creates a new package by safely extracting a ZIP archive.</summary>
+    Task CreatePackageFromZipAsync(
+        string domainName,
+        string slug,
+        int version,
+        Stream zipStream,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Extracts a ZIP archive into an existing package.</summary>
+    Task ImportZipAsync(
+        string domainName,
+        string slug,
+        int version,
+        Stream zipStream,
+        CancellationToken cancellationToken = default);
 }
