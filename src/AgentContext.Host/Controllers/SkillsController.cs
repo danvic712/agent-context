@@ -56,8 +56,14 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
     public async Task<ActionResult<SkillListPage>> List(
         [FromQuery] int? pageSize,
         [FromQuery] string? cursor,
+        [FromQuery] string? search,
+        [FromQuery] string? domain,
+        [FromQuery] string? sourceType,
+        [FromQuery] string? sort,
         CancellationToken cancellationToken)
-        => Ok(await skills.ListAsync(pageSize, cursor, cancellationToken));
+        => Ok(await skills.ListAsync(
+            new SkillListQuery(pageSize, cursor, search, domain, sourceType, sort),
+            cancellationToken));
 
     /// <summary>
     /// get_skill over REST (AC3): resolves the latest version of a skill by

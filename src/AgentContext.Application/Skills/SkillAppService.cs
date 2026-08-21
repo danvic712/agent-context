@@ -26,6 +26,16 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
     private const string ManualSourceType = "manual";
     private const string ZipSourceType = "zip";
 
+    private static readonly string[] SupportedListSorts =
+    [
+        "updated-desc",
+        "updated-asc",
+        "name-asc",
+        "name-desc",
+        "version-desc",
+        "version-asc",
+    ];
+
     private static readonly Regex SlugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     public async Task<SkillDetail> CreateAsync(CreateSkillRequest request, CancellationToken cancellationToken = default)
@@ -148,8 +158,14 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         int? pageSize = null,
         string? cursor = null,
         CancellationToken cancellationToken = default)
+        => await ListAsync(new SkillListQuery(pageSize, cursor), cancellationToken);
+
+    public async Task<SkillListPage> ListAsync(
+        SkillListQuery query,
+        CancellationToken cancellationToken = default)
     {
-        var effectivePageSize = pageSize ?? DefaultSkillPageSize;
+        ArgumentNullException.ThrowIfNull(query);
+        var effectivePageSize = query.PageSize ?? DefaultSkillPageSize;
         if (effectivePageSize is < 1 or > MaxSkillPageSize)
         {
             throw new LocalizedException(
@@ -159,11 +175,16 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
                 MaxSkillPageSize);
         }
 
-        var decodedCursor = DecodeCursor(cursor);
+        var search = NormalizeListFilter(query.Search);
+        var domain = NormalizeListFilter(query.Domain);
+        var sourceType = NormalizeListFilter(query.SourceType);
+        var sort = ParseListSort(query.Sort);
+        var decodedCursor = DecodeCursor(query.Cursor);
+        ValidateCursor(decodedCursor, sort, search, domain, sourceType);
         var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);
         if (workspaceId is null)
         {
-            return new SkillListPage(effectivePageSize, cursor, [], false, null);
+            return new SkillListPage(effectivePageSize, query.Cursor, [], false, null);
         }
 
         // Latest version per (domain, slug). A correlated MAX(version) predicate
@@ -177,19 +198,31 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
                     && candidate.Slug == s.Slug)
                 .Max(candidate => candidate.Version));
 
-        if (decodedCursor is not null)
+        if (search is not null)
         {
             latest = latest.Where(s =>
-                s.UpdatedAtUtc < decodedCursor.UpdatedAtUtc
-                || (s.UpdatedAtUtc == decodedCursor.UpdatedAtUtc
-                    && (s.Id.CompareTo(decodedCursor.Id) < 0
-                        || (s.Id == decodedCursor.Id && s.Version < decodedCursor.Version))));
+                s.Name.ToLower().Contains(search)
+                || s.Slug.ToLower().Contains(search)
+                || s.Description.ToLower().Contains(search));
         }
 
-        var rows = await latest
-            .OrderByDescending(s => s.UpdatedAtUtc)
-            .ThenByDescending(s => s.Id)
-            .ThenByDescending(s => s.Version)
+        if (domain is not null)
+        {
+            latest = latest.Where(s => s.Domain.Name.ToLower() == domain);
+        }
+
+        if (sourceType is not null)
+        {
+            latest = latest.Where(s => s.SourceType == sourceType);
+        }
+
+        if (decodedCursor is not null)
+        {
+            latest = ApplyCursor(latest, decodedCursor, sort);
+        }
+
+        var ordered = ApplySort(latest, sort);
+        var rows = await ordered
             .Take(effectivePageSize + 1)
             .ToListAsync(cancellationToken);
 
@@ -215,10 +248,10 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             .ToList();
 
         var nextCursor = hasMore && pageRows.Count > 0
-            ? EncodeCursor(pageRows[^1])
+            ? EncodeCursor(pageRows[^1], sort, search, domain, sourceType)
             : null;
 
-        return new SkillListPage(effectivePageSize, cursor, items, hasMore, nextCursor);
+        return new SkillListPage(effectivePageSize, query.Cursor, items, hasMore, nextCursor);
     }
 
     public async Task<SkillDetail> GetAsync(Guid id, CancellationToken cancellationToken = default)
@@ -466,6 +499,92 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         }
     }
 
+    private static string? NormalizeListFilter(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
+
+    private static string ParseListSort(string? sort)
+    {
+        var normalized = string.IsNullOrWhiteSpace(sort) ? "updated-desc" : sort.Trim().ToLowerInvariant();
+        if (!SupportedListSorts.Contains(normalized, StringComparer.Ordinal))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.SortInvalid);
+        }
+
+        return normalized;
+    }
+
+    private static IQueryable<Skill> ApplyCursor(
+        IQueryable<Skill> source,
+        SkillListCursor cursor,
+        string sort)
+        => sort switch
+        {
+            "updated-asc" => source.Where(s =>
+                s.UpdatedAtUtc > cursor.UpdatedAtUtc
+                || (s.UpdatedAtUtc == cursor.UpdatedAtUtc
+                    && (s.Id.CompareTo(cursor.Id) > 0
+                        || (s.Id == cursor.Id && s.Version > cursor.Version)))),
+            "name-asc" => source.Where(s =>
+                s.Name.ToLower().CompareTo(cursor.Name) > 0
+                || (s.Name.ToLower() == cursor.Name
+                    && s.Id.CompareTo(cursor.Id) > 0)),
+            "name-desc" => source.Where(s =>
+                s.Name.ToLower().CompareTo(cursor.Name) < 0
+                || (s.Name.ToLower() == cursor.Name
+                    && s.Id.CompareTo(cursor.Id) < 0)),
+            "version-asc" => source.Where(s =>
+                s.Version > cursor.Version
+                || (s.Version == cursor.Version && s.Id.CompareTo(cursor.Id) > 0)),
+            "version-desc" => source.Where(s =>
+                s.Version < cursor.Version
+                || (s.Version == cursor.Version && s.Id.CompareTo(cursor.Id) < 0)),
+            _ => source.Where(s =>
+                s.UpdatedAtUtc < cursor.UpdatedAtUtc
+                || (s.UpdatedAtUtc == cursor.UpdatedAtUtc
+                    && (s.Id.CompareTo(cursor.Id) < 0
+                        || (s.Id == cursor.Id && s.Version < cursor.Version)))),
+        };
+
+    private static IQueryable<Skill> ApplySort(IQueryable<Skill> source, string sort)
+        => sort switch
+        {
+            "updated-asc" => source.OrderBy(s => s.UpdatedAtUtc)
+                .ThenBy(s => s.Id)
+                .ThenBy(s => s.Version),
+            "name-asc" => source.OrderBy(s => s.Name.ToLower())
+                .ThenBy(s => s.Id),
+            "name-desc" => source.OrderByDescending(s => s.Name.ToLower())
+                .ThenByDescending(s => s.Id),
+            "version-asc" => source.OrderBy(s => s.Version)
+                .ThenBy(s => s.Id),
+            "version-desc" => source.OrderByDescending(s => s.Version)
+                .ThenByDescending(s => s.Id),
+            _ => source.OrderByDescending(s => s.UpdatedAtUtc)
+                .ThenByDescending(s => s.Id)
+                .ThenByDescending(s => s.Version),
+        };
+
+    private static void ValidateCursor(
+        SkillListCursor? cursor,
+        string sort,
+        string? search,
+        string? domain,
+        string? sourceType)
+    {
+        if (cursor is null)
+        {
+            return;
+        }
+
+        if (!string.Equals(cursor.Sort, sort, StringComparison.Ordinal)
+            || !string.Equals(cursor.Search, search, StringComparison.Ordinal)
+            || !string.Equals(cursor.Domain, domain, StringComparison.Ordinal)
+            || !string.Equals(cursor.SourceType, sourceType, StringComparison.Ordinal))
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.CursorInvalid);
+        }
+    }
+
     private static SkillListCursor? DecodeCursor(string? cursor)
     {
         if (string.IsNullOrWhiteSpace(cursor))
@@ -478,7 +597,11 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             var base64 = cursor.Replace('-', '+').Replace('_', '/');
             base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
             var decoded = JsonSerializer.Deserialize<SkillListCursor>(Convert.FromBase64String(base64));
-            if (decoded is null || decoded.Id == Guid.Empty || decoded.Version < 1 || decoded.UpdatedAtUtc == default)
+            if (decoded is null
+                || string.IsNullOrWhiteSpace(decoded.Sort)
+                || decoded.Id == Guid.Empty
+                || decoded.Version < 1
+                || decoded.UpdatedAtUtc == default)
             {
                 throw new JsonException("The cursor payload is incomplete.");
             }
@@ -495,10 +618,20 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         }
     }
 
-    private static string EncodeCursor(Skill skill)
+    private static string EncodeCursor(
+        Skill skill,
+        string sort,
+        string? search,
+        string? domain,
+        string? sourceType)
     {
         var payload = JsonSerializer.SerializeToUtf8Bytes(new SkillListCursor(
+            sort,
+            search,
+            domain,
+            sourceType,
             skill.UpdatedAtUtc,
+            skill.Name.ToLowerInvariant(),
             skill.Id,
             skill.Version));
         return Convert.ToBase64String(payload)
@@ -507,5 +640,13 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
             .Replace('/', '_');
     }
 
-    private sealed record SkillListCursor(DateTimeOffset UpdatedAtUtc, Guid Id, int Version);
+    private sealed record SkillListCursor(
+        string Sort,
+        string? Search,
+        string? Domain,
+        string? SourceType,
+        DateTimeOffset UpdatedAtUtc,
+        string Name,
+        Guid Id,
+        int Version);
 }

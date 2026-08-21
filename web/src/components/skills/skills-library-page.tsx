@@ -1,15 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2Icon, SearchIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { CheckCircle2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { SkillActionBar } from './skill-action-bar'
 import { SkillLibraryList } from './skill-library-list'
 import { SkillPageHeader } from './skill-page-header'
+import { SkillSearchFilters, type InstalledSkillFilters } from './skill-search-filters'
 import { listSkills, type SkillItem } from '@/lib/api'
 
 const PAGE_SIZE = 20
+const DEFAULT_FILTERS: InstalledSkillFilters = {
+  search: '',
+  domain: '',
+  sourceType: '',
+  sort: 'updated-desc',
+}
 
 interface SkillsNavigationState {
   highlightId?: string
@@ -33,11 +39,30 @@ export function SkillsLibraryPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorScope, setErrorScope] = useState<'initial' | 'more' | null>(null)
-  const [filter, setFilter] = useState('')
+  const [draftFilters, setDraftFilters] = useState<InstalledSkillFilters>(DEFAULT_FILTERS)
+  const [appliedFilters, setAppliedFilters] = useState<InstalledSkillFilters>(DEFAULT_FILTERS)
   const [highlightedId, setHighlightedId] = useState<string | null>(navigationState?.highlightId ?? null)
   const [notice, setNotice] = useState<string | null>(navigationState?.successSlug ? t('skills.uploadSuccess', { slug: navigationState.successSlug }) : null)
 
-  const loadInitial = useCallback(async () => {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const nextFilters = {
+        ...draftFilters,
+        search: draftFilters.search.trim(),
+        domain: draftFilters.domain.trim(),
+      }
+      setAppliedFilters((current) =>
+        current.search === nextFilters.search
+          && current.domain === nextFilters.domain
+          && current.sourceType === nextFilters.sourceType
+          && current.sort === nextFilters.sort
+          ? current
+          : nextFilters)
+    }, 250)
+    return () => window.clearTimeout(timeout)
+  }, [draftFilters])
+
+  const loadInitial = useCallback(async (filters: InstalledSkillFilters) => {
     const requestVersion = ++requestVersionRef.current
     requestRef.current?.abort()
     paginationRequestRef.current?.abort()
@@ -48,7 +73,12 @@ export function SkillsLibraryPage() {
     setError(null)
     setErrorScope(null)
     try {
-      const page = await listSkills(PAGE_SIZE, null, controller.signal)
+      const page = await listSkills(PAGE_SIZE, null, controller.signal, {
+        search: filters.search || undefined,
+        domain: filters.domain || undefined,
+        sourceType: filters.sourceType || undefined,
+        sort: filters.sort,
+      })
       if (requestVersion !== requestVersionRef.current) return
       setItems(page.items)
       setNextCursor(page.nextCursor)
@@ -73,7 +103,12 @@ export function SkillsLibraryPage() {
     setError(null)
     setErrorScope(null)
     try {
-      const page = await listSkills(PAGE_SIZE, nextCursor, controller.signal)
+      const page = await listSkills(PAGE_SIZE, nextCursor, controller.signal, {
+        search: appliedFilters.search || undefined,
+        domain: appliedFilters.domain || undefined,
+        sourceType: appliedFilters.sourceType || undefined,
+        sort: appliedFilters.sort,
+      })
       if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return
       setItems((current) => {
         const known = new Set(current.map((item) => item.id))
@@ -89,15 +124,15 @@ export function SkillsLibraryPage() {
     } finally {
       if (requestVersion === requestVersionRef.current) setLoadingMore(false)
     }
-  }, [hasMore, loadingMore, nextCursor, t])
+  }, [appliedFilters, hasMore, loadingMore, nextCursor, t])
 
   useEffect(() => {
-    void loadInitial()
+    void loadInitial(appliedFilters)
     return () => {
       requestRef.current?.abort()
       paginationRequestRef.current?.abort()
     }
-  }, [loadInitial])
+  }, [appliedFilters, loadInitial])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -123,16 +158,10 @@ export function SkillsLibraryPage() {
     return () => window.clearTimeout(timeout)
   }, [highlightedId])
 
-  const visibleItems = useMemo(() => {
-    const query = filter.trim().toLowerCase()
-    if (!query) return items
-    return items.filter((item) => `${item.name} ${item.slug} ${item.domainName} ${item.description}`.toLowerCase().includes(query))
-  }, [filter, items])
-
   const refresh = async () => {
     setRefreshing(true)
     try {
-      await loadInitial()
+      await loadInitial(appliedFilters)
     } finally {
       setRefreshing(false)
     }
@@ -164,32 +193,31 @@ export function SkillsLibraryPage() {
         onRefresh={() => void refresh()}
       />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="kicker">{t('skills.installedKicker')}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t('skills.installedDescription')}</p>
-        </div>
-        <label className="relative block w-full sm:w-72">
-          <span className="sr-only">{t('skills.filterInstalled')}</span>
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder={t('skills.filterInstalled')} className="h-9 pl-9 text-xs" />
-        </label>
+      <div className="mb-4">
+        <p className="kicker">{t('skills.installedKicker')}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t('skills.installedDescription')}</p>
       </div>
 
+      <SkillSearchFilters
+        filters={draftFilters}
+        onChange={setDraftFilters}
+        onClear={() => setDraftFilters(DEFAULT_FILTERS)}
+      />
+
       <SkillLibraryList
-        items={visibleItems}
+        items={items}
         loading={loading}
         loadingMore={loadingMore}
         hasMore={hasMore}
         error={error}
         highlightedId={highlightedId}
-        filterActive={Boolean(filter.trim())}
+        filterActive={Boolean(appliedFilters.search || appliedFilters.domain || appliedFilters.sourceType)}
         sentinelRef={(node) => { sentinelRef.current = node }}
         onLoadMore={() => void loadMore()}
-        onRetry={() => void (errorScope === 'initial' ? loadInitial() : loadMore())}
+        onRetry={() => void (errorScope === 'initial' ? loadInitial(appliedFilters) : loadMore())}
         onUpload={() => navigate('/skills/upload')}
         onCreate={() => navigate('/skills/editor')}
-        onClearFilter={() => setFilter('')}
+        onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
       />
     </div>
   )

@@ -219,6 +219,91 @@ public sealed class SkillAppServiceTests
     }
 
     [Fact]
+    public async Task List_applies_search_domain_and_source_filters()
+    {
+        var workspace = Workspace("workspace");
+        var dev = CreateDomain("dev", workspace.Id);
+        var home = CreateDomain("home", workspace.Id);
+        var matching = Skill("release-guide", 1, dev, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        matching.Name = "Release Guide";
+        matching.Description = "Ship a release safely";
+        matching.SourceType = "zip";
+        var wrongSource = Skill("release-manual", 1, dev, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        wrongSource.Name = "Release Manual";
+        wrongSource.SourceType = "manual";
+        var wrongDomain = Skill("release-home", 1, home, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        wrongDomain.Name = "Release Home";
+        wrongDomain.SourceType = "zip";
+        var service = CreateService(workspace, dev, [matching, wrongSource, wrongDomain], [home]);
+
+        var result = await service.ListAsync(new SkillListQuery(
+            PageSize: 10,
+            Search: "release guide",
+            Domain: "DEV",
+            SourceType: "zip",
+            Sort: "name-asc"));
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal("release-guide", item.Slug);
+        Assert.Equal("dev", item.DomainName);
+        Assert.Equal("zip", item.SourceType);
+    }
+
+    [Fact]
+    public async Task List_custom_sort_keeps_cursor_scoped_to_the_sort()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var skills = new[]
+        {
+            Skill("zulu", 1, domain, Guid.Parse("00000000-0000-0000-0000-000000000003"), DateTimeOffset.UtcNow),
+            Skill("alpha", 1, domain, Guid.Parse("00000000-0000-0000-0000-000000000001"), DateTimeOffset.UtcNow),
+            Skill("bravo", 1, domain, Guid.Parse("00000000-0000-0000-0000-000000000002"), DateTimeOffset.UtcNow),
+        };
+        var service = CreateService(workspace, domain, skills);
+
+        var first = await service.ListAsync(new SkillListQuery(PageSize: 2, Sort: "name-asc"));
+        var second = await service.ListAsync(new SkillListQuery(PageSize: 2, Cursor: first.NextCursor, Sort: "name-asc"));
+
+        Assert.Equal(["alpha", "bravo"], first.Items.Select(item => item.Slug));
+        Assert.Equal(["zulu"], second.Items.Select(item => item.Slug));
+        Assert.False(second.HasMore);
+    }
+
+    [Fact]
+    public async Task List_rejects_an_unknown_sort()
+    {
+        var service = CreateService(Workspace("workspace"));
+
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() => service.ListAsync(
+            new SkillListQuery(Sort: "random")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.SortInvalid, exception.ErrorCode);
+    }
+
+    [Fact]
+    public async Task List_rejects_a_cursor_created_for_different_filters()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var service = CreateService(
+            workspace,
+            domain,
+            [
+                Skill("alpha", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow),
+                Skill("bravo", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(-1)),
+            ]);
+
+        var first = await service.ListAsync(new SkillListQuery(PageSize: 1, Sort: "name-asc"));
+        var exception = await Assert.ThrowsAsync<LocalizedException>(() => service.ListAsync(
+            new SkillListQuery(PageSize: 1, Cursor: first.NextCursor, Sort: "updated-desc")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
+        Assert.Equal(ErrorCodes.Skill.CursorInvalid, exception.ErrorCode);
+    }
+
+    [Fact]
     public async Task List_returns_empty_page_for_empty_library()
     {
         var workspace = Workspace("workspace");

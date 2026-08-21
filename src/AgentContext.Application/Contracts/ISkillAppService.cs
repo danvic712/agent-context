@@ -39,6 +39,14 @@ public interface ISkillAppService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns a bounded page using the installed-library filters and ordering.
+    /// The cursor must be reused with the same query values.
+    /// </summary>
+    Task<SkillListPage> ListAsync(
+        SkillListQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// get_skill: the latest published version of the skill at (domain, slug),
     /// with its package file manifest. Missing packages migrate lazily from the
     /// legacy Instructions column. Throws <see cref="LocalizedException"/> (404,
