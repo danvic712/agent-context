@@ -301,6 +301,34 @@
       "editorCreateTitle": "Create a Skill",
       "editorPreviewTitle": "Open Skill editor",
       "editorDeferredDescription": "The single editor route is reserved for the unified editor delivery. Return to your installed library to choose another action.",
+      "loadingEditor": "Loading Skill editor…",
+      "editorLoadFailed": "Unable to load this Skill.",
+      "editorSaveFailed": "Unable to save this Skill version.",
+      "createMetadata": "Skill metadata",
+      "metadata": "Metadata",
+      "versioningTitle": "Immutable versions",
+      "versioningDescription": "Every publish creates a new id and keeps the previous package read-only. Domain and slug stay fixed across the lineage.",
+      "versionPublished": "Version {{version}} published.",
+      "versioning": "Versioning",
+      "latest": "latest",
+      "historicalReadOnly": "Historical · read-only",
+      "historicalDescription": "This is an immutable historical version. Review its files and history, then return to the latest version to publish changes.",
+      "publishTitle": "Publish draft",
+      "publishDescription": "Metadata, files, folders, renames, and deletions are staged locally and published together as a new version.",
+      "publishing": "Publishing…",
+      "saveDraft": "Save draft",
+      "draftSaved": "Draft change staged.",
+      "saving": "Saving…",
+      "history": "Version history",
+      "deletePathConfirm": "Delete {{path}} from the next version?",
+      "latestVersionHint": "The latest version is now {{version}}.",
+      "editor": {
+        "domain": "Domain",
+        "slug": "Slug",
+        "name": "Name",
+        "description": "Description",
+        "instructions": "Instructions (SKILL.md)"
+      },
       "discover": "Discover"
     },
     "analytics": {
@@ -431,7 +459,9 @@
       "importInvalid": "The uploaded archive is invalid or contains an unsafe path.",
       "pageSizeInvalid": "Page size must be between {0} and {1}.",
       "cursorInvalid": "The skill list cursor is invalid.",
-      "sortInvalid": "The skill list sort is invalid."
+      "sortInvalid": "The skill list sort is invalid.",
+      "versionConflict": "This Skill version is no longer the latest. Reload version {0} before publishing.",
+      "versionReadOnly": "Version {0} is historical and read-only. Publish a new version from the latest version."
     },
     "pricing": {
       "modelRequired": "Model name is required.",

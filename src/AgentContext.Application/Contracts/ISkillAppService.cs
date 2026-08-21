@@ -65,6 +65,19 @@ public interface ISkillAppService
     Task<SkillDetail> PublishAsync(Guid id, PublishSkillRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Atomically publishes a staged draft as a new immutable version. The URL
+    /// id must be the current latest version or the operation returns a localized
+    /// 409 containing latestId and latestVersion.
+    /// </summary>
+    Task<SkillDetail> PublishVersionAsync(
+        Guid id,
+        PublishSkillVersionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the complete lineage for any version id, newest first.</summary>
+    Task<SkillHistory> GetHistoryAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes the skill (every version of its (domain, slug), including their
     /// package directories) so get_skill can no longer resolve it.
     /// </summary>

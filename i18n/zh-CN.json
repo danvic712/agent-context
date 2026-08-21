@@ -301,6 +301,34 @@
       "editorCreateTitle": "创建 Skill",
       "editorPreviewTitle": "打开 Skill 编辑器",
       "editorDeferredDescription": "统一编辑器路由已预留给后续编辑器交付。你可以返回已安装技能库继续其他操作。",
+      "loadingEditor": "正在加载 Skill 编辑器…",
+      "editorLoadFailed": "无法加载这个 Skill。",
+      "editorSaveFailed": "无法保存这个 Skill 版本。",
+      "createMetadata": "Skill 元数据",
+      "metadata": "元数据",
+      "versioningTitle": "不可变版本",
+      "versioningDescription": "每次发布都会创建新的 id，并将上一个包保留为只读版本。同一条版本链中的领域和 slug 不变。",
+      "versionPublished": "版本 {{version}} 已发布。",
+      "versioning": "版本管理",
+      "latest": "最新",
+      "historicalReadOnly": "历史版本 · 只读",
+      "historicalDescription": "这是不可变的历史版本。你可以查看文件和历史记录；如需发布修改，请返回最新版本。",
+      "publishTitle": "发布草稿",
+      "publishDescription": "元数据、文件、文件夹、重命名和删除操作会先在本地暂存，再作为一个新版本一起发布。",
+      "publishing": "正在发布…",
+      "saveDraft": "保存草稿",
+      "draftSaved": "草稿修改已暂存。",
+      "saving": "正在保存…",
+      "history": "版本历史",
+      "deletePathConfirm": "要从下一个版本中删除 {{path}} 吗？",
+      "latestVersionHint": "最新版本现在是 {{version}}。",
+      "editor": {
+        "domain": "领域",
+        "slug": "Slug",
+        "name": "名称",
+        "description": "描述",
+        "instructions": "Instructions（SKILL.md）"
+      },
       "discover": "发现"
     },
     "analytics": {
@@ -431,7 +459,9 @@
       "importInvalid": "上传的归档无效或包含不安全的路径。",
       "pageSizeInvalid": "分页大小必须在 {0} 到 {1} 之间。",
       "cursorInvalid": "技能列表游标无效。",
-      "sortInvalid": "技能列表排序方式无效。"
+      "sortInvalid": "技能列表排序方式无效。",
+      "versionConflict": "这个 Skill 版本已经不是最新版本。请重新加载版本 {0} 后再发布。",
+      "versionReadOnly": "版本 {0} 是历史版本，只读。请从最新版本发布新版本。"
     },
     "pricing": {
       "modelRequired": "需要填写模型名称。",

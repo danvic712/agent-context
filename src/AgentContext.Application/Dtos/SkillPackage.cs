@@ -15,4 +15,5 @@ public sealed record SkillPackage(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
     IReadOnlyList<SkillFileInfo> Manifest,
-    IReadOnlyList<SkillFileContent> Files);
+    IReadOnlyList<SkillFileContent> Files,
+    IReadOnlyList<string>? Folders = null);

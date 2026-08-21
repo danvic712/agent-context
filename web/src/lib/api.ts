@@ -1,5 +1,21 @@
 import axios from 'axios'
 
+export class ApiError extends Error {
+  readonly status: number | undefined
+  readonly details: Record<string, unknown>
+
+  constructor(
+    message: string,
+    status: number | undefined,
+    details: Record<string, unknown> = {},
+  ) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.details = details
+  }
+}
+
 // All API calls go through axios (single instance, shared interceptors).
 const http = axios.create({ baseURL: '/api' })
 
@@ -9,7 +25,7 @@ http.interceptors.response.use(
     const message =
       error.response?.data?.message ??
       `Request failed with status ${error.response?.status ?? error.code ?? 'unknown'}`
-    return Promise.reject(new Error(message))
+    return Promise.reject(new ApiError(message, error.response?.status, error.response?.data ?? {}))
   },
 )
 
@@ -212,6 +228,7 @@ export async function deleteKnowledge(id: string): Promise<void> {
 
 export interface SkillItem {
   id: string
+  previousVersionId?: string | null
   domainName: string
   slug: string
   name: string
@@ -241,6 +258,45 @@ export interface SkillFileInfo {
 
 export interface SkillDetail extends SkillItem {
   manifest: SkillFileInfo[]
+  isLatest: boolean
+  folders: string[]
+}
+
+export interface SkillFileChange {
+  path: string
+  contentBase64: string
+}
+
+export interface SkillPathRename {
+  from: string
+  to: string
+}
+
+export interface PublishSkillVersionInput {
+  name: string
+  description: string
+  instructions: string
+  files?: SkillFileChange[]
+  folders?: string[]
+  renames?: SkillPathRename[]
+  deletedPaths?: string[]
+}
+
+export interface SkillVersionSummary {
+  id: string
+  previousVersionId: string | null
+  version: number
+  name: string
+  description: string
+  createdAtUtc: string
+  updatedAtUtc: string
+  sourceType: SkillSourceType | null
+  isLatest: boolean
+}
+
+export interface SkillHistory {
+  latestId: string
+  versions: SkillVersionSummary[]
 }
 
 export interface SkillListPage {
@@ -318,8 +374,23 @@ export async function getSkill(domain: string, slug: string): Promise<SkillDetai
   return data
 }
 
+export async function getSkillById(id: string): Promise<SkillDetail> {
+  const { data } = await http.get<SkillDetail>(`/skills/${id}`)
+  return data
+}
+
+export async function getSkillHistory(id: string): Promise<SkillHistory> {
+  const { data } = await http.get<SkillHistory>(`/skills/${id}/history`)
+  return data
+}
+
 export async function publishSkill(id: string, input: Omit<SkillInput, 'domain' | 'slug'>): Promise<SkillDetail> {
   const { data } = await http.post<SkillDetail>(`/skills/${id}/publish`, input)
+  return data
+}
+
+export async function publishSkillVersion(id: string, input: PublishSkillVersionInput): Promise<SkillDetail> {
+  const { data } = await http.post<SkillDetail>(`/skills/${id}/versions`, input)
   return data
 }
 
