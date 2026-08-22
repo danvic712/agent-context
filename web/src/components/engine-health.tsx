@@ -1,119 +1,200 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIcon, RefreshCwIcon, SparklesIcon } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { ActivityIcon, CheckIcon, RefreshCwIcon, SparklesIcon } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getEngineHealth, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
+import { getEngineHealthState } from '@/lib/engine-health-state'
 
-export function EngineHealthView() {
+type EngineError = {
+  message: string
+  source: 'load' | 'run'
+}
+
+interface EngineHealthPanelProps {
+  className?: string
+}
+
+export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
   const { t } = useTranslation()
   const [health, setHealth] = useState<EngineHealth | null>(null)
   const [hygiene, setHygiene] = useState<HygieneResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [runningHygiene, setRunningHygiene] = useState(false)
+  const [error, setError] = useState<EngineError | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     setError(null)
     try {
       setHealth(await getEngineHealth())
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('engineHealth.failedLoad'))
+      setError({
+        source: 'load',
+        message: cause instanceof Error ? cause.message : t('engineHealth.failedLoad'),
+      })
+    } finally {
+      if (showLoading) setLoading(false)
     }
-  }
+  }, [t])
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [load])
 
   const run = async () => {
     setError(null)
     setHygiene(null)
+    setRunningHygiene(true)
     try {
       setHygiene(await runHygiene())
-      await load()
+      await load(false)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('engineHealth.failedRun'))
+      setError({
+        source: 'run',
+        message: cause instanceof Error ? cause.message : t('engineHealth.failedRun'),
+      })
+    } finally {
+      setRunningHygiene(false)
     }
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ActivityIcon className="size-4 text-muted-foreground" />
-            {t('engineHealth.learningEngineTitle')}
-          </CardTitle>
-          <CardDescription>{t('engineHealth.learningEngineDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {health ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="default">
-                {t('engineHealth.queued', { count: health.queuedSessions })}
-              </Badge>
-              <Badge variant="secondary">
-                {t('engineHealth.processing', { count: health.processingSessions })}
-              </Badge>
-              <Badge variant={health.failedSessions > 0 ? 'destructive' : 'outline'}>
-                {t('engineHealth.failed', { count: health.failedSessions })}
-              </Badge>
-              <Badge variant={health.retryScheduledSessions > 0 ? 'default' : 'outline'}>
-                {t('engineHealth.retryScheduled', { count: health.retryScheduledSessions })}
-              </Badge>
-              <Badge variant="outline">
-                {t('engineHealth.totalSessions', { count: health.totalSessions })}
-              </Badge>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3" aria-busy="true">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="h-6 w-16" />
-              <Skeleton className="h-6 w-28" />
-              <Skeleton className="h-6 w-24" />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+  const state = getEngineHealthState(health, Boolean(error) && !health)
+  const attention = state === 'attention'
+  const statusTitle = {
+    loading: t('engineHealth.statusChecking'),
+    healthy: t('engineHealth.statusHealthy'),
+    attention: t('engineHealth.statusAttention'),
+    degraded: t('engineHealth.statusDegraded'),
+  }[state]
+  const statusDetail = health
+    ? attention
+      ? t('engineHealth.statusAttentionDetail', {
+          failed: health.failedSessions,
+          retry: health.retryScheduledSessions,
+        })
+      : t('engineHealth.statusHealthyDetail', { queued: health.queuedSessions })
+    : state === 'loading'
+      ? t('engineHealth.statusCheckingDetail')
+      : t('engineHealth.statusDegradedDetail')
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <SparklesIcon className="size-4 text-muted-foreground" />
-            {t('engineHealth.hygieneTitle')}
-          </CardTitle>
-          <CardDescription>{t('engineHealth.hygieneDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+  return (
+    <section
+      id="engine-health"
+      className={`c-panel c-engine-panel${className ? ` ${className}` : ''}`}
+      data-engine-state={state}
+      aria-labelledby="engine-health-title"
+    >
+      <div className="c-panel__header c-engine-panel__header">
+        <div className="c-engine-heading">
+          <span className="c-engine-heading__icon"><ActivityIcon /></span>
           <div>
-            <Button size="sm" onClick={() => void run()}>
-              <RefreshCwIcon data-icon="inline-start" className="size-4" />
-              {t('engineHealth.runHygiene')}
+            <h3 id="engine-health-title" className="c-panel__title">
+              {t('engineHealth.learningEngineTitle')}
+            </h3>
+            <p className="c-panel__description">{t('engineHealth.learningEngineDescription')}</p>
+          </div>
+        </div>
+        <div
+          className={`c-engine-summary c-engine-summary--${state}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="c-engine-summary__dot" />
+          <div>
+            <strong>{statusTitle}</strong>
+            <small>{statusDetail}</small>
+          </div>
+        </div>
+      </div>
+
+      <div className="c-panel__body c-engine-panel__body" aria-busy={loading}>
+        {loading && !health ? (
+          <div className="c-engine-metrics" aria-label={t('engineHealth.statusChecking')}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="c-engine-metric" aria-hidden="true">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="mt-3 h-7 w-12" />
+                <Skeleton className="mt-2 h-3 w-20" />
+              </div>
+            ))}
+          </div>
+        ) : health ? (
+          <>
+            <div className="c-engine-metrics">
+              <EngineMetric label={t('engineHealth.metricQueued')} value={health.queuedSessions} note={t('engineHealth.queuedNote', { count: health.queuedSessions })} tone={health.queuedSessions === 0 ? 'ok' : undefined} />
+              <EngineMetric label={t('engineHealth.metricProcessing')} value={health.processingSessions} note={t('engineHealth.processingNote', { count: health.processingSessions })} />
+              <EngineMetric label={t('engineHealth.metricFailed')} value={health.failedSessions} note={health.failedSessions > 0 ? t('engineHealth.failedAttention') : t('engineHealth.failedNone')} tone={health.failedSessions > 0 ? 'warn' : 'ok'} />
+              <EngineMetric label={t('engineHealth.metricRetryScheduled')} value={health.retryScheduledSessions} note={health.retryScheduledSessions > 0 ? t('engineHealth.retryAttention') : t('engineHealth.retryNone')} tone={health.retryScheduledSessions > 0 ? 'warn' : 'ok'} />
+              <EngineMetric label={t('engineHealth.metricTotal')} value={health.totalSessions} note={t('engineHealth.totalNote')} />
+            </div>
+            {health.totalSessions === 0 && (
+              <div className="c-engine-empty" role="status">
+                <SparklesIcon />
+                <span>{t('engineHealth.emptyState')}</span>
+              </div>
+            )}
+          </>
+        ) : null}
+
+        {error && (
+          <Alert variant="destructive" className="c-engine-alert">
+            <AlertTitle>{t(error.source === 'run' ? 'engineHealth.failedRunTitle' : 'engineHealth.failedLoadTitle')}</AlertTitle>
+            <AlertDescription>
+              <span>{error.message}</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
+                <RefreshCwIcon data-icon="inline-start" />
+                {t('common.retry')}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="c-engine-footer">
+          <div className="c-engine-hygiene-copy">
+            <SparklesIcon />
+            <div>
+              <strong>{t('engineHealth.hygieneTitle')}</strong>
+              <span>{t('engineHealth.hygieneDescription')}</span>
+            </div>
+          </div>
+          <div className="c-engine-action">
+            <span className="c-engine-last-check">{t('engineHealth.lastChecked')}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => void run()} disabled={runningHygiene}>
+              <RefreshCwIcon data-icon="inline-start" className={runningHygiene ? 'animate-spin' : undefined} />
+              {runningHygiene ? t('engineHealth.runningHygiene') : t('engineHealth.runHygiene')}
             </Button>
           </div>
-          {hygiene && (
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <Badge variant="secondary">{t('engineHealth.decayed', { count: hygiene.decayed })}</Badge>
-              <Badge variant="secondary">
-                {t('engineHealth.movedToReview', { count: hygiene.movedToReview })}
-              </Badge>
-              <Badge variant="secondary">
-                {t('engineHealth.archived', { count: hygiene.archived })}
-              </Badge>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+        {hygiene && (
+          <div className="c-engine-result" role="status" aria-live="polite">
+            <CheckIcon />
+            <span>{t('engineHealth.actionResult', { ...hygiene })}</span>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function EngineMetric({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string
+  value: number
+  note: string
+  tone?: 'ok' | 'warn'
+}) {
+  return (
+    <div className="c-engine-metric">
+      <div className="c-engine-metric__label">{label}</div>
+      <div className={`c-engine-metric__value${tone ? ` c-engine-metric__value--${tone}` : ''}`}>{value}</div>
+      <div className="c-engine-metric__note">{note}</div>
     </div>
   )
 }

@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIcon, BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
+import { BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
-import { EngineHealthView } from '@/components/engine-health'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillDetailPage } from '@/components/skills/skill-detail-page'
 import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
 import { SkillUploadPage } from '@/components/skills/skill-upload-page'
 import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
-import { getDashboardUrl, getHealth } from '@/lib/api'
+import { getDashboardUrl, getEngineHealth, type EngineHealth } from '@/lib/api'
+import { getEngineHealthState } from '@/lib/engine-health-state'
 import { cn } from '@/lib/utils'
 
 const icons: Record<AppTab, React.ReactNode> = {
@@ -20,7 +20,6 @@ const icons: Record<AppTab, React.ReactNode> = {
   archived: <FolderArchiveIcon className="size-3.5" />,
   skills: <WrenchIcon className="size-3.5" />,
   analytics: <BarChart3Icon className="size-3.5" />,
-  health: <ActivityIcon className="size-3.5" />,
   settings: <SettingsIcon className="size-3.5" />,
 }
 
@@ -28,17 +27,21 @@ export function AppShell() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const tab = getTabFromPath(pathname)
-  const [healthy, setHealthy] = useState<boolean | null>(null)
+  const [engineHealth, setEngineHealth] = useState<EngineHealth | null>(null)
+  const [engineHealthError, setEngineHealthError] = useState(false)
   const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    getHealth()
+    getEngineHealth()
       .then((health) => {
-        if (!cancelled) setHealthy(health.database === 'ok')
+        if (!cancelled) {
+          setEngineHealth(health)
+          setEngineHealthError(false)
+        }
       })
       .catch(() => {
-        if (!cancelled) setHealthy(false)
+        if (!cancelled) setEngineHealthError(true)
       })
     getDashboardUrl()
       .then((dto) => {
@@ -53,6 +56,14 @@ export function AppShell() {
   }, [])
 
   const tabs = appTabs.map((item) => ({ ...item, label: t(`appShell.tabs.${item.id}`) }))
+  const engineState = getEngineHealthState(engineHealth, engineHealthError)
+  const engineLabel = engineState === 'loading'
+    ? t('appShell.checking')
+    : engineState === 'healthy'
+      ? t('appShell.engineHealthy', { queued: engineHealth?.queuedSessions ?? 0 })
+      : engineState === 'attention'
+        ? t('appShell.engineAttention')
+        : t('appShell.engineDegraded')
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -124,15 +135,20 @@ export function AppShell() {
                 {t('appShell.dashboard')}
               </button>
             )}
-            <div className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] text-muted-foreground lg:flex" style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}>
+            <NavLink
+              to="/settings#engine-health"
+              aria-label={t('appShell.engineStatusLabel')}
+              className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] text-muted-foreground transition-colors hover:text-foreground lg:flex"
+              style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}
+            >
               <span
                 className={cn(
                   'inline-block size-1.5 rounded-full',
-                  healthy === null ? 'bg-warn' : healthy ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : 'bg-destructive',
+                  engineState === 'loading' ? 'bg-warn' : engineState === 'healthy' ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : engineState === 'attention' ? 'bg-warn' : 'bg-destructive',
                 )}
               />
-              {healthy === null ? t('appShell.checking') : healthy ? 'OK' : t('appShell.degraded')}
-            </div>
+              {engineLabel}
+            </NavLink>
             <ThemeToggle />
           </div>
         </div>
@@ -148,7 +164,6 @@ export function AppShell() {
           <Route path="/skills/upload" element={<SkillUploadPage />} />
           <Route path="/skills/view/:id" element={<SkillDetailPage />} />
           <Route path="/analytics" element={<AnalyticsOverview />} />
-          <Route path="/health" element={<EngineHealthView />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/knowledge" replace />} />
         </Routes>
