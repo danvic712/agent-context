@@ -157,29 +157,6 @@ public sealed class SkillPackageStoreTests
     }
 
     [Fact]
-    public async Task Import_into_existing_package_keeps_existing_main_file_when_archive_omits_it()
-    {
-        var root = CreateTempDirectory();
-        try
-        {
-            var store = new SkillPackageStore(root);
-            store.CreatePackage("dev", "existing", 1, "# Existing");
-
-            await store.ImportZipAsync(
-                "dev", "existing", 1, Zip(("existing/examples/new.ts", Encoding.UTF8.GetBytes("export {};"))), CancellationToken.None);
-
-            Assert.Equal(Encoding.UTF8.GetBytes("# Existing"),
-                store.ReadFile("dev", "existing", 1, "SKILL.md"));
-            Assert.Equal(Encoding.UTF8.GetBytes("export {};"),
-                store.ReadFile("dev", "existing", 1, "existing/examples/new.ts"));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
     public async Task Create_from_zip_rejects_duplicate_normalized_entries()
     {
         var root = CreateTempDirectory();
@@ -247,82 +224,6 @@ public sealed class SkillPackageStoreTests
 
             Assert.Equal(script, store.ReadFile("dev", "script-data", 1, "scripts/setup.sh"));
             Assert.False(File.Exists(Path.Combine(root, "should-not-exist")));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void Publish_package_clones_files_applies_folder_operations_and_preserves_the_source()
-    {
-        var root = CreateTempDirectory();
-        try
-        {
-            var store = new SkillPackageStore(root);
-            store.CreatePackage("dev", "versioned", 1, "# Original");
-            store.WriteFile("dev", "versioned", 1, "assets/logo.bin", [0, 1, 2, 255]);
-            Directory.CreateDirectory(Path.Combine(root, "dev", "versioned", "v1", "empty"));
-
-            store.PublishPackage(
-                "dev",
-                "versioned",
-                1,
-                "dev",
-                "versioned",
-                2,
-                "# Updated",
-                new PublishSkillVersionRequest(
-                    "Versioned",
-                    "Updated",
-                    "# Updated",
-                    [new SkillFileChange("scripts/run.bin", Convert.ToBase64String([9, 8, 7]))],
-                    ["docs/empty"],
-                    [new SkillPathRename("assets", "static")],
-                    ["empty"]));
-
-            Assert.Equal(Encoding.UTF8.GetBytes("# Original"), store.ReadFile("dev", "versioned", 1, "SKILL.md"));
-            Assert.Equal([0, 1, 2, 255], store.ReadFile("dev", "versioned", 2, "static/logo.bin"));
-            Assert.Equal([9, 8, 7], store.ReadFile("dev", "versioned", 2, "scripts/run.bin"));
-            Assert.Equal(Encoding.UTF8.GetBytes("# Updated"), store.ReadFile("dev", "versioned", 2, "SKILL.md"));
-            Assert.Contains("docs/empty", store.ListFolders("dev", "versioned", 2));
-            Assert.DoesNotContain("empty", store.ListFolders("dev", "versioned", 2));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void Publish_package_failure_does_not_install_a_partial_target_or_change_the_source()
-    {
-        var root = CreateTempDirectory();
-        try
-        {
-            var store = new SkillPackageStore(root);
-            store.CreatePackage("dev", "atomic", 1, "# Stable");
-
-            var request = new PublishSkillVersionRequest(
-                "Atomic",
-                "Broken",
-                "# Broken",
-                [new SkillFileChange("bad.bin", "not-base64")]);
-            var exception = Assert.Throws<LocalizedException>(() => store.PublishPackage(
-                "dev",
-                "atomic",
-                1,
-                "dev",
-                "atomic",
-                2,
-                "# Broken",
-                request));
-
-            Assert.Equal(ErrorCodes.Skill.ImportInvalid, exception.ErrorCode);
-
-            Assert.False(store.PackageExists("dev", "atomic", 2));
-            Assert.Equal(Encoding.UTF8.GetBytes("# Stable"), store.ReadFile("dev", "atomic", 1, "SKILL.md"));
         }
         finally
         {

@@ -13,6 +13,7 @@ interface SkillCardProps {
 
 const sourceKey = (sourceType: SkillSourceType | null): string => {
   if (sourceType === 'manual') return 'skills.sourceManual'
+  if (sourceType === 'file') return 'skills.sourceFile'
   if (sourceType === 'zip') return 'skills.sourceZip'
   if (sourceType === 'skills_sh') return 'skills.sourceSkillsSh'
   if (sourceType === 'local_copy') return 'skills.sourceLocalCopy'
@@ -25,8 +26,8 @@ export function SkillCard({ item, highlighted = false }: SkillCardProps) {
 
   return (
     <Link
-      to={`/skills/editor/${item.id}`}
-      aria-label={t('skills.openEditorFor', { name: item.name })}
+      to={`/skills/view/${item.id}`}
+      aria-label={t('skills.viewPackageFor', { name: item.name })}
       className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <Card
@@ -71,7 +72,7 @@ export function SkillCard({ item, highlighted = false }: SkillCardProps) {
               <span className="truncate">{t('skills.updatedOn', { date: updatedAt })}</span>
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-primary transition group-hover:bg-primary/10">
-              {t('skills.editSkill')}
+              {t('skills.viewSkill')}
               <ArrowUpRightIcon className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </span>
           </div>

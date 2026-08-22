@@ -2,14 +2,14 @@ import { ArrowLeftIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { SkillPageHeader } from './skill-page-header'
-import { SkillUploadForm, type SkillUploadFormInput } from './skill-upload-form'
-import { uploadSkill } from '@/lib/api'
+import { SkillUploadForm } from './skill-upload-form'
+import { uploadSkill, type SkillUploadInput } from '@/lib/api'
 
 export function SkillUploadPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const submit = async (input: SkillUploadFormInput, reportProgress: (progress: number) => void) => {
+  const submit = async (input: SkillUploadInput, reportProgress: (progress: number) => void) => {
     const created = await uploadSkill(input, reportProgress)
     navigate('/skills', { state: { highlightId: created.id, successSlug: created.slug } })
   }

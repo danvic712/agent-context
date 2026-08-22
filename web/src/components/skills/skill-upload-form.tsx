@@ -1,21 +1,15 @@
-import { FileArchiveIcon, UploadCloudIcon, XIcon } from 'lucide-react'
+import { FileArchiveIcon, FileUpIcon, UploadCloudIcon, XIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-
-export interface SkillUploadFormInput {
-  domain: string
-  slug: string
-  name: string
-  description: string
-  archive: File
-}
+import { Textarea } from '@/components/ui/textarea'
+import type { SkillUploadInput, SkillUploadKind } from '@/lib/api'
 
 type SkillUploadFormSubmit = (
-  input: SkillUploadFormInput,
+  input: SkillUploadInput,
   reportProgress: (progress: number) => void,
 ) => Promise<void>
 
@@ -30,23 +24,35 @@ export function SkillUploadForm({ onSubmit }: SkillUploadFormProps) {
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [archive, setArchive] = useState<File | null>(null)
+  const [kind, setKind] = useState<SkillUploadKind>('zip')
+  const [file, setFile] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const chooseArchive = (file: File | undefined) => {
-    if (!file) return
-    setArchive(file)
+  const chooseFile = (selected: File | undefined) => {
+    if (!selected) return
+    setFile(selected)
+    setError(null)
+  }
+
+  const changeKind = (nextKind: SkillUploadKind) => {
+    setKind(nextKind)
+    setFile(null)
+    if (inputRef.current) inputRef.current.value = ''
     setError(null)
   }
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    if (!domain.trim() || !slug.trim() || !name.trim() || !description.trim() || !archive) {
+    if (!domain.trim() || !slug.trim() || !name.trim() || !description.trim() || !file) {
       setError(t('skills.requiredFields'))
+      return
+    }
+    if (kind === 'zip' && !file.name.toLowerCase().endsWith('.zip')) {
+      setError(t('skills.invalidArchive'))
       return
     }
 
@@ -54,7 +60,7 @@ export function SkillUploadForm({ onSubmit }: SkillUploadFormProps) {
     setProgress(0)
     try {
       await onSubmit(
-        { domain: domain.trim(), slug: slug.trim(), name: name.trim(), description: description.trim(), archive },
+        { domain: domain.trim(), slug: slug.trim(), name: name.trim(), description: description.trim(), kind, file },
         setProgress,
       )
     } catch (cause) {
@@ -63,6 +69,8 @@ export function SkillUploadForm({ onSubmit }: SkillUploadFormProps) {
       setUploading(false)
     }
   }
+
+  const isPackage = kind === 'zip'
 
   return (
     <form className="grid gap-6" onSubmit={(event) => void submit(event)}>
@@ -97,34 +105,75 @@ export function SkillUploadForm({ onSubmit }: SkillUploadFormProps) {
         <Field>
           <FieldLabel htmlFor="skill-upload-description">{t('skills.description')}</FieldLabel>
           <FieldContent>
-            <Input id="skill-upload-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t('skills.descriptionPlaceholder')} required />
+            <Textarea
+              id="skill-upload-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={t('skills.descriptionPlaceholder')}
+              rows={4}
+              className="min-h-28 resize-y leading-6"
+              required
+            />
           </FieldContent>
         </Field>
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium">{t('skills.archive')}</p>
+        <p className="mb-2 text-sm font-medium">{t('skills.uploadKind')}</p>
+        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('skills.uploadKind')}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={isPackage}
+            className={`rounded-xl border p-4 text-left transition ${isPackage ? 'border-primary bg-primary/10 shadow-sm' : 'border-border bg-muted/20 hover:border-primary/40'}`}
+            onClick={() => changeKind('zip')}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium"><FileArchiveIcon className="size-4 text-primary" />{t('skills.uploadPackage')}</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('skills.uploadPackageHint')}</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!isPackage}
+            className={`rounded-xl border p-4 text-left transition ${!isPackage ? 'border-primary bg-primary/10 shadow-sm' : 'border-border bg-muted/20 hover:border-primary/40'}`}
+            onClick={() => changeKind('file')}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium"><FileUpIcon className="size-4 text-primary" />{t('skills.uploadSingleFile')}</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('skills.uploadSingleFileHint')}</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium">{isPackage ? t('skills.archive') : t('skills.singleFile')}</p>
         <label
-          htmlFor="skill-upload-archive"
+          htmlFor="skill-upload-file"
           className={`group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-10 text-center transition ${dragging ? 'border-primary bg-primary/10' : 'border-border bg-muted/20 hover:border-primary/50 hover:bg-primary/5'}`}
           onDragEnter={(event) => { event.preventDefault(); setDragging(true) }}
           onDragOver={(event) => event.preventDefault()}
           onDragLeave={() => setDragging(false)}
-          onDrop={(event) => { event.preventDefault(); setDragging(false); chooseArchive(event.dataTransfer.files[0]) }}
+          onDrop={(event) => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files[0]) }}
         >
-          <input ref={inputRef} id="skill-upload-archive" className="sr-only" type="file" accept=".zip,application/zip" onChange={(event) => chooseArchive(event.target.files?.[0])} />
+          <input
+            ref={inputRef}
+            id="skill-upload-file"
+            className="sr-only"
+            type="file"
+            accept={isPackage ? '.zip,application/zip' : undefined}
+            onChange={(event) => chooseFile(event.target.files?.[0])}
+          />
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:scale-105">
-            <UploadCloudIcon className="size-6" />
+            {isPackage ? <FileArchiveIcon className="size-6" /> : <UploadCloudIcon className="size-6" />}
           </div>
-          <span className="mt-3 text-sm font-medium">{t('skills.chooseArchive')}</span>
-          <span className="mt-1 text-xs text-muted-foreground">{t('skills.archiveHint')}</span>
+          <span className="mt-3 text-sm font-medium">{isPackage ? t('skills.chooseArchive') : t('skills.chooseFile')}</span>
+          <span className="mt-1 text-xs text-muted-foreground">{isPackage ? t('skills.archiveHint') : t('skills.singleFileHint')}</span>
         </label>
-        {archive && (
+        {file && (
           <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
-            <FileArchiveIcon className="size-4 shrink-0 text-[var(--hi)]" />
-            <span className="min-w-0 flex-1 truncate font-mono text-xs">{archive.name}</span>
-            <span className="shrink-0 text-[10px] text-muted-foreground">{Math.max(1, Math.round(archive.size / 1024))} KB</span>
-            <Button type="button" size="icon-xs" variant="ghost" aria-label={t('skills.removeArchive')} onClick={() => { setArchive(null); if (inputRef.current) inputRef.current.value = '' }}>
+            {isPackage ? <FileArchiveIcon className="size-4 shrink-0 text-[var(--hi)]" /> : <FileUpIcon className="size-4 shrink-0 text-[var(--hi)]" />}
+            <span className="min-w-0 flex-1 truncate font-mono text-xs">{file.name}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground">{Math.max(1, Math.round(file.size / 1024))} KB</span>
+            <Button type="button" size="icon-xs" variant="ghost" aria-label={t('skills.removeFile', { name: file.name })} onClick={() => { setFile(null); if (inputRef.current) inputRef.current.value = '' }}>
               <XIcon />
             </Button>
           </div>

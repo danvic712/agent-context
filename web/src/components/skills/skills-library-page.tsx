@@ -180,7 +180,7 @@ export function SkillsLibraryPage() {
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-ok/30 bg-ok/10 px-4 py-3 text-sm" role="status">
           <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-ok" />
           <div className="min-w-0 flex-1">{notice}</div>
-          {highlightedId && <Link className="shrink-0 text-xs font-medium text-primary underline-offset-4 hover:underline" to={`/skills/editor/${highlightedId}`}>{t('skills.continueEditing')}</Link>}
+          {highlightedId && <Link className="shrink-0 text-xs font-medium text-primary underline-offset-4 hover:underline" to={`/skills/view/${highlightedId}`}>{t('skills.viewPackage')}</Link>}
           <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t('skills.dismissNotice')} onClick={() => setNotice(null)}>×</button>
         </div>
       )}
@@ -188,7 +188,6 @@ export function SkillsLibraryPage() {
       <SkillActionBar
         count={items.length}
         refreshing={refreshing}
-        onCreate={() => navigate('/skills/editor')}
         onUpload={() => navigate('/skills/upload')}
         onRefresh={() => void refresh()}
       />
@@ -216,7 +215,6 @@ export function SkillsLibraryPage() {
         onLoadMore={() => void loadMore()}
         onRetry={() => void (errorScope === 'initial' ? loadInitial(appliedFilters) : loadMore())}
         onUpload={() => navigate('/skills/upload')}
-        onCreate={() => navigate('/skills/editor')}
         onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
       />
     </div>

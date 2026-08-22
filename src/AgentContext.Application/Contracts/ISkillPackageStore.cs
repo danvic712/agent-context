@@ -19,10 +19,7 @@ public interface ISkillPackageStore
     /// </summary>
     string EnsurePackage(string domainName, string slug, int version, string? fallbackMarkdown = null);
 
-    /// <summary>Returns whether a concrete version directory already exists.</summary>
-    bool PackageExists(string domainName, string slug, int version);
-
-    /// <summary>Creates a fresh package (used by create/publish) with SKILL.md from the input markdown.</summary>
+    /// <summary>Creates a fresh package with SKILL.md from the input markdown.</summary>
     void CreatePackage(string domainName, string slug, int version, string? initialMarkdown);
 
     /// <summary>All files in the package, relative paths, ordered by name.</summary>
@@ -34,37 +31,10 @@ public interface ISkillPackageStore
     /// <summary>Reads a file's raw bytes.</summary>
     byte[] ReadFile(string domainName, string slug, int version, string path);
 
-    /// <summary>Writes (creates or overwrites) a file.</summary>
-    void WriteFile(string domainName, string slug, int version, string path, byte[] content);
+    /// <summary>Adds the uploaded file to a new package.</summary>
+    void AddFile(string domainName, string slug, int version, string path, byte[] content);
 
-    /// <summary>Deletes a file.</summary>
-    void DeleteFile(string domainName, string slug, int version, string path);
-
-    /// <summary>
-    /// Copies every file of an existing package into a new version directory
-    /// (publish keeps the full package); optionally overrides the main file.
-    /// </summary>
-    void CopyPackage(
-        string sourceDomain, string sourceSlug, int sourceVersion,
-        string targetDomain, string targetSlug, int targetVersion,
-        string? overrideMain = null);
-
-    /// <summary>
-    /// Builds and atomically installs a new package directory from a source
-    /// version plus staged changes. The source package is never modified.
-    /// </summary>
-    bool PublishPackage(
-        string sourceDomain,
-        string sourceSlug,
-        int sourceVersion,
-        string targetDomain,
-        string targetSlug,
-        int targetVersion,
-        string instructions,
-        PublishSkillVersionRequest changes,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>Deletes the whole package directory (used by Skill deletion).</summary>
+    /// <summary>Deletes a staged package directory after a failed creation.</summary>
     void DeletePackage(string domainName, string slug, int version);
 
     /// <summary>Creates a new package by safely extracting a ZIP archive.</summary>
@@ -75,11 +45,4 @@ public interface ISkillPackageStore
         Stream zipStream,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Extracts a ZIP archive into an existing package.</summary>
-    Task ImportZipAsync(
-        string domainName,
-        string slug,
-        int version,
-        Stream zipStream,
-        CancellationToken cancellationToken = default);
 }
