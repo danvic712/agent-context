@@ -116,6 +116,9 @@
     --warn: #c08a2e;
     --code-bg: #26323d;
     --code-ink: #e5eff8;
+    --editor-bg: #fbfdff;
+    --editor-ink: #33414d;
+    --editor-gutter-bg: #eef2f6;
     --shadow-card: 0 1px 3px rgba(51, 65, 77, 0.04), 0 12px 30px rgba(51, 65, 77, 0.08);
     --topbg: rgba(251, 253, 255, 0.82);
 }
@@ -179,6 +182,9 @@
     --warn: #d9b45c;
     --code-bg: #0e1620;
     --code-ink: #dbeaf7;
+    --editor-bg: #0e1620;
+    --editor-ink: #dbeaf7;
+    --editor-gutter-bg: #15202b;
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 16px 40px rgba(0, 0, 0, 0.42);
     --topbg: rgba(28, 39, 51, 0.88);
 }
