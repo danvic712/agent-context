@@ -112,6 +112,15 @@ internal static class MockDbSetFactory
                 return Visit(node.Arguments[0]);
             }
 
+            // Mocked query sets cannot execute EF bulk-update expressions. The
+            // application tests only need the affected-row result to exercise the
+            // surrounding pipeline seam.
+            if (node.Method.DeclaringType == typeof(EntityFrameworkQueryableExtensions) &&
+                node.Method.Name is "ExecuteUpdate" or "ExecuteUpdateAsync" or "ExecuteDelete" or "ExecuteDeleteAsync")
+            {
+                return Expression.Constant(1);
+            }
+
             return base.VisitMethodCall(node);
         }
     }

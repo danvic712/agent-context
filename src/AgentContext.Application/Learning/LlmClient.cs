@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Localization;
+using AgentContext.Domain;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -37,7 +38,7 @@ public sealed class LlmClient(
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public async Task<IReadOnlyList<KnowledgeExtraction>> ExtractKnowledgeAsync(
+    public async Task<LlmCallResult<IReadOnlyList<KnowledgeExtraction>>> ExtractKnowledgeAsync(
         string sessionSummaryJson, CancellationToken cancellationToken = default)
     {
         var runtime = await GetRuntimeOptionsAsync(cancellationToken);
@@ -48,10 +49,14 @@ public sealed class LlmClient(
         var response = await CreateAgent(runtime.Chat, locale).RunAsync<ExtractionEnvelope>(
             sessionSummaryJson, null, JsonOptions, null, cancellationToken);
 
-        return response.Result?.KnowledgeItems ?? [];
+        return new LlmCallResult<IReadOnlyList<KnowledgeExtraction>>(
+            response.Result?.KnowledgeItems ?? [],
+            ToUsage(response.Usage, InferenceCapability.Chat),
+            runtime.Chat.Id,
+            runtime.Chat.Model);
     }
 
-    public async Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
+    public async Task<LlmCallResult<float[]>> EmbedAsync(string text, CancellationToken cancellationToken = default)
     {
         var runtime = await GetRuntimeOptionsAsync(cancellationToken);
         var generated = await CreateGenerator(runtime.Embedding).GenerateAsync([text], cancellationToken: cancellationToken);
@@ -65,7 +70,11 @@ public sealed class LlmClient(
                 "with 1536 dimensions (e.g. text-embedding-3-small) or migrate the column.");
         }
 
-        return vector.ToArray();
+        return new LlmCallResult<float[]>(
+            vector.ToArray(),
+            ToUsage(generated.Usage, InferenceCapability.Embedding),
+            runtime.Embedding.Id,
+            runtime.Embedding.Model);
     }
 
     private async Task<InferenceRuntimeOptions> GetRuntimeOptionsAsync(CancellationToken cancellationToken)
@@ -101,6 +110,36 @@ public sealed class LlmClient(
         // the requested dimension when told (T9 integration fix).
         return new OpenAI.Embeddings.EmbeddingClient(route.Model, credential, openAiOptions)
             .AsIEmbeddingGenerator(LearningPipelineDefaults.EmbeddingDimensions);
+    }
+
+    private static LlmUsage? ToUsage(UsageDetails? usage, InferenceCapability capability)
+    {
+        if (usage?.InputTokenCount is not { } inputTokens)
+        {
+            return null;
+        }
+
+        // Embedding APIs report prompt/input tokens only. Output is structurally
+        // zero for an embedding vector; it is not a fabricated provider count.
+        if (capability == InferenceCapability.Chat && usage.OutputTokenCount is null)
+        {
+            return null;
+        }
+
+        var cachedInputTokens = usage.CachedInputTokenCount ?? 0;
+        var outputTokens = capability == InferenceCapability.Embedding
+            ? usage.OutputTokenCount ?? 0
+            : usage.OutputTokenCount!.Value;
+        if (inputTokens < 0 || cachedInputTokens < 0 || outputTokens < 0 || cachedInputTokens > inputTokens ||
+            inputTokens > int.MaxValue || cachedInputTokens > int.MaxValue || outputTokens > int.MaxValue)
+        {
+            return null;
+        }
+
+        return new LlmUsage(
+            (int)inputTokens,
+            (int)cachedInputTokens,
+            (int)outputTokens);
     }
 
     private OpenAIClientOptions CreateClientOptions(string baseUrl)

@@ -18,7 +18,10 @@ namespace AgentContext.Application.Retrieval;
 /// 0.5). Conflict-group partners are appended so both sides show side by side.
 /// Single-user MVP: private items are always visible to the owner (AC5).
 /// </summary>
-public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm) : IRetrievalAppService
+public sealed class RetrievalAppService(
+    AgentContextDbContext db,
+    ILlmClient llm,
+    ILearningUsageRecorder usageRecorder) : IRetrievalAppService
 {
     public async Task<SearchMemoryResult> SearchMemoryAsync(
         string domain, string query, double? minConfidence = null, CancellationToken cancellationToken = default)
@@ -83,7 +86,13 @@ public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm
         Guid domainId, string query, double threshold, int take,
         CancellationToken cancellationToken, KnowledgeType? type = null)
     {
-        var vector = new Vector(await llm.EmbedAsync(query, cancellationToken));
+        var embedding = await llm.EmbedAsync(query, cancellationToken);
+        await usageRecorder.RecordAsync(
+            null,
+            InferenceCapability.Embedding,
+            embedding,
+            cancellationToken);
+        var vector = new Vector(embedding.Result);
 
         var queryable = db.Knowledge.AsNoTracking()
             .Where(k => k.DomainId == domainId

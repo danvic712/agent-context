@@ -68,6 +68,7 @@ public static class ServiceCollectionExtensions
         // dedicated three-table configuration and resolved per call.
         services.AddScoped<ISettingsAppService, SettingsAppService>();
         services.AddScoped<ILlmClient, LlmClient>();
+        services.AddScoped<ILearningUsageRecorder, LearningUsageRecorder>();
         services.AddScoped<ILearningPipelineAppService, LearningPipelineAppService>();
         services.AddScoped<IRetrievalAppService, RetrievalAppService>();
         services.AddScoped<IKnowledgeAppService, KnowledgeAppService>();

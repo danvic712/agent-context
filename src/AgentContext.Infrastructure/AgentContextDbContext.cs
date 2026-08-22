@@ -20,7 +20,7 @@ public class AgentContextDbContext(DbContextOptions<AgentContextDbContext> optio
     public virtual DbSet<Session> Sessions => Set<Session>();
     public virtual DbSet<Knowledge> Knowledge => Set<Knowledge>();
     public virtual DbSet<Skill> Skills => Set<Skill>();
-    public DbSet<Usage> Usage => Set<Usage>();
+    public virtual DbSet<Usage> Usage => Set<Usage>();
     public virtual DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();
     public virtual DbSet<InferenceConfiguration> InferenceConfigurations => Set<InferenceConfiguration>();

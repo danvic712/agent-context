@@ -84,7 +84,7 @@ public sealed class InferenceConfigurationAppService(
                 return null;
             }
 
-            resolved[route.Capability] = new InferenceRuntimeRoute(provider.BaseUrl, apiKey, route.Model);
+            resolved[route.Capability] = new InferenceRuntimeRoute(route.Id, provider.BaseUrl, apiKey, route.Model);
         }
 
         return resolved.TryGetValue(InferenceCapability.Chat, out var chat) &&
