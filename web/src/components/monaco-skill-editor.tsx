@@ -70,6 +70,7 @@ const applyTheme = (resolved: 'light' | 'dark') => {
 
 export function MonacoSkillEditor({ path, value, disabled = false, onChange }: MonacoSkillEditorProps) {
   const { resolved } = useTheme()
+  const language = languageForSkillPath(path, value)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
   const valueRef = useRef(value)
@@ -91,7 +92,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
     applyTheme(resolved)
     const model = monaco.editor.createModel(
       valueRef.current,
-      languageForSkillPath(path),
+      languageForSkillPath(path, valueRef.current),
       monaco.Uri.parse(`skill://editor/${encodeURIComponent(path)}`),
     )
     const editor = monaco.editor.create(container, {
@@ -108,7 +109,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
       scrollBeyondLastLine: false,
       smoothScrolling: true,
       tabSize: 2,
-      wordWrap: languageForSkillPath(path) === 'markdown' ? 'on' : 'off',
+      wordWrap: languageForSkillPath(path, valueRef.current) === 'markdown' ? 'on' : 'off',
     })
     const subscription = editor.onDidChangeModelContent(() => {
       onChangeRef.current(editor.getValue())
@@ -125,6 +126,14 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
 
   useEffect(() => {
     const editor = editorRef.current
+    const model = editor?.getModel()
+    if (!editor || !model || model.getLanguageId() === language) return
+    monaco.editor.setModelLanguage(model, language)
+    editor.updateOptions({ wordWrap: language === 'markdown' ? 'on' : 'off' })
+  }, [language])
+
+  useEffect(() => {
+    const editor = editorRef.current
     if (!editor || editor.getValue() === value) return
     const position = editor.getPosition()
     editor.setValue(value)
@@ -136,7 +145,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
       ref={containerRef}
       className="skill-monaco-editor h-[min(58vh,680px)] min-h-[360px] w-full overflow-hidden rounded-xl border border-border/70"
       data-editor="monaco"
-      data-language={languageForSkillPath(path)}
+      data-language={language}
       data-readonly={disabled || undefined}
     />
   )

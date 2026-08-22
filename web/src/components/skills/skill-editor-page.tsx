@@ -157,7 +157,13 @@ function SkillVersionEditor({ detail, history, error, notice, onError, onNotice,
   }, [detail])
 
   const activeInfo = files.find((file) => file.path === activePath)
-  const sortedFiles = useMemo(() => [...files].sort((a, b) => a.path.localeCompare(b.path)), [files])
+  const sortedFolders = useMemo(() => [...folders].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })), [folders])
+  const sortedFiles = useMemo(() => [...files].sort((a, b) => {
+    const aName = a.path.split('/').pop() ?? a.path
+    const bName = b.path.split('/').pop() ?? b.path
+    return aName.localeCompare(bName, undefined, { numeric: true, sensitivity: 'base' })
+      || a.path.localeCompare(b.path, undefined, { numeric: true, sensitivity: 'base' })
+  }), [files])
 
   const selectFile = async (path: string) => {
     setActivePath(path)
@@ -283,7 +289,55 @@ function SkillVersionEditor({ detail, history, error, notice, onError, onNotice,
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
       <div className="grid gap-5">
         <Card><CardHeader><CardTitle className="text-base">{t('skills.metadata')}</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5"><Label>{t('skills.editor.name')}</Label><Input value={name} onChange={(event) => setName(event.target.value)} disabled={!detail.isLatest} /></label><label className="grid gap-1.5"><Label>{t('skills.editor.description')}</Label><Input value={description} onChange={(event) => setDescription(event.target.value)} disabled={!detail.isLatest} /></label></CardContent></Card>
-        <Card><CardHeader className="flex flex-row items-center gap-2"><CardTitle className="text-base">{t('skills.packageTree')}</CardTitle><div className="ml-auto flex gap-1"><Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={addFile}><PlusIcon className="mr-1 size-3.5" />{t('skills.newFile')}</Button><Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={addFolder}><FolderPlusIcon className="mr-1 size-3.5" />{t('skills.newFolder')}</Button><Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={() => fileInput.current?.click()}><UploadIcon className="mr-1 size-3.5" />{t('skills.uploadFiles')}</Button><input ref={fileInput} type="file" multiple className="hidden" onChange={(event) => void uploadFiles(event)} /></div></CardHeader><CardContent className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]"><div className="space-y-1 rounded-xl border border-border/70 bg-muted/20 p-2">{sortedFiles.map((file) => <div key={file.path} className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${activePath === file.path ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}><button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => void selectFile(file.path)}><FileIcon className="size-3.5 shrink-0" /><span className="truncate font-mono">{file.path}</span></button>{detail.isLatest && <button type="button" title={t('skills.renameFile')} onClick={() => renamePath(file.path, false)}><PencilIcon className="size-3" /></button>} {detail.isLatest && <button type="button" title={t('common.delete')} onClick={() => removePath(file.path)}><Trash2Icon className="size-3 text-destructive" /></button>}</div>)}{folders.map((folder) => <div key={folder} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground"><FolderIcon className="size-3.5 shrink-0" /><span className="min-w-0 flex-1 truncate font-mono">{folder}</span>{detail.isLatest && <button type="button" title={t('skills.renameFile')} onClick={() => renamePath(folder, true)}><PencilIcon className="size-3" /></button>} {detail.isLatest && <button type="button" title={t('common.delete')} onClick={() => removePath(folder, true)}><Trash2Icon className="size-3 text-destructive" /></button>}</div>)}</div><div className="min-h-[300px]">{activeInfo?.binary ? <p className="rounded-lg border border-border/70 p-4 text-xs text-muted-foreground">{t('skills.binaryFileNote')}</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="truncate font-mono text-xs text-muted-foreground">{activePath}</span><SkillLanguageBadge path={activePath} /></div><div className="flex items-center gap-1 rounded-lg border border-border/70 bg-muted/20 p-1"><Button size="sm" variant={previewing ? 'secondary' : 'ghost'} aria-pressed={previewing} onClick={() => setPreviewing(true)}>{t('skills.preview')}</Button><Button size="sm" variant={!previewing ? 'secondary' : 'ghost'} aria-pressed={!previewing} disabled={!detail.isLatest} onClick={() => setPreviewing(false)}>{t('skills.edit')}</Button>{!previewing && <Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={() => { saveActiveFile(); setPreviewing(true); setSavingFile(false) }}>{savingFile ? t('skills.saving') : <><SaveIcon className="mr-1 size-3.5" />{t('skills.saveDraft')}</>}</Button>}</div></div>{previewing ? <SkillFilePreview path={activePath} content={activeContent} /> : <LazyMonacoSkillEditor key={activePath} path={activePath} value={activeContent} disabled={!detail.isLatest} onChange={setActiveContent} />}</>}</div></CardContent></Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <CardTitle className="text-base">{t('skills.packageTree')}</CardTitle>
+            <div className="ml-auto flex gap-1">
+              <Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={addFile}><PlusIcon className="mr-1 size-3.5" />{t('skills.newFile')}</Button>
+              <Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={addFolder}><FolderPlusIcon className="mr-1 size-3.5" />{t('skills.newFolder')}</Button>
+              <Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={() => fileInput.current?.click()}><UploadIcon className="mr-1 size-3.5" />{t('skills.uploadFiles')}</Button>
+              <input ref={fileInput} type="file" multiple className="hidden" onChange={(event) => void uploadFiles(event)} />
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="space-y-1 rounded-xl border border-border/70 bg-muted/20 p-2">
+              {sortedFolders.map((folder) => (
+                <div key={folder} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground">
+                  <FolderIcon className="size-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate font-mono">{folder}</span>
+                  {detail.isLatest && <button type="button" title={t('skills.renameFile')} onClick={() => renamePath(folder, true)}><PencilIcon className="size-3" /></button>}
+                  {detail.isLatest && <button type="button" title={t('common.delete')} onClick={() => removePath(folder, true)}><Trash2Icon className="size-3 text-destructive" /></button>}
+                </div>
+              ))}
+              {sortedFiles.map((file) => (
+                <div key={file.path} className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${activePath === file.path ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}>
+                  <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => void selectFile(file.path)}>
+                    <FileIcon className="size-3.5 shrink-0" />
+                    <span className="truncate font-mono">{file.path}</span>
+                  </button>
+                  {detail.isLatest && <button type="button" title={t('skills.renameFile')} onClick={() => renamePath(file.path, false)}><PencilIcon className="size-3" /></button>}
+                  {detail.isLatest && <button type="button" title={t('common.delete')} onClick={() => removePath(file.path)}><Trash2Icon className="size-3 text-destructive" /></button>}
+                </div>
+              ))}
+            </div>
+            <div className="min-h-[300px]">
+              {activeInfo?.binary ? <p className="rounded-lg border border-border/70 p-4 text-xs text-muted-foreground">{t('skills.binaryFileNote')}</p> : <>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-mono text-xs text-muted-foreground">{activePath}</span>
+                    <SkillLanguageBadge path={activePath} content={activeContent} />
+                  </div>
+                  <div className="flex items-center gap-1 rounded-lg border border-border/70 bg-muted/20 p-1">
+                    <Button size="sm" variant={previewing ? 'secondary' : 'ghost'} aria-pressed={previewing} onClick={() => setPreviewing(true)}>{t('skills.preview')}</Button>
+                    <Button size="sm" variant={!previewing ? 'secondary' : 'ghost'} aria-pressed={!previewing} disabled={!detail.isLatest} onClick={() => setPreviewing(false)}>{t('skills.edit')}</Button>
+                    {!previewing && <Button size="sm" variant="outline" disabled={!detail.isLatest} onClick={() => { saveActiveFile(); setPreviewing(true); setSavingFile(false) }}>{savingFile ? t('skills.saving') : <><SaveIcon className="mr-1 size-3.5" />{t('skills.saveDraft')}</>}</Button>}
+                  </div>
+                </div>
+                {previewing ? <SkillFilePreview path={activePath} content={activeContent} /> : <LazyMonacoSkillEditor key={activePath} path={activePath} value={activeContent} disabled={!detail.isLatest} onChange={setActiveContent} />}
+              </>}
+            </div>
+          </CardContent>
+        </Card>
       </div>
       <div className="grid h-fit gap-5"><Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><HistoryIcon className="size-4" />{t('skills.history')}</CardTitle></CardHeader><CardContent className="space-y-1">{history?.versions.map((version) => <button key={version.id} type="button" className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs hover:bg-muted ${version.id === detail.id ? 'bg-primary/10 text-primary' : ''}`} onClick={() => onSelectVersion(version.id)}><span><span className="font-medium">{t('skills.version', { version: version.version })}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{version.name}</span></span>{version.isLatest && <Badge variant="outline" className="text-[9px]">{t('skills.latest')}</Badge>}</button>)}</CardContent></Card><Card><CardHeader><CardTitle className="text-base">{t('skills.publishTitle')}</CardTitle></CardHeader><CardContent className="space-y-3 text-xs text-muted-foreground"><p>{t('skills.publishDescription')}</p><Button className="w-full" disabled={!detail.isLatest || publishing} onClick={() => void publish()}>{publishing ? t('skills.publishing') : t('skills.publishVersion')}</Button>{!detail.isLatest && <p className="text-destructive">{t('skills.historicalReadOnly')}</p>}</CardContent></Card></div>
     </div>
