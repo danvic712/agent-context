@@ -6,31 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AgentContext.Host.Controllers;
 
-/// <summary>
-    /// Skill surface (T6, issue #7 + T12 package model): CRUD over the latest
-    /// version, publish-new-version, get_skill over REST, plus per-file operations
-    /// (read / write / delete / bulk upload / zip import) against the filesystem
-    /// package. Thin adapters over the application seam.
-/// </summary>
+/// <summary>Uploaded Skill package creation and read-only package access.</summary>
 [ApiController]
 [Route("api/skills")]
 public sealed class SkillsController(ISkillAppService skills) : ControllerBase
 {
-    /// <summary>Create a Skill at version 1 in the given domain (AC1).</summary>
-    [HttpPost]
-    public async Task<ActionResult<SkillDetail>> Create([FromBody] CreateSkillRequest request, CancellationToken cancellationToken)
-    {
-        var created = await skills.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
-    }
-
-    /// <summary>Creates a new Skill from a multipart ZIP package (T18).</summary>
+    /// <summary>Creates a new Skill from an uploaded ZIP package or single file (T18).</summary>
     [HttpPost("upload")]
     public async Task<ActionResult<SkillDetail>> Upload(
         [FromForm] string domain,
         [FromForm] string slug,
         [FromForm] string name,
         [FromForm] string description,
+        [FromForm] string? kind,
         [FromForm] IFormFile? archive,
         CancellationToken cancellationToken)
     {
@@ -39,11 +27,31 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
         }
 
+        var uploadKind = string.IsNullOrWhiteSpace(kind)
+            ? (Path.GetExtension(archive.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase) ? "zip" : "file")
+            : kind.Trim().ToLowerInvariant();
+
         using var stream = archive.OpenReadStream();
-        var created = await skills.CreateFromZipAsync(
-            new CreateSkillFromZipRequest(domain, slug, name, description),
-            stream,
-            cancellationToken);
+        SkillDetail created;
+        if (uploadKind == "file")
+        {
+            created = await skills.CreateFromFileAsync(
+                new CreateSkillFromFileRequest(domain, slug, name, description, archive.FileName),
+                stream,
+                cancellationToken);
+        }
+        else if (uploadKind == "zip")
+        {
+            created = await skills.CreateFromZipAsync(
+                new CreateSkillFromZipRequest(domain, slug, name, description),
+                stream,
+                cancellationToken);
+        }
+        else
+        {
+            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
+        }
+
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
@@ -82,39 +90,6 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
         => Ok(await skills.GetAsync(id, cancellationToken));
 
     /// <summary>
-    /// Publish a new version on top of the skill with the given id (AC2/AC3):
-    /// the current row stays as history, the next version is created with Version+1.
-    /// </summary>
-    [HttpPost("{id:guid}/publish")]
-    public async Task<ActionResult<SkillDetail>> Publish(
-        Guid id, [FromBody] PublishSkillRequest request, CancellationToken cancellationToken)
-        => Ok(await skills.PublishAsync(id, request, cancellationToken));
-
-    /// <summary>
-    /// Atomically publishes staged metadata and package changes as a new
-    /// immutable version. A stale base returns 409 with latestId/latestVersion.
-    /// </summary>
-    [HttpPost("{id:guid}/versions")]
-    public async Task<ActionResult<SkillDetail>> PublishVersion(
-        Guid id,
-        [FromBody] PublishSkillVersionRequest request,
-        CancellationToken cancellationToken)
-        => Ok(await skills.PublishVersionAsync(id, request, cancellationToken));
-
-    /// <summary>Returns all versions for a Skill lineage, newest first.</summary>
-    [HttpGet("{id:guid}/history")]
-    public async Task<ActionResult<SkillHistory>> History(Guid id, CancellationToken cancellationToken)
-        => Ok(await skills.GetHistoryAsync(id, cancellationToken));
-
-    /// <summary>Delete the skill — every version of its (domain, slug) (AC4).</summary>
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
-    {
-        await skills.DeleteAsync(id, cancellationToken);
-        return NoContent();
-    }
-
-    /// <summary>
     /// Read one package file (T12): raw bytes with a mime type derived from the
     /// file extension (binary assets included).
     /// </summary>
@@ -123,63 +98,6 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
     {
         var content = await skills.ReadFileAsync(id, path, cancellationToken);
         return File(content, ContentType(path));
-    }
-
-    /// <summary>
-    /// Write (create or overwrite) one package file (T12). The request body is the
-    /// raw file content — text or binary.
-    /// </summary>
-    [HttpPut("{id:guid}/file")]
-    public async Task<ActionResult<SkillDetail>> WriteFile(Guid id, [FromQuery] string path, CancellationToken cancellationToken)
-    {
-        using var buffer = new MemoryStream();
-        await Request.Body.CopyToAsync(buffer, cancellationToken);
-        return Ok(await skills.WriteFileAsync(id, path, buffer.ToArray(), cancellationToken));
-    }
-
-    /// <summary>Delete one package file (T12); empty parent directories are pruned.</summary>
-    [HttpDelete("{id:guid}/file")]
-    public async Task<ActionResult<SkillDetail>> DeleteFile(Guid id, [FromQuery] string path, CancellationToken cancellationToken)
-        => Ok(await skills.DeleteFileAsync(id, path, cancellationToken));
-
-    /// <summary>
-    /// Bulk upload into the package (T12, drag-and-drop in the UI): each uploaded
-    /// file lands at its relative name. Binary assets are supported.
-    /// </summary>
-    [HttpPost("{id:guid}/files")]
-    public async Task<ActionResult<SkillDetail>> UploadFiles(Guid id, CancellationToken cancellationToken)
-    {
-        if (Request.Form.Files.Count == 0)
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
-        }
-
-        SkillDetail detail = await skills.GetAsync(id, cancellationToken);
-        foreach (var file in Request.Form.Files)
-        {
-            using var stream = file.OpenReadStream();
-            using var buffer = new MemoryStream();
-            await stream.CopyToAsync(buffer, cancellationToken);
-            detail = await skills.WriteFileAsync(id, file.FileName, buffer.ToArray(), cancellationToken);
-        }
-
-        return Ok(detail);
-    }
-
-    /// <summary>
-    /// Import a package from a zip archive (T12): entries are extracted into the
-    /// package; SKILL.md is created when the zip omits it.
-    /// </summary>
-    [HttpPost("{id:guid}/import")]
-    public async Task<ActionResult<SkillDetail>> Import(Guid id, CancellationToken cancellationToken)
-    {
-        if (Request.Form.Files.Count == 0)
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
-        }
-
-        using var stream = Request.Form.Files[0].OpenReadStream();
-        return Ok(await skills.ImportZipAsync(id, stream, cancellationToken));
     }
 
     private static string ContentType(string path)

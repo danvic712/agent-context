@@ -17,8 +17,16 @@ interface SkillSearchFiltersProps {
   onClear: () => void
 }
 
-const sourceOptions: Array<SkillSourceType | ''> = ['', 'manual', 'zip', 'skills_sh', 'local_copy']
+const sourceOptions: Array<SkillSourceType | ''> = ['', 'manual', 'file', 'zip', 'skills_sh', 'local_copy']
 const sortOptions: SkillListSort[] = ['updated-desc', 'updated-asc', 'name-asc', 'name-desc', 'version-desc', 'version-asc']
+
+const sourceLabelKey = (source: SkillSourceType): string => {
+  if (source === 'skills_sh') return 'skills.sourceSkillsSh'
+  if (source === 'local_copy') return 'skills.sourceLocalCopy'
+  if (source === 'manual') return 'skills.sourceManual'
+  if (source === 'file') return 'skills.sourceFile'
+  return 'skills.sourceZip'
+}
 
 export function SkillSearchFilters({ filters, onChange, onClear }: SkillSearchFiltersProps) {
   const { t } = useTranslation()
@@ -75,7 +83,7 @@ export function SkillSearchFilters({ filters, onChange, onClear }: SkillSearchFi
             onChange={(event) => onChange({ ...filters, sourceType: event.target.value as SkillSourceType | '' })}
           >
             {sourceOptions.map((source) => (
-              <option key={source || 'all'} value={source}>{t(source ? `skills.source${source === 'skills_sh' ? 'SkillsSh' : source === 'local_copy' ? 'LocalCopy' : source === 'manual' ? 'Manual' : 'Zip'}` : 'skills.allSources')}</option>
+              <option key={source || 'all'} value={source}>{t(source ? sourceLabelKey(source) : 'skills.allSources')}</option>
             ))}
           </select>
         </label>

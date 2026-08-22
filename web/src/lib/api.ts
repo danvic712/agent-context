@@ -239,7 +239,7 @@ export interface SkillItem {
   sourceType: SkillSourceType | null
 }
 
-export type SkillSourceType = 'manual' | 'zip' | 'skills_sh' | 'local_copy'
+export type SkillSourceType = 'manual' | 'file' | 'zip' | 'skills_sh' | 'local_copy'
 
 export type SkillListSort = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc' | 'version-desc' | 'version-asc'
 
@@ -262,43 +262,6 @@ export interface SkillDetail extends SkillItem {
   folders: string[]
 }
 
-export interface SkillFileChange {
-  path: string
-  contentBase64: string
-}
-
-export interface SkillPathRename {
-  from: string
-  to: string
-}
-
-export interface PublishSkillVersionInput {
-  name: string
-  description: string
-  instructions: string
-  files?: SkillFileChange[]
-  folders?: string[]
-  renames?: SkillPathRename[]
-  deletedPaths?: string[]
-}
-
-export interface SkillVersionSummary {
-  id: string
-  previousVersionId: string | null
-  version: number
-  name: string
-  description: string
-  createdAtUtc: string
-  updatedAtUtc: string
-  sourceType: SkillSourceType | null
-  isLatest: boolean
-}
-
-export interface SkillHistory {
-  latestId: string
-  versions: SkillVersionSummary[]
-}
-
 export interface SkillListPage {
   pageSize: number
   cursor: string | null
@@ -307,20 +270,15 @@ export interface SkillListPage {
   nextCursor: string | null
 }
 
-export interface SkillInput {
-  domain: string
-  slug: string
-  name: string
-  description: string
-  instructions: string
-}
+export type SkillUploadKind = 'zip' | 'file'
 
 export interface SkillUploadInput {
   domain: string
   slug: string
   name: string
   description: string
-  archive: File
+  kind: SkillUploadKind
+  file: File
 }
 
 export async function listSkills(
@@ -349,11 +307,12 @@ export async function uploadSkill(
   signal?: AbortSignal,
 ): Promise<SkillDetail> {
   const form = new FormData()
+  form.append('kind', input.kind)
   form.append('domain', input.domain)
   form.append('slug', input.slug)
   form.append('name', input.name)
   form.append('description', input.description)
-  form.append('archive', input.archive, input.archive.name)
+  form.append('archive', input.file, input.file.name)
 
   const { data } = await http.post<SkillDetail>('/skills/upload', form, {
     signal,
@@ -361,11 +320,6 @@ export async function uploadSkill(
       if (event.total) onProgress?.(Math.round((event.loaded / event.total) * 100))
     },
   })
-  return data
-}
-
-export async function createSkill(input: SkillInput): Promise<SkillDetail> {
-  const { data } = await http.post<SkillDetail>('/skills', input)
   return data
 }
 
@@ -379,60 +333,9 @@ export async function getSkillById(id: string): Promise<SkillDetail> {
   return data
 }
 
-export async function getSkillHistory(id: string): Promise<SkillHistory> {
-  const { data } = await http.get<SkillHistory>(`/skills/${id}/history`)
-  return data
-}
-
-export async function publishSkill(id: string, input: Omit<SkillInput, 'domain' | 'slug'>): Promise<SkillDetail> {
-  const { data } = await http.post<SkillDetail>(`/skills/${id}/publish`, input)
-  return data
-}
-
-export async function publishSkillVersion(id: string, input: PublishSkillVersionInput): Promise<SkillDetail> {
-  const { data } = await http.post<SkillDetail>(`/skills/${id}/versions`, input)
-  return data
-}
-
 export async function readSkillFile(id: string, path: string): Promise<Blob> {
   const { data } = await http.get<Blob>(`/skills/${id}/file`, { params: { path }, responseType: 'blob' })
   return data
-}
-
-export async function writeSkillFile(id: string, path: string, content: string | Blob): Promise<SkillDetail> {
-  // A Blob body keeps binary assets byte-exact (used by rename); a string is
-  // plain text. axios sends Blob bodies with their own content type.
-  const isBlob = content instanceof Blob
-  const { data } = await http.put<SkillDetail>(`/skills/${id}/file`, content, {
-    params: { path },
-    headers: isBlob ? {} : { 'Content-Type': 'text/plain; charset=utf-8' },
-  })
-  return data
-}
-
-export async function deleteSkillFile(id: string, path: string): Promise<SkillDetail> {
-  const { data } = await http.delete<SkillDetail>(`/skills/${id}/file`, { params: { path } })
-  return data
-}
-
-export async function uploadSkillFiles(id: string, files: File[]): Promise<SkillDetail> {
-  const form = new FormData()
-  for (const file of files) {
-    form.append('files', file, file.name)
-  }
-  const { data } = await http.post<SkillDetail>(`/skills/${id}/files`, form)
-  return data
-}
-
-export async function importSkillZip(id: string, zip: File): Promise<SkillDetail> {
-  const form = new FormData()
-  form.append('archive', zip, zip.name)
-  const { data } = await http.post<SkillDetail>(`/skills/${id}/import`, form)
-  return data
-}
-
-export async function deleteSkill(id: string): Promise<void> {
-  await http.delete(`/skills/${id}`)
 }
 
 export interface AnalyticsGroupItem {

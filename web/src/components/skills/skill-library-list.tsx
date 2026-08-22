@@ -19,7 +19,6 @@ interface SkillLibraryListProps {
   onLoadMore: () => void
   onRetry: () => void
   onUpload: () => void
-  onCreate: () => void
   onClearFilter?: () => void
 }
 
@@ -35,7 +34,6 @@ export function SkillLibraryList({
   onLoadMore,
   onRetry,
   onUpload,
-  onCreate,
   onClearFilter,
 }: SkillLibraryListProps) {
   const { t } = useTranslation()
@@ -113,7 +111,6 @@ export function SkillLibraryList({
           <h2 className="serif mt-4 text-2xl font-semibold">{t('skills.emptyTitle')}</h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t('skills.emptyDescription')}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <Button type="button" variant="outline" onClick={onCreate}>{t('skills.createSkill')}</Button>
             <Button type="button" onClick={onUpload}>{t('skills.uploadSkill')}</Button>
           </div>
         </CardContent>

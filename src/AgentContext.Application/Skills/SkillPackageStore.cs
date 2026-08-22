@@ -8,7 +8,7 @@ namespace AgentContext.Application.Skills;
 
 /// <inheritdoc cref="ISkillPackageStore"/>
 /// <summary>
-/// Filesystem-backed Skill packages (T12): <c>{root}/{domain}/{slug}/v{version}/</c>.
+/// Filesystem-backed uploaded Skill packages: <c>{root}/{domain}/{slug}/v{version}/</c>.
 /// Paths are normalized and traversal is rejected; file contents are raw bytes so
 /// binary assets work. A package always carries a <c>SKILL.md</c> main file —
 /// created from the legacy Instructions value during migration when missing.
@@ -37,9 +37,6 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
 
         return dir;
     }
-
-    public bool PackageExists(string domainName, string slug, int version)
-        => Directory.Exists(PackageDirectory(domainName, slug, version));
 
     public void CreatePackage(string domainName, string slug, int version, string? initialMarkdown)
     {
@@ -96,7 +93,7 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         return File.ReadAllBytes(file);
     }
 
-    public void WriteFile(string domainName, string slug, int version, string path, byte[] content)
+    public void AddFile(string domainName, string slug, int version, string path, byte[] content)
     {
         if (content.Length > MaxFileBytes)
         {
@@ -106,102 +103,6 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         var file = ResolveFile(domainName, slug, version, path);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         File.WriteAllBytes(file, content);
-    }
-
-    public void DeleteFile(string domainName, string slug, int version, string path)
-    {
-        var file = ResolveFile(domainName, slug, version, path);
-        if (!File.Exists(file))
-        {
-            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, path);
-        }
-
-        File.Delete(file);
-        TryPruneEmptyDirectories(file);
-    }
-
-    /// <summary>
-    /// Copies every file of an existing package into a new version directory
-    /// (publish keeps the full package, not just SKILL.md); optionally overrides
-    /// the main file with edited instructions.
-    /// </summary>
-    public void CopyPackage(
-        string sourceDomain, string sourceSlug, int sourceVersion,
-        string targetDomain, string targetSlug, int targetVersion,
-        string? overrideMain = null)
-    {
-        var source = PackageDirectory(sourceDomain, sourceSlug, sourceVersion);
-        if (!Directory.Exists(source))
-        {
-            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, "SKILL.md");
-        }
-
-        var target = PackageDirectory(targetDomain, targetSlug, targetVersion);
-        Directory.CreateDirectory(target);
-
-        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
-        {
-            var relative = Path.GetRelativePath(source, file);
-            var destination = Path.Combine(target, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(file, destination, overwrite: true);
-        }
-
-        if (overrideMain is not null)
-        {
-            File.WriteAllText(Path.Combine(target, MainFile), overrideMain);
-        }
-    }
-
-    public bool PublishPackage(
-        string sourceDomain,
-        string sourceSlug,
-        int sourceVersion,
-        string targetDomain,
-        string targetSlug,
-        int targetVersion,
-        string instructions,
-        PublishSkillVersionRequest changes,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(changes);
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var source = PackageDirectory(sourceDomain, sourceSlug, sourceVersion);
-        if (!Directory.Exists(source))
-        {
-            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, MainFile);
-        }
-
-        var target = PackageDirectory(targetDomain, targetSlug, targetVersion);
-        var staging = CreateStagingDirectory();
-        try
-        {
-            CopyDirectory(source, staging, cancellationToken);
-            ApplyDraft(staging, instructions, changes, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            try
-            {
-                Directory.Move(staging, target);
-                staging = string.Empty;
-                return true;
-            }
-            catch (IOException) when (Directory.Exists(target))
-            {
-                throw new LocalizedException(
-                    HttpStatusCode.Conflict,
-                    ErrorCodes.Skill.PackageExists,
-                    targetDomain,
-                    targetSlug,
-                    targetVersion);
-            }
-        }
-        finally
-        {
-            DeleteStagingDirectory(staging);
-        }
     }
 
     public void DeletePackage(string domainName, string slug, int version)
@@ -261,63 +162,6 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
             catch (IOException) when (Directory.Exists(target))
             {
                 throw new LocalizedException(HttpStatusCode.Conflict, ErrorCodes.Skill.PackageExists, domainName, slug, version);
-            }
-        }
-        catch (LocalizedException)
-        {
-            throw;
-        }
-        catch (InvalidDataException)
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
-        }
-        catch (IOException)
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
-        }
-        finally
-        {
-            DeleteStagingDirectory(staging);
-        }
-    }
-
-    public async Task ImportZipAsync(
-        string domainName,
-        string slug,
-        int version,
-        Stream zipStream,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(zipStream);
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var target = PackageDirectory(domainName, slug, version);
-        var staging = CreateStagingDirectory();
-        try
-        {
-            await ExtractZipAsync(
-                staging,
-                zipStream,
-                normalizeWrapper: false,
-                enforceLimits: false,
-                seedMainFile: false,
-                cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(target);
-
-            foreach (var source in Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var relative = Path.GetRelativePath(staging, source);
-                var destination = Path.Combine(target, relative);
-                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                File.Copy(source, destination, overwrite: true);
-            }
-
-            var mainPath = Path.Combine(target, MainFile);
-            if (!File.Exists(mainPath))
-            {
-                File.WriteAllText(mainPath, string.Empty);
             }
         }
         catch (LocalizedException)
@@ -527,139 +371,6 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         return full;
     }
 
-    private void ApplyDraft(
-        string staging,
-        string instructions,
-        PublishSkillVersionRequest changes,
-        CancellationToken cancellationToken)
-    {
-        foreach (var rename in changes.Renames ?? [])
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var from = NormalizePath(rename.From);
-            var to = NormalizePath(rename.To);
-            var source = ResolveDraftPath(staging, from);
-            var target = ResolveDraftPath(staging, to);
-            if (from == to || (Directory.Exists(source) && to.StartsWith(from + "/", StringComparison.Ordinal)))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
-            }
-
-            if (!File.Exists(source) && !Directory.Exists(source))
-            {
-                throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, from);
-            }
-
-            if (File.Exists(target) || Directory.Exists(target))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            if (Directory.Exists(source))
-            {
-                Directory.Move(source, target);
-            }
-            else
-            {
-                File.Move(source, target);
-            }
-        }
-
-        foreach (var pathValue in changes.DeletedPaths ?? [])
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var path = NormalizePath(pathValue);
-            var target = ResolveDraftPath(staging, path);
-            if (Directory.Exists(target))
-            {
-                Directory.Delete(target, recursive: true);
-            }
-            else if (File.Exists(target))
-            {
-                File.Delete(target);
-            }
-        }
-
-        foreach (var folderValue in changes.Folders ?? [])
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var folder = NormalizePath(folderValue);
-            var target = ResolveDraftPath(staging, folder);
-            if (File.Exists(target))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
-            }
-
-            Directory.CreateDirectory(target);
-        }
-
-        foreach (var file in changes.Files ?? [])
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var path = NormalizePath(file.Path);
-            byte[] content;
-            try
-            {
-                content = Convert.FromBase64String(file.ContentBase64);
-            }
-            catch (FormatException)
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.ImportInvalid);
-            }
-
-            if (content.Length > MaxFileBytes)
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FileTooLarge, path);
-            }
-
-            var target = ResolveDraftPath(staging, path);
-            if (Directory.Exists(target))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.WriteAllBytes(target, content);
-        }
-
-        var mainPath = ResolveDraftPath(staging, MainFile);
-        Directory.CreateDirectory(Path.GetDirectoryName(mainPath)!);
-        File.WriteAllText(mainPath, instructions);
-    }
-
-    private static string ResolveDraftPath(string root, string relative)
-    {
-        var full = Path.GetFullPath(Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)));
-        if (!IsWithinDirectory(root, full))
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Skill.FilePathInvalid);
-        }
-
-        return full;
-    }
-
-    private static void CopyDirectory(string source, string target, CancellationToken cancellationToken)
-    {
-        Directory.CreateDirectory(target);
-        foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories)
-                     .OrderBy(path => path.Length))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var relative = Path.GetRelativePath(source, directory);
-            Directory.CreateDirectory(Path.Combine(target, relative));
-        }
-
-        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var relative = Path.GetRelativePath(source, file);
-            var destination = Path.Combine(target, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(file, destination, overwrite: false);
-        }
-    }
-
     private string PackageDirectory(string domainName, string slug, int version)
     {
         var domain = SanitizeSegment(domainName);
@@ -732,20 +443,4 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         return false;
     }
 
-    private static void TryPruneEmptyDirectories(string file)
-    {
-        var dir = Path.GetDirectoryName(file);
-        while (dir is not null)
-        {
-            if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
-            {
-                Directory.Delete(dir);
-                dir = Path.GetDirectoryName(dir);
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
 }

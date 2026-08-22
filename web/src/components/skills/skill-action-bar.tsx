@@ -1,16 +1,15 @@
-import { PlusIcon, RefreshCwIcon, UploadIcon } from 'lucide-react'
+import { RefreshCwIcon, UploadIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 interface SkillActionBarProps {
   count: number
   refreshing?: boolean
-  onCreate: () => void
   onUpload: () => void
   onRefresh: () => void
 }
 
-export function SkillActionBar({ count, refreshing = false, onCreate, onUpload, onRefresh }: SkillActionBarProps) {
+export function SkillActionBar({ count, refreshing = false, onUpload, onRefresh }: SkillActionBarProps) {
   const { t } = useTranslation()
 
   return (
@@ -23,10 +22,6 @@ export function SkillActionBar({ count, refreshing = false, onCreate, onUpload, 
         <Button type="button" size="sm" variant="ghost" onClick={onRefresh} disabled={refreshing}>
           <RefreshCwIcon data-icon="inline-start" className={refreshing ? 'size-3.5 animate-spin' : 'size-3.5'} />
           {t('skills.refresh')}
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onCreate}>
-          <PlusIcon data-icon="inline-start" className="size-3.5" />
-          {t('skills.createSkill')}
         </Button>
         <Button type="button" size="sm" onClick={onUpload}>
           <UploadIcon data-icon="inline-start" className="size-3.5" />
