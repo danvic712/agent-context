@@ -12,7 +12,7 @@ namespace AgentContext.Application.Pricing;
 /// <summary>
 /// The maintained model pricing table (T7 / spec US28): per-model USD per-token
 /// rates, upserted by model name. The Learning/analytics rollup reads these rows
-/// to compute cost, so Usage needs no extra collection.
+/// to compute report-time cost; Usage does not persist a cost field.
 /// </summary>
 public sealed class PricingAppService(AgentContextDbContext db) : IPricingAppService
 {

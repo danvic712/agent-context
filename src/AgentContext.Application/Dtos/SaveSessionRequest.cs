@@ -3,8 +3,10 @@ namespace AgentContext.Application.Dtos;
 /// <summary>
 /// Input for recording a Session (spec §6.1 save_session): domain tag, structured
 /// summary (task/conclusion/key snippets), optional remember + full context, and
-/// model/tokens/cost which land in Usage. Shared by the REST endpoint and the MCP
-/// save_session tool.
+/// model and token fields which may be recorded in the source-aware Usage ledger.
+/// Cost remains a legacy request field until the reported-usage contract is updated
+/// by T27; it is not persisted. Shared by the REST endpoint and the MCP save_session
+/// tool.
 /// </summary>
 public sealed record SaveSessionRequest(
     string? Domain,

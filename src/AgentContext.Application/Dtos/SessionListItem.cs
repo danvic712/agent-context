@@ -1,6 +1,6 @@
 namespace AgentContext.Application.Dtos;
 
-/// <summary>Compact session list item with Usage rollups.</summary>
+/// <summary>Compact session list item with token rollups.</summary>
 public sealed record SessionListItem(
     Guid Id,
     string? DomainName,
@@ -8,5 +8,4 @@ public sealed record SessionListItem(
     string Status,
     bool Remembered,
     DateTimeOffset CreatedAtUtc,
-    int TotalTokens,
-    decimal TotalCost);
+    int TotalTokens);

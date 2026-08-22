@@ -49,8 +49,8 @@ public sealed class AnalyticsAppService(
                 s.Usage))
             .ToList();
 
-        var totalTokensIn = rows.Sum(r => (long)r.Usage.Sum(u => (long)u.TokensIn));
-        var totalTokensOut = rows.Sum(r => (long)r.Usage.Sum(u => (long)u.TokensOut));
+        var totalTokensIn = rows.Sum(r => (long)r.Usage.Sum(u => (long)u.InputTokens));
+        var totalTokensOut = rows.Sum(r => (long)r.Usage.Sum(u => (long)u.OutputTokens));
         var totalCost = rows.Sum(r => CostOf(r.Usage, rateByModel));
 
         var byDomain = rows
@@ -92,8 +92,8 @@ public sealed class AnalyticsAppService(
         => new(
             name,
             sessionCount,
-            (long)usage.Sum(u => (long)u.TokensIn),
-            (long)usage.Sum(u => (long)u.TokensOut),
+            (long)usage.Sum(u => (long)u.InputTokens),
+            (long)usage.Sum(u => (long)u.OutputTokens),
             CostOf(usage, rateByModel));
 
     private static decimal CostOf(
@@ -106,7 +106,7 @@ public sealed class AnalyticsAppService(
                 return 0m;
             }
 
-            return u.TokensIn * rate.Input + u.TokensOut * rate.Output;
+            return u.InputTokens * rate.Input + u.OutputTokens * rate.Output;
         });
 
     private async Task<Guid?> FirstWorkspaceIdAsync(CancellationToken cancellationToken)

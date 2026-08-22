@@ -4,8 +4,8 @@ namespace AgentContext.Application.Contracts;
 
 /// <summary>
 /// The maintained model pricing table (T7 / spec US28): per-model USD per-token
-/// rates the platform uses to compute Usage cost, so Usage requires no extra
-/// collection. Configurable at runtime.
+/// rates the platform uses to compute report-time aggregates; Usage does not
+/// persist a cost field. Configurable at runtime.
 /// </summary>
 public interface IPricingAppService
 {

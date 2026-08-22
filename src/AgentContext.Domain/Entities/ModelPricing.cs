@@ -2,8 +2,8 @@ namespace AgentContext.Domain.Entities;
 
 /// <summary>
 /// A maintained model pricing row (spec US28 / §6.2): the platform computes
-/// cost = tokensIn × inputRate + tokensOut × outputRate against this table,
-/// so Usage requires no extra collection. One row per model.
+/// cost = input tokens × inputRate + output tokens × outputRate against this
+/// table at analytics time. Usage stores no pricing relationship. One row per model.
 /// </summary>
 public sealed class ModelPricing
 {
