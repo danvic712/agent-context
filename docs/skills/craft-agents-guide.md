@@ -50,9 +50,9 @@ decision, a reusable pattern, or a conclusion another session would benefit from
   full original context ("remember this"). The default is a summary — that's the
   privacy-preserving contract of the platform.
 - **Always report the optional Usage payload** when you know it — include the model
-  snapshot plus input, cached input, and output token counts. These power the Usage
-  view. Analytics reports token counts only; no pricing table or cost estimate is
-  maintained.
+  snapshot plus input, cached input, and output token counts. These populate the
+  retained Usage ledger for a future Analytics redesign; no current Analytics page
+  or pricing estimate is maintained.
 
 ## How to structure a summary
 

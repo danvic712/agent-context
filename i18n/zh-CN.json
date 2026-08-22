@@ -25,7 +25,6 @@
         "review": "复查",
         "archived": "已归档",
         "skills": "技能",
-        "analytics": "分析",
         "health": "引擎",
         "settings": "设置"
       }
@@ -389,20 +388,6 @@
         "instructions": "Instructions（SKILL.md）"
       },
       "discover": "发现"
-    },
-    "analytics": {
-      "overviewTitle": "会话概览",
-      "overviewDescription": "平台范围内的会话与 token 使用情况。",
-      "domain": "领域",
-      "domainPlaceholder": "所有领域",
-      "agent": "代理",
-      "agentPlaceholder": "所有代理",
-      "sessions": "{{count}} 个会话",
-      "tokens": "{{count}} 个 token",
-      "byDomain": "按领域",
-      "byAgent": "按代理",
-      "noSessions": "暂无会话。",
-      "failedLoad": "加载分析失败"
     },
     "engineHealth": {
       "learningEngineTitle": "Learning Engine",

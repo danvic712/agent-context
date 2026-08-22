@@ -1,4 +1,3 @@
-using AgentContext.Application.Analytics;
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Hygiene;
 using AgentContext.Application.Inference;
@@ -79,9 +78,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISkillPackageStore>(_ => new SkillPackageStore(
             configuration["Skills:Directory"] ?? "skills"));
         services.AddScoped<ISkillAppService, SkillAppService>();
-
-        // Token-only session overview analytics (T7, issue #8)
-        services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
 
         // Knowledge hygiene + engine health (T8, issue #9)
         services.AddScoped<IKnowledgeHygieneAppService, KnowledgeHygieneAppService>();

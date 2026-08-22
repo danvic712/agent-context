@@ -371,31 +371,6 @@ export async function readSkillFile(id: string, path: string): Promise<Blob> {
   return data
 }
 
-export interface AnalyticsGroupItem {
-  name: string
-  sessions: number
-  tokensIn: number
-  tokensOut: number
-}
-
-export interface AnalyticsOverview {
-  totalSessions: number
-  totalTokensIn: number
-  totalTokensOut: number
-  byDomain: AnalyticsGroupItem[]
-  byAgent: AnalyticsGroupItem[]
-}
-
-export interface OverviewFilters {
-  domain?: string
-  agent?: string
-}
-
-export async function getOverview(filters: OverviewFilters = {}): Promise<AnalyticsOverview> {
-  const { data } = await http.get<AnalyticsOverview>('/analytics/overview', { params: filters })
-  return data
-}
-
 export interface EngineHealth {
   queuedSessions: number
   processingSessions: number

@@ -25,7 +25,6 @@
         "review": "Review",
         "archived": "Archived",
         "skills": "Skills",
-        "analytics": "Analytics",
         "health": "Health",
         "settings": "Settings"
       }
@@ -389,20 +388,6 @@
         "instructions": "Instructions (SKILL.md)"
       },
       "discover": "Discover"
-    },
-    "analytics": {
-      "overviewTitle": "Session overview",
-      "overviewDescription": "Sessions and tokens across the platform.",
-      "domain": "Domain",
-      "domainPlaceholder": "all domains",
-      "agent": "Agent",
-      "agentPlaceholder": "all agents",
-      "sessions": "{{count}} sessions",
-      "tokens": "{{count}} tokens",
-      "byDomain": "By domain",
-      "byAgent": "By agent",
-      "noSessions": "No sessions.",
-      "failedLoad": "Failed to load analytics"
     },
     "engineHealth": {
       "learningEngineTitle": "Learning Engine",

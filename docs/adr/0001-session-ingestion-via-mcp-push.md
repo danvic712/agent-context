@@ -4,4 +4,4 @@ Agent Context records sessions only when an agent pushes them through the platfo
 
 Why: a proxy would give universal coverage but is invasive, fragile across vendors, and risks violating their terms of service. Push-based reporting keeps ingestion standard (MCP), opt-in, and controllable.
 
-Consequence: analytics only covers agents that actually integrate with the platform. The "track every agent uniformly" expectation from the original overview is dropped.
+Consequence: any future Analytics surface will only cover agents that actually integrate with the platform. The "track every agent uniformly" expectation from the original overview is dropped.

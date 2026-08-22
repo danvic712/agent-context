@@ -4,7 +4,7 @@
 
 ## 1. Positioning & Scope
 
-Agent Context is a self-hosted shared context layer for AI agents: agents report Sessions over MCP, the Learning Engine distills them into domain-scoped Knowledge with Confidence, future Sessions retrieve that Knowledge, Skills are managed centrally, and the UI reports Usage.
+Agent Context is a self-hosted shared context layer for AI agents: agents report Sessions over MCP, the Learning Engine distills them into domain-scoped Knowledge with Confidence, future Sessions retrieve that Knowledge, Skills are managed centrally, and the platform retains a source-aware Usage ledger while the Analytics UI/API is deferred for redesign.
 
 - **Users**: personal & family first (a technically capable person does the initial setup), small teams next. Domain-agnostic — dev, home, business, any domain.
 - **Four value axes**: Shared AI Context (foundation) · Continuous Learning (foundation, table stakes) · AI Capability Management (core) · AI Usage Intelligence (**differentiator**).
@@ -19,7 +19,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 ### 2.2 Sessions & Usage (T2)
 - `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
-- `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. Analytics exposes token counts only; cost is not part of the Usage or Analytics contracts.
+- `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. The Analytics UI/API is deferred for redesign; cost is not part of the Usage contract.
 
 ### 2.3 Learning Engine (T3)
 - BackgroundService polls pending Sessions → pipeline: dedup → chat extraction through the configured inference route → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding through the configured embedding route (`vector(1536)`) → pgvector.
@@ -38,8 +38,8 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Versioned per `(domain, slug)`; publish bumps version, history retained; `get_skill` returns the latest; `skill://{domain}/{slug}/{file}` resource. CRUD + UI.
 - **Skill package model (T12)**: each skill is a filesystem package (manifest + `SKILL.md` + assets/scripts), stored under `Skills__Directory` (data volume in compose); in-browser file tree / markdown rendering (react-markdown + shiki) / code editing / drag-drop uploads / zip import; legacy `Instructions` column lazily migrated to `SKILL.md`.
 
-### 2.7 Analytics (T7)
-- Session overview: sessions and token counts by workspace / domain / agent; report page.
+### 2.7 Analytics (T7, deferred)
+- The current Analytics page and API are removed pending a future redesign. Usage token recording remains part of Sessions and the Learning Engine.
 
 ### 2.8 Inference configuration (T14, issue #16)
 - Platform-level inference configuration is stored across three PostgreSQL tables: `inference_configurations` (configuration identity and timestamps), `inference_routes` (one Chat and one Embedding binding), and `inference_providers` (reusable OpenAI-compatible connection data and protected API-key secret material). `inference_providers` has no reverse configuration foreign key.
@@ -139,7 +139,7 @@ AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ─
 | 0001 | Sessions reported by agents over MCP; no traffic proxy |
 | 0002 | Self-hosted Docker Compose first; SaaS later |
 | 0003 | Historical single OpenAI-compatible endpoint decision (superseded by 0009) |
-| 0004 | MVP scope = learning loop + thin skills + session overview; explicit no-list |
+| 0004 | MVP scope = learning loop + thin skills + Usage recording; explicit no-list |
 | 0005 | BackgroundService + Postgres-as-queue; Hangfire deferred |
 | 0006 | One project, one entrypoint (no-args = full 3-in-1 environment) |
 | 0007 | Redis deferred from MVP stack |
