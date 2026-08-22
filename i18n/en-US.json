@@ -392,7 +392,7 @@
     },
     "analytics": {
       "overviewTitle": "Session overview",
-      "overviewDescription": "Sessions, tokens and cost across the platform — cost is computed from the maintained model pricing table.",
+      "overviewDescription": "Sessions and tokens across the platform.",
       "domain": "Domain",
       "domainPlaceholder": "all domains",
       "agent": "Agent",
@@ -402,20 +402,7 @@
       "byDomain": "By domain",
       "byAgent": "By agent",
       "noSessions": "No sessions.",
-      "pricingTitle": "Model pricing",
-      "pricingDescription": "Per-token USD rates used to compute Usage cost (US28). Models without a row cost 0.",
-      "model": "Model",
-      "modelPlaceholder": "gpt-4o",
-      "inputPerToken": "Input / token",
-      "outputPerToken": "Output / token",
-      "addOrUpdate": "Add / update",
-      "pricingEmpty": "No pricing rows yet — add one above to start pricing Usage.",
-      "inPerToken": "in ${{value}}",
-      "outPerToken": "out ${{value}}",
-      "deletePricingAria": "Delete pricing for {{model}}",
-      "failedLoad": "Failed to load analytics",
-      "failedSavePricing": "Failed to save pricing",
-      "failedDeletePricing": "Failed to delete pricing"
+      "failedLoad": "Failed to load analytics"
     },
     "engineHealth": {
       "learningEngineTitle": "Learning Engine",
@@ -556,10 +543,6 @@
       "sortInvalid": "The skill list sort is invalid.",
       "versionConflict": "This Skill version is no longer the latest. Reload version {0} before publishing.",
       "versionReadOnly": "Version {0} is historical and read-only. Publish a new version from the latest version."
-    },
-    "pricing": {
-      "modelRequired": "Model name is required.",
-      "negativeCost": "Per-token costs cannot be negative."
     },
     "session": {
       "fullContextRequired": "FullContext is required when Remembered is true.",

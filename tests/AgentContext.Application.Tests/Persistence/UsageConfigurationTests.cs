@@ -10,6 +10,19 @@ namespace AgentContext.Application.Tests.Persistence;
 public sealed class UsageConfigurationTests
 {
     [Fact]
+    public void Model_excludes_removed_model_pricing_schema()
+    {
+        var options = new DbContextOptionsBuilder<AgentContextDbContext>()
+            .UseNpgsql("Host=unused;Database=unused", npgsql => npgsql.UseVector())
+            .Options;
+        using var db = new AgentContextDbContext(options);
+
+        Assert.DoesNotContain(
+            db.GetService<IDesignTimeModel>().Model.GetEntityTypes(),
+            entity => entity.GetTableName() == "model_pricing");
+    }
+
+    [Fact]
     public void Usage_model_keeps_token_and_source_invariants_in_the_database_contract()
     {
         var options = new DbContextOptionsBuilder<AgentContextDbContext>()

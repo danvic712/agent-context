@@ -19,7 +19,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 
 ### 2.2 Sessions & Usage (T2)
 - `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
-- `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. Cost is computed from token counts × maintained model pricing at analytics time (T7), not stored on Usage.
+- `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. Analytics exposes token counts only; cost is not part of the Usage or Analytics contracts.
 
 ### 2.3 Learning Engine (T3)
 - BackgroundService polls pending Sessions → pipeline: dedup → chat extraction through the configured inference route → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding through the configured embedding route (`vector(1536)`) → pgvector.
@@ -39,7 +39,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - **Skill package model (T12)**: each skill is a filesystem package (manifest + `SKILL.md` + assets/scripts), stored under `Skills__Directory` (data volume in compose); in-browser file tree / markdown rendering (react-markdown + shiki) / code editing / drag-drop uploads / zip import; legacy `Instructions` column lazily migrated to `SKILL.md`.
 
 ### 2.7 Analytics (T7)
-- Session overview: sessions / tokens / cost by workspace / domain / agent; maintained model pricing table; report page.
+- Session overview: sessions and token counts by workspace / domain / agent; report page.
 
 ### 2.8 Inference configuration (T14, issue #16)
 - Platform-level inference configuration is stored across three PostgreSQL tables: `inference_configurations` (configuration identity and timestamps), `inference_routes` (one Chat and one Embedding binding), and `inference_providers` (reusable OpenAI-compatible connection data and protected API-key secret material). `inference_providers` has no reverse configuration foreign key.
@@ -124,7 +124,7 @@ Workspace ──┬── Domain ──┬── Knowledge (Type/Content/Confide
             └── Session ──┬── Agent
                           ├── Usage (source-aware tokens by model; optional route/session bindings)
                           └── ⟶ Knowledge (distilled into)
-AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider · ModelPricing (analytics-time cost table)
+AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider
 ```
 
 ## 7. Workspace & Visibility

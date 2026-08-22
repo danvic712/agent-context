@@ -3,9 +3,8 @@ using AgentContext.Application.Dtos;
 namespace AgentContext.Application.Contracts;
 
 /// <summary>
-/// Session overview analytics (T7 / spec US27): sessions / tokens / cost, with
-/// breakdowns by domain and agent, optionally filtered. Cost is computed from the
-/// maintained pricing table (spec US28) at the rollup level — never client-reported.
+/// Token-only session overview analytics (T7 / spec US27), with breakdowns by
+/// domain and agent, optionally filtered.
 /// </summary>
 public interface IAnalyticsAppService
 {

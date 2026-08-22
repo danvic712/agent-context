@@ -17,7 +17,7 @@ An AI assistant instance connected to the platform that reads and writes shared 
 _Avoid_: bot, model
 
 **Session**:
-A record of one agent interaction, reported by the agent itself over MCP as a structured summary (task, conclusion, key snippets), including model, tokens, skills used, and cost. Full original context is stored only when the user explicitly asks to remember.
+A record of one agent interaction, reported by the agent itself over MCP as a structured summary (task, conclusion, key snippets), including model, token usage, and skills used. Full original context is stored only when the user explicitly asks to remember.
 _Avoid_: conversation, thread
 
 **Remember**:
@@ -39,8 +39,8 @@ _Avoid_: score, weight
 **Usage**:
 A source-aware token ledger broken down by model. Reported Session rows attach to a
 Session; Learning Engine rows may be sessionless and may retain an optional inference
-route and capability binding. Cached input tokens are a subset of input tokens. Cost
-is computed at analytics time from ModelPricing and is not persisted on Usage.
+route and capability binding. Cached input tokens are a subset of input tokens. The
+Analytics report exposes token counts only; Usage does not contain cost data.
 _Avoid_: billing record, telemetry
 
 **Learning Engine**:

@@ -57,12 +57,6 @@ public static class ErrorCodes
         public const string SortInvalid = "skill.sortInvalid";
     }
 
-    public static class Pricing
-    {
-        public const string ModelRequired = "pricing.modelRequired";
-        public const string NegativeCost = "pricing.negativeCost";
-    }
-
     public static class Session
     {
         public const string FullContextRequired = "session.fullContextRequired";

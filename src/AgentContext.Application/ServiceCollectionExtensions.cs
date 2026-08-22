@@ -5,7 +5,6 @@ using AgentContext.Application.Inference;
 using AgentContext.Application.KnowledgeManagement;
 using AgentContext.Application.Learning;
 using AgentContext.Application.Localization;
-using AgentContext.Application.Pricing;
 using AgentContext.Application.Retrieval;
 using AgentContext.Application.Sessions;
 using AgentContext.Application.Settings;
@@ -81,8 +80,7 @@ public static class ServiceCollectionExtensions
             configuration["Skills:Directory"] ?? "skills"));
         services.AddScoped<ISkillAppService, SkillAppService>();
 
-        // Session overview analytics + model pricing (T7, issue #8)
-        services.AddScoped<IPricingAppService, PricingAppService>();
+        // Token-only session overview analytics (T7, issue #8)
         services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
 
         // Knowledge hygiene + engine health (T8, issue #9)

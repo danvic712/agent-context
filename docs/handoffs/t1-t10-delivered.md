@@ -31,7 +31,7 @@
 - Migrations in `AgentContext.Infrastructure` (all entities + pgvector extension). Fluent `IEntityTypeConfiguration` classes in `Configurations/`. Design-time factory via `DbContextOptionsFactory` (used by both runtime and tests).
 
 ### T2 — Session recording (caf87ee)
-- `ISaveSessionAppService` → `SaveSessionAppService` (`Application/Sessions`): persists Session + Usage (model/tokens/cost), resolves/creates the domain tag, honours `Remembered` (full context only when asked). Sessions land as `Pending`.
+- `ISaveSessionAppService` → `SaveSessionAppService` (`Application/Sessions`): persists Session + Usage (model/tokens), resolves/creates the domain tag, honours `Remembered` (full context only when asked). Sessions land as `Pending`.
 - REST `POST /api/sessions` + MCP `save_session`. Seam tests via Testcontainers pgvector; adapter tests via `WebApplicationFactory` and the MCP in-process client (`McpProcess.CreateClientAsync(connectionString)` runs the real `--mcp-stdio` binary).
 
 ### T3 — Learning Engine pipeline (9a8620b, b5d717a, 25ba606)

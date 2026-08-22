@@ -22,7 +22,6 @@ public class AgentContextDbContext(DbContextOptions<AgentContextDbContext> optio
     public virtual DbSet<Skill> Skills => Set<Skill>();
     public virtual DbSet<Usage> Usage => Set<Usage>();
     public virtual DbSet<AppSetting> AppSettings => Set<AppSetting>();
-    public DbSet<ModelPricing> ModelPricings => Set<ModelPricing>();
     public virtual DbSet<InferenceConfiguration> InferenceConfigurations => Set<InferenceConfiguration>();
     public virtual DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
     public virtual DbSet<InferenceProvider> InferenceProviders => Set<InferenceProvider>();
