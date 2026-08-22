@@ -5,6 +5,7 @@ import CssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 import HtmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
 import TsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import { languageForSkillPath } from '@/lib/skill-language'
 import { useTheme } from '@/theme'
 
 export interface MonacoSkillEditorProps {
@@ -12,37 +13,6 @@ export interface MonacoSkillEditorProps {
   value: string
   disabled?: boolean
   onChange: (value: string) => void
-}
-
-const languageByExtension: Record<string, string> = {
-  bash: 'shell',
-  cjs: 'javascript',
-  css: 'css',
-  go: 'go',
-  h: 'cpp',
-  hpp: 'cpp',
-  html: 'html',
-  java: 'java',
-  js: 'javascript',
-  json: 'json',
-  jsx: 'javascript',
-  md: 'markdown',
-  markdown: 'markdown',
-  mjs: 'javascript',
-  ps1: 'powershell',
-  py: 'python',
-  sh: 'shell',
-  sql: 'sql',
-  ts: 'typescript',
-  tsx: 'typescript',
-  xml: 'xml',
-  yaml: 'yaml',
-  yml: 'yaml',
-}
-
-const languageForPath = (path: string) => {
-  const extension = path.toLowerCase().split('.').pop()
-  return extension ? languageByExtension[extension] ?? 'plaintext' : 'plaintext'
 }
 
 const workerForLabel = (label: string): Worker => {
@@ -81,9 +51,9 @@ const applyTheme = (resolved: 'light' | 'dark') => {
     inherit: true,
     rules: [],
     colors: {
-      'editor.background': cssVariable('--code-bg'),
-      'editor.foreground': cssVariable('--code-ink'),
-      'editorGutter.background': cssVariable('--code-bg'),
+      'editor.background': cssVariable('--editor-bg'),
+      'editor.foreground': cssVariable('--editor-ink'),
+      'editorGutter.background': cssVariable('--editor-gutter-bg'),
       'editorLineNumber.foreground': cssVariable('--dim'),
       'editorLineNumber.activeForeground': cssVariable('--hi'),
       'editor.selectionBackground': cssVariable('--accent-soft'),
@@ -91,6 +61,7 @@ const applyTheme = (resolved: 'light' | 'dark') => {
       'editorIndentGuide.background': cssVariable('--line'),
       'editorIndentGuide.activeBackground': cssVariable('--line2'),
       'editorWidget.background': cssVariable('--card-paper'),
+      'editorWidget.foreground': cssVariable('--ink'),
       'editorWidget.border': cssVariable('--line2'),
     },
   })
@@ -120,7 +91,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
     applyTheme(resolved)
     const model = monaco.editor.createModel(
       valueRef.current,
-      languageForPath(path),
+      languageForSkillPath(path),
       monaco.Uri.parse(`skill://editor/${encodeURIComponent(path)}`),
     )
     const editor = monaco.editor.create(container, {
@@ -137,7 +108,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
       scrollBeyondLastLine: false,
       smoothScrolling: true,
       tabSize: 2,
-      wordWrap: languageForPath(path) === 'markdown' ? 'on' : 'off',
+      wordWrap: languageForSkillPath(path) === 'markdown' ? 'on' : 'off',
     })
     const subscription = editor.onDidChangeModelContent(() => {
       onChangeRef.current(editor.getValue())
@@ -165,7 +136,7 @@ export function MonacoSkillEditor({ path, value, disabled = false, onChange }: M
       ref={containerRef}
       className="skill-monaco-editor h-[min(58vh,680px)] min-h-[360px] w-full overflow-hidden rounded-xl border border-border/70"
       data-editor="monaco"
-      data-language={languageForPath(path)}
+      data-language={languageForSkillPath(path)}
       data-readonly={disabled || undefined}
     />
   )
