@@ -320,7 +320,7 @@ export function InferenceConfigForm({
               <PlusIcon /> {t('inference.addProvider')}
             </Button>
           </div>
-          <div className="c-panel__body">
+          <div className="c-panel__body c-provider-body">
             <div className="c-provider-layout">
               <div className="c-provider-list">
                 {draft.providers.map((provider) => (

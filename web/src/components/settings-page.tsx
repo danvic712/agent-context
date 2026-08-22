@@ -23,6 +23,8 @@ import {
 import i18n from '@/i18n'
 import { useTheme, type ThemeMode } from '@/theme'
 
+const settingsSectionIds = ['engine-health', 'preferences', 'inference'] as const
+
 export function SettingsPage() {
   const { t } = useTranslation()
   const location = useLocation()
@@ -35,15 +37,48 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [activeSection, setActiveSection] = useState<(typeof settingsSectionIds)[number]>('engine-health')
 
   useEffect(() => {
+    const targetId = location.hash ? decodeURIComponent(location.hash.slice(1)) : 'engine-health'
+    const sectionId = settingsSectionIds.find((id) => id === targetId) ?? 'engine-health'
+    setActiveSection(sectionId)
     if (!location.hash) return
-    const targetId = decodeURIComponent(location.hash.slice(1))
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById(targetId)?.scrollIntoView({ block: 'start' })
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' })
     })
     return () => window.cancelAnimationFrame(frame)
   }, [location.hash])
+
+  useEffect(() => {
+    let frame = 0
+
+    const updateActiveSection = () => {
+      frame = 0
+      let currentSection: (typeof settingsSectionIds)[number] = settingsSectionIds[0]
+      for (const sectionId of settingsSectionIds) {
+        const section = document.getElementById(sectionId)
+        if (section && section.getBoundingClientRect().top <= 112) {
+          currentSection = sectionId
+        }
+      }
+      setActiveSection((current) => current === currentSection ? current : currentSection)
+    }
+
+    const scheduleUpdate = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(updateActiveSection)
+    }
+
+    scheduleUpdate()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    return () => {
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -133,9 +168,9 @@ export function SettingsPage() {
       <div className="c-settings-layout">
         <aside className="c-settings-index" aria-label={t('settings.sectionNavigation')}>
           <div className="c-settings-index__label">{t('settings.onThisPage')}</div>
-          <a href="#engine-health" aria-current="location">{t('settings.runtimeSection')}</a>
-          <a href="#preferences">{t('settings.preferencesSection')}</a>
-          <a href="#inference">{t('settings.inferenceSection')}</a>
+          <a href="#engine-health" aria-current={activeSection === 'engine-health' ? 'location' : undefined}>{t('settings.runtimeSection')}</a>
+          <a href="#preferences" aria-current={activeSection === 'preferences' ? 'location' : undefined}>{t('settings.preferencesSection')}</a>
+          <a href="#inference" aria-current={activeSection === 'inference' ? 'location' : undefined}>{t('settings.inferenceSection')}</a>
           <p className="c-settings-index__note">{t('settings.sectionNavigationNote')}</p>
         </aside>
 
