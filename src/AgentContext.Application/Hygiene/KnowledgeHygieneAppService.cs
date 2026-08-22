@@ -39,14 +39,17 @@ public sealed class KnowledgeHygieneAppService(AgentContextDbContext db) : IKnow
 
         foreach (var item in items)
         {
-            // "Unused" = LastUsedAtUtc, falling back to the last write (creation or
-            // previous decay). Decay advances UpdatedAtUtc, so a decayed-but-still-
-            // Active item is not decayed again on the next run (idempotency, AC2).
+            // LastUsedAtUtc describes user/retrieval activity. The separate decay
+            // checkpoint prevents a stale LastUsedAtUtc from causing the same
+            // cumulative decay to be applied on every timer tick.
             var lastUsed = item.LastUsedAtUtc ?? item.UpdatedAtUtc;
+            var lastDecay = item.LastConfidenceDecayAtUtc ?? item.UpdatedAtUtc;
 
-            if (item.Status == KnowledgeStatus.Active && lastUsed < decayCutoff)
+            if (item.Status == KnowledgeStatus.Active
+                && lastUsed < decayCutoff
+                && lastDecay < decayCutoff)
             {
-                var elapsedWindows = (int)((now - lastUsed).TotalDays / HygieneDefaults.DecayWindowDays);
+                var elapsedWindows = (int)((now - lastDecay).TotalDays / HygieneDefaults.DecayWindowDays);
                 var decay = Math.Min(elapsedWindows * HygieneDefaults.DecayStep, HygieneDefaults.MaxDecay);
                 if (decay <= 0)
                 {
@@ -59,6 +62,7 @@ public sealed class KnowledgeHygieneAppService(AgentContextDbContext db) : IKnow
                     // Decayed below the retrieval threshold → Review.
                     item.Confidence = next;
                     item.Status = KnowledgeStatus.Review;
+                    item.LastConfidenceDecayAtUtc = now;
                     item.UpdatedAtUtc = now;
                     movedToReview++;
                     decayed++;
@@ -67,6 +71,7 @@ public sealed class KnowledgeHygieneAppService(AgentContextDbContext db) : IKnow
                 {
                     // Still above threshold: decay in place, stays Active.
                     item.Confidence = next;
+                    item.LastConfidenceDecayAtUtc = now;
                     item.UpdatedAtUtc = now;
                     decayed++;
                 }

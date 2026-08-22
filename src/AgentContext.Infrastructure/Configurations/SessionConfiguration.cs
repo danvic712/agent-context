@@ -21,6 +21,10 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.HasIndex(s => new { s.Status, s.NextAttemptAtUtc });
         builder.HasIndex(s => new { s.WorkspaceId, s.DomainId });
         builder.HasOne(s => s.Domain).WithMany().HasForeignKey(s => s.DomainId).OnDelete(DeleteBehavior.SetNull);
-        builder.HasMany(s => s.Knowledge).WithOne(k => k.SourceSession).HasForeignKey(k => k.SourceSessionId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasMany(s => s.Knowledge)
+            .WithOne(k => k.SourceSession)
+            .HasForeignKey(k => k.SourceSessionId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .HasConstraintName("fk_knowledge_sessions_source_session_id");
     }
 }

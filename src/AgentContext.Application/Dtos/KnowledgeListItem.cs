@@ -8,12 +8,15 @@ namespace AgentContext.Application.Dtos;
 /// </summary>
 public sealed record KnowledgeListItem(
     Guid Id,
+    KnowledgeStatus Status,
     KnowledgeType Type,
     string Title,
     string Content,
     double Confidence,
     bool IsPrivate,
     string? DomainName,
+    Guid? SourceSessionId,
     string? SourceSessionTask,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    DateTimeOffset? LastUsedAtUtc);

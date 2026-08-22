@@ -162,23 +162,38 @@ export async function saveTheme(theme: string): Promise<ThemeDto> {
 }
 
 export type KnowledgeType = 'Problem' | 'Solution' | 'Pattern'
+export type KnowledgeStatus = 'Active' | 'Review' | 'Archived'
 
 export interface KnowledgeItem {
   id: string
+  status: KnowledgeStatus
   type: KnowledgeType
   title: string
   content: string
   confidence: number
   isPrivate: boolean
   domainName: string | null
+  sourceSessionId: string | null
   sourceSessionTask: string | null
   createdAtUtc: string
   updatedAtUtc: string
+  lastUsedAtUtc: string | null
 }
 
-export interface ReviewKnowledgeResult {
-  threshold: number
+export interface KnowledgeLibraryCounts {
+  active: number
+  review: number
+  archived: number
+}
+
+export interface KnowledgeLibraryPage {
+  limit: number
+  cursor: string | null
   items: KnowledgeItem[]
+  hasMore: boolean
+  nextCursor: string | null
+  counts: KnowledgeLibraryCounts
+  reviewThreshold: number
 }
 
 export async function getSetupStatus(): Promise<SetupStatus> {
@@ -208,18 +223,36 @@ export async function getHealth(): Promise<HealthStatus> {
   return data
 }
 
-export async function listKnowledge(): Promise<KnowledgeItem[]> {
-  const { data } = await http.get<KnowledgeItem[]>('/knowledge')
-  return data
-}
-
-export async function listReviewKnowledge(): Promise<ReviewKnowledgeResult> {
-  const { data } = await http.get<ReviewKnowledgeResult>('/knowledge/review')
+export async function listKnowledgeLibrary(
+  status: KnowledgeStatus,
+  limit = 30,
+  cursor: string | null = null,
+  search = '',
+  signal?: AbortSignal,
+): Promise<KnowledgeLibraryPage> {
+  const { data } = await http.get<KnowledgeLibraryPage>('/knowledge/library', {
+    params: {
+      status: status.toLowerCase(),
+      limit,
+      cursor: cursor ?? undefined,
+      q: search || undefined,
+    },
+    signal,
+  })
   return data
 }
 
 export async function setKnowledgePrivate(id: string, isPrivate: boolean): Promise<void> {
   await http.patch(`/knowledge/${id}`, { isPrivate })
+}
+
+export async function sendKnowledgeToReview(id: string): Promise<void> {
+  await http.post(`/knowledge/${id}/review`)
+}
+
+export async function rateKnowledge(id: string, useful: boolean): Promise<{ id: string; confidence: number }> {
+  const { data } = await http.post<{ id: string; confidence: number }>(`/knowledge/${id}/rate`, { useful })
+  return data
 }
 
 export async function deleteKnowledge(id: string): Promise<void> {
@@ -407,11 +440,6 @@ export interface HygieneResult {
 
 export async function getEngineHealth(): Promise<EngineHealth> {
   const { data } = await http.get<EngineHealth>('/health/engine')
-  return data
-}
-
-export async function listArchivedKnowledge(): Promise<KnowledgeItem[]> {
-  const { data } = await http.get<KnowledgeItem[]>('/knowledge/archived')
   return data
 }
 

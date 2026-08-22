@@ -12,7 +12,11 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<DomainEntity>
         builder.ToTable("domains");
         builder.Property(d => d.Name).HasMaxLength(100).IsRequired();
         builder.HasIndex(d => new { d.WorkspaceId, d.Name }).IsUnique();
-        builder.HasMany(d => d.Knowledge).WithOne(k => k.Domain).HasForeignKey(k => k.DomainId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(d => d.Knowledge)
+            .WithOne(k => k.Domain)
+            .HasForeignKey(k => k.DomainId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("fk_knowledge_domains_domain_id");
         builder.HasMany(d => d.Skills)
             .WithOne(s => s.Domain)
             .HasForeignKey(s => s.DomainId)
