@@ -73,6 +73,10 @@ public static class ErrorCodes
     {
         public const string NotFound = "knowledge.notFound";
         public const string NotArchived = "knowledge.notArchived";
+        public const string NotActive = "knowledge.notActive";
+        public const string ArchivedCannotRate = "knowledge.archivedCannotRate";
+        public const string PageSizeInvalid = "knowledge.pageSizeInvalid";
+        public const string CursorInvalid = "knowledge.cursorInvalid";
     }
 
     public static class Platform

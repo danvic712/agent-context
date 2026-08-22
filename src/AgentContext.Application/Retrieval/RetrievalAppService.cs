@@ -32,6 +32,7 @@ public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm
 
         var items = await RankedMatchesAsync(domainId.Value, query, threshold, RetrievalDefaults.TopN, cancellationToken);
         var grouped = await AppendConflictPartnersAsync(domainId.Value, items, cancellationToken);
+        await MarkUsedAsync(grouped.Select(item => item.Id), cancellationToken);
 
         return new SearchMemoryResult(grouped);
     }
@@ -55,6 +56,12 @@ public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm
             return new FindSimilarSolutionResult(null, []);
         }
 
+        if (solution.ConflictGroupId is null)
+        {
+            await MarkUsedAsync([solution.Id], cancellationToken);
+            return new FindSimilarSolutionResult(solution, []);
+        }
+
         // Conflict partners are answer-level disagreements: same group, same
         // KnowledgeType (Solution) — a Problem row in the group is not a conflict.
         // Domain-scoped like the main query (AC1).
@@ -66,7 +73,9 @@ public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm
                 && k.Type == KnowledgeType.Solution)
             .ToListAsync(cancellationToken);
 
-        return new FindSimilarSolutionResult(solution, conflicts.Select(c => ToItem(c, score: 0)).ToList());
+        var conflictItems = conflicts.Select(c => ToItem(c, score: 0)).ToList();
+        await MarkUsedAsync([solution.Id, .. conflictItems.Select(item => item.Id)], cancellationToken);
+        return new FindSimilarSolutionResult(solution, conflictItems);
     }
 
     /// <summary>Top-N Active Knowledge in the domain ranked by cosine distance to the query.</summary>
@@ -123,6 +132,27 @@ public sealed class RetrievalAppService(AgentContextDbContext db, ILlmClient llm
         var result = new List<KnowledgeSearchItem>(items);
         result.AddRange(partners.Select(p => ToItem(p, score: 0)));
         return result;
+    }
+
+    /// <summary>
+    /// Usage is tracked independently from UpdatedAtUtc so a successful retrieval
+    /// does not move an item while a management-library cursor is being consumed.
+    /// </summary>
+    private async Task MarkUsedAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        var itemIds = ids.Distinct().ToList();
+        if (itemIds.Count == 0)
+        {
+            return;
+        }
+
+        await db.Knowledge
+            .Where(k => itemIds.Contains(k.Id) && k.Status == KnowledgeStatus.Active)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(k => k.LastUsedAtUtc, DateTimeOffset.UtcNow),
+                cancellationToken);
     }
 
     /// <summary>

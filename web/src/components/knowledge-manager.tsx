@@ -1,195 +1,363 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArchiveIcon, BookOpenIcon, LockIcon, TrashIcon } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  CheckIcon,
+  LoaderCircleIcon,
+  RotateCcwIcon,
+  SearchIcon,
+  TrashIcon,
+} from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   deleteKnowledge,
-  listArchivedKnowledge,
-  listKnowledge,
-  listReviewKnowledge,
+  listKnowledgeLibrary,
+  rateKnowledge,
   restoreKnowledge,
+  sendKnowledgeToReview,
   setKnowledgePrivate,
   type KnowledgeItem,
+  type KnowledgeLibraryPage,
+  type KnowledgeStatus,
 } from '@/lib/api'
 
-export type KnowledgeMode = 'all' | 'review' | 'archived'
+const PAGE_SIZE = 30
+const STATUSES: KnowledgeStatus[] = ['Active', 'Review', 'Archived']
 
-interface KnowledgeManagerProps {
-  mode: KnowledgeMode
+function isKnowledgeLibraryPage(value: unknown): value is KnowledgeLibraryPage {
+  if (!value || typeof value !== 'object') return false
+  const page = value as Partial<KnowledgeLibraryPage>
+  return Array.isArray(page.items)
+    && typeof page.hasMore === 'boolean'
+    && typeof page.counts?.active === 'number'
+    && typeof page.counts.review === 'number'
+    && typeof page.counts.archived === 'number'
 }
 
-export function KnowledgeManager({ mode }: KnowledgeManagerProps) {
-  const { t } = useTranslation()
-  const [items, setItems] = useState<KnowledgeItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [threshold, setThreshold] = useState<number | null>(null)
+interface KnowledgeManagerProps {
+  // Kept intentionally empty: Active, Review and Archived are one library surface.
+}
 
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      if (mode === 'all') {
-        setItems(await listKnowledge())
-        setThreshold(null)
-      } else if (mode === 'review') {
-        const review = await listReviewKnowledge()
-        setItems(review.items)
-        setThreshold(review.threshold) // the backend owns the threshold — no hardcoding
-      } else {
-        setItems(await listArchivedKnowledge())
-        setThreshold(null)
-      }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('knowledge.failedLoad'))
-    } finally {
-      setLoading(false)
-    }
+export function KnowledgeManager(_props: KnowledgeManagerProps) {
+  const { t } = useTranslation()
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const initialRequestRef = useRef<AbortController | null>(null)
+  const paginationRequestRef = useRef<AbortController | null>(null)
+  const requestVersionRef = useRef(0)
+  const [status, setStatus] = useState<KnowledgeStatus>('Active')
+  const [search, setSearch] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [items, setItems] = useState<KnowledgeItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [counts, setCounts] = useState({ active: 0, review: 0, archived: 0 })
+  const [reviewThreshold, setReviewThreshold] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [mutatingId, setMutatingId] = useState<string | null>(null)
+
+  const statusMeta: Record<KnowledgeStatus, { label: string; tone: 'blue' | 'amber' | 'red' }> = {
+    Active: { label: t('knowledge.active'), tone: 'blue' },
+    Review: { label: t('knowledge.review'), tone: 'amber' },
+    Archived: { label: t('knowledge.archived'), tone: 'red' },
   }
 
   useEffect(() => {
-    void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode])
+    const timeout = window.setTimeout(() => setAppliedSearch(search.trim()), 250)
+    return () => window.clearTimeout(timeout)
+  }, [search])
 
-  const togglePrivate = async (item: KnowledgeItem) => {
+  const loadInitial = useCallback(async (nextStatus: KnowledgeStatus, query: string) => {
+    const requestVersion = ++requestVersionRef.current
+    initialRequestRef.current?.abort()
+    paginationRequestRef.current?.abort()
+    const controller = new AbortController()
+    initialRequestRef.current = controller
+    setLoading(true)
+    setLoadingMore(false)
     setError(null)
+
     try {
-      await setKnowledgePrivate(item.id, !item.isPrivate)
-      await load()
+      const page = await listKnowledgeLibrary(nextStatus, PAGE_SIZE, null, query, controller.signal)
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return
+      if (!isKnowledgeLibraryPage(page)) throw new Error(t('knowledge.failedLoad'))
+      setItems(page.items)
+      setNextCursor(page.nextCursor)
+      setHasMore(page.hasMore)
+      setCounts(page.counts)
+      setReviewThreshold(page.reviewThreshold)
+      setSelectedId((current) => page.items.some((item) => item.id === current) ? current : page.items[0]?.id ?? null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('knowledge.failedUpdate'))
+      if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
+        setError(cause instanceof Error ? cause.message : t('knowledge.failedLoad'))
+      }
+    } finally {
+      if (!controller.signal.aborted && requestVersion === requestVersionRef.current) setLoading(false)
     }
+  }, [t])
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || !nextCursor) return
+    const requestVersion = requestVersionRef.current
+    const controller = new AbortController()
+    paginationRequestRef.current?.abort()
+    paginationRequestRef.current = controller
+    setLoadingMore(true)
+    try {
+      const page = await listKnowledgeLibrary(status, PAGE_SIZE, nextCursor, appliedSearch, controller.signal)
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return
+      if (!isKnowledgeLibraryPage(page)) throw new Error(t('knowledge.failedLoadMore'))
+      setItems((current) => {
+        const known = new Set(current.map((item) => item.id))
+        return [...current, ...page.items.filter((item) => !known.has(item.id))]
+      })
+      setNextCursor(page.nextCursor)
+      setHasMore(page.hasMore)
+      setCounts(page.counts)
+    } catch (cause) {
+      if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
+        setError(cause instanceof Error ? cause.message : t('knowledge.failedLoadMore'))
+      }
+    } finally {
+      if (requestVersion === requestVersionRef.current) setLoadingMore(false)
+    }
+  }, [appliedSearch, hasMore, loadingMore, nextCursor, status, t])
+
+  useEffect(() => {
+    void loadInitial(status, appliedSearch)
+    return () => {
+      initialRequestRef.current?.abort()
+      paginationRequestRef.current?.abort()
+    }
+  }, [appliedSearch, loadInitial, status])
+
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node || loading || !hasMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore()
+      },
+      { rootMargin: '320px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, loadMore, loading])
+
+  const refresh = async () => {
+    await loadInitial(status, appliedSearch)
   }
 
-  const restore = async (item: KnowledgeItem) => {
+  const mutate = async (item: KnowledgeItem, action: () => Promise<void>) => {
+    setMutatingId(item.id)
     setError(null)
     try {
-      await restoreKnowledge(item.id)
-      await load()
+      await action()
+      await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('knowledge.failedRestore'))
+      setError(cause instanceof Error ? cause.message : t('knowledge.failedUpdate'))
+    } finally {
+      setMutatingId(null)
     }
   }
 
   const remove = async (item: KnowledgeItem) => {
-    if (!window.confirm(t('knowledge.deleteConfirm', { title: item.title }))) {
-      return
-    }
-    setError(null)
-    try {
-      await deleteKnowledge(item.id)
-      await load()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('knowledge.failedDelete'))
-    }
+    if (!window.confirm(t('knowledge.deleteConfirm', { title: item.title }))) return
+    await mutate(item, () => deleteKnowledge(item.id))
   }
 
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === selectedId) ?? items[0] ?? null,
+    [items, selectedId],
+  )
+
+  const countFor = (value: KnowledgeStatus) => {
+    if (value === 'Active') return counts.active
+    if (value === 'Review') return counts.review
+    return counts.archived
+  }
+
+  const selectedIndex = selectedItem ? items.findIndex((item) => item.id === selectedItem.id) : -1
+  const navigateSelected = (direction: -1 | 1) => {
+    if (items.length === 0 || selectedIndex < 0) return
+    const nextIndex = (selectedIndex + direction + items.length) % items.length
+    setSelectedId(items[nextIndex].id)
+  }
+  const typeTone = (type: KnowledgeItem['type']) => type === 'Solution' ? 'blue' : type === 'Pattern' ? 'green' : 'amber'
+  const detailReason = selectedItem ? t(`knowledge.detailReason${selectedItem.status}`) : ''
+
   return (
-    <div className="flex flex-col gap-4">
-      {mode === 'review' && threshold !== null && (
-        <p className="text-sm text-muted-foreground">
-          {t('knowledge.reviewThresholdNote', { threshold })}
-        </p>
-      )}
-
-      {mode === 'archived' && (
-        <p className="text-sm text-muted-foreground">{t('knowledge.archivedNote')}</p>
-      )}
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      {loading ? (
-        <div className="flex flex-col gap-4" aria-busy="true">
-          {[0, 1, 2].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-start justify-between gap-4">
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-64" />
-                </div>
-                <Skeleton className="h-6 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-40" />
-              </CardContent>
-            </Card>
-          ))}
+    <div className="knowledge-page -mx-4 -my-4 md:-mx-6 md:-my-6">
+      <div className="knowledge-page__title-row">
+        <div>
+          <p className="knowledge-page__eyebrow">{t('knowledge.libraryKicker')}</p>
+          <h1 className="knowledge-page__title">{t('knowledge.libraryTitle')}</h1>
+          <p className="knowledge-page__lede">{t('knowledge.libraryDescription')}</p>
         </div>
-      ) : items.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-sm text-muted-foreground">
-            {mode === 'all' && t('knowledge.emptyAll')}
-            {mode === 'review' && t('knowledge.emptyReview')}
-            {mode === 'archived' && t('knowledge.emptyArchived')}
-          </CardContent>
-        </Card>
-      ) : (
-        items.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  {mode === 'archived' ? (
-                    <ArchiveIcon className="size-4 text-muted-foreground" />
-                  ) : (
-                    <BookOpenIcon className="size-4 text-muted-foreground" />
-                  )}
-                  <CardTitle className="text-base">{item.title}</CardTitle>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant={item.type === 'Solution' ? 'default' : 'secondary'}>
-                    {item.type}
-                  </Badge>
-                  <Badge variant="default">{(item.confidence * 100).toFixed(0)}%</Badge>
-                  {item.isPrivate && (
-                    <Badge variant="outline">
-                      <LockIcon data-icon="inline-start" className="size-3" />
-                      {t('knowledge.private')}
-                    </Badge>
-                  )}
-                </div>
+      </div>
+
+      <div className="knowledge-library-split">
+        <aside className="knowledge-library-left">
+          <div className="knowledge-pane-head">
+            <div className="knowledge-pane-title">{t('knowledge.itemsTitle')}</div>
+            <label className="knowledge-search">
+              <SearchIcon aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t('knowledge.searchPlaceholder')}
+                aria-label={t('knowledge.searchPlaceholder')}
+                type="search"
+              />
+            </label>
+          </div>
+
+          <div className="knowledge-status-tabs" role="tablist" aria-label={t('knowledge.libraryTitle')}>
+            {STATUSES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={status === value}
+                onClick={() => setStatus(value)}
+                className="knowledge-status-tab"
+              >
+                {statusMeta[value].label}
+                <span className="knowledge-count">{countFor(value)}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="knowledge-confidence-note">
+            <span className="knowledge-confidence-info" aria-hidden="true">i</span>
+            <span><strong>{t('knowledge.confidenceLabel')}</strong> {t('knowledge.confidenceMeaning')}</span>
+          </div>
+
+          <div className="knowledge-list">
+            {error && <p className="knowledge-error" role="alert">{error}</p>}
+            {loading ? (
+              <div className="knowledge-loading" aria-busy="true">
+                {[0, 1, 2].map((value) => <Skeleton key={value} className="h-28 w-full rounded-xl" />)}
               </div>
-              <CardDescription className="line-clamp-2">{item.content}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-4">
-              <p className="text-xs text-muted-foreground">
-                {item.domainName ?? t('knowledge.noDomain')}
-                {item.sourceSessionTask ? ` · ${t('knowledge.fromTask', { task: item.sourceSessionTask })}` : ''}
-              </p>
-              <div className="flex shrink-0 items-center gap-2">
-                {mode === 'archived' ? (
-                  <Button variant="outline" size="sm" onClick={() => void restore(item)}>
-                    {t('knowledge.restore')}
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => void togglePrivate(item)}>
-                    {item.isPrivate ? t('knowledge.unmarkPrivate') : t('knowledge.markPrivate')}
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => void remove(item)}
-                  aria-label={t('knowledge.deleteAria', { title: item.title })}
+            ) : items.length === 0 ? (
+              <div className="knowledge-empty">
+                {search.trim() ? t('knowledge.noMatches') : t(`knowledge.empty${status}` as 'knowledge.emptyActive' | 'knowledge.emptyReview' | 'knowledge.emptyArchived')}
+              </div>
+            ) : (
+              items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-selected={item.id === selectedItem?.id}
+                  onClick={() => setSelectedId(item.id)}
+                  className="knowledge-item"
                 >
-                  <TrashIcon data-icon="inline-start" className="size-4" />
-                  {t('common.delete')}
-                </Button>
+                  <span className="knowledge-item-top">
+                    <span className="knowledge-item-title-wrap">
+                      <span className="knowledge-item-title">{item.title}</span>
+                      <span className="knowledge-item-kind">
+                        <span className={`knowledge-tag knowledge-tag--${typeTone(item.type)}`}>{item.type}</span>
+                      </span>
+                    </span>
+                    <span className={`knowledge-item-confidence ${item.confidence < (reviewThreshold ?? 0.5) ? 'knowledge-item-confidence--low' : ''}`}>
+                      {t('knowledge.confidenceValue', { value: Math.round(item.confidence * 100) })}
+                    </span>
+                  </span>
+                  <span className="knowledge-item-content">{item.content}</span>
+                  <span className="knowledge-item-foot">
+                    <span className="knowledge-item-domain">{item.domainName ?? t('knowledge.noDomain')}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{new Date(item.updatedAtUtc).toLocaleDateString()}</span>
+                  </span>
+                </button>
+              ))
+            )}
+            <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+            {hasMore && (
+              <button type="button" className="knowledge-load-more" onClick={() => void loadMore()} disabled={loadingMore}>
+                {loadingMore && <LoaderCircleIcon className="mr-1.5 inline-block size-3.5 animate-spin align-[-2px]" />}
+                {loadingMore ? t('knowledge.loadingMore') : t('knowledge.loadMore')}
+              </button>
+            )}
+          </div>
+        </aside>
+
+        <section className="knowledge-library-right">
+          {selectedItem ? (
+            <div className="knowledge-detail">
+              <div className="knowledge-detail-top">
+                <div>
+                  <div className="knowledge-detail-kicker">{t('knowledge.detailKicker')}　·　{selectedItem.domainName ?? t('knowledge.noDomain')}</div>
+                  <h2 className="knowledge-detail-title">{selectedItem.title}</h2>
+                  <div className="knowledge-detail-status">
+                    <span className={`knowledge-tag knowledge-tag--${statusMeta[selectedItem.status].tone}`}>{statusMeta[selectedItem.status].label}</span>
+                  </div>
+                </div>
+                <div className="knowledge-detail-tools">
+                  <span className="knowledge-detail-position">{selectedIndex + 1} / {items.length}</span>
+                  <button type="button" className="knowledge-icon-button" onClick={() => navigateSelected(-1)} aria-label={t('knowledge.previousItem')}>←</button>
+                  <button type="button" className="knowledge-icon-button" onClick={() => navigateSelected(1)} aria-label={t('knowledge.nextItem')}>→</button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))
-      )}
+
+              <div className="knowledge-detail-body">
+                <p>{selectedItem.content}</p>
+                <div className="knowledge-callout">
+                  <strong>{t('knowledge.whyHere')}</strong> {detailReason}
+                </div>
+                <div className="knowledge-detail-section">
+                  <div className="knowledge-section-label">{t('knowledge.sourceAndUpdated')}</div>
+                  <div className="knowledge-meta-grid">
+                    <div className="knowledge-meta-cell">
+                      <label>{t('knowledge.sourceSession')}</label>
+                      <strong>{selectedItem.sourceSessionTask ?? t('knowledge.noSource')}</strong>
+                    </div>
+                    <div className="knowledge-meta-cell">
+                      <label>{t('knowledge.updated')}</label>
+                      <strong>{new Date(selectedItem.updatedAtUtc).toLocaleString()}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="knowledge-detail-footer">
+                  <span className="knowledge-detail-footer-label">{t('knowledge.operationLabel')}</span>
+                  {selectedItem.status === 'Archived' ? (
+                    <button type="button" className="knowledge-action knowledge-action--primary" onClick={() => void mutate(selectedItem, () => restoreKnowledge(selectedItem.id))} disabled={mutatingId === selectedItem.id}>
+                      <RotateCcwIcon />{t('knowledge.restoreToActive')}
+                    </button>
+                  ) : selectedItem.status === 'Review' ? (
+                    <>
+                      <button type="button" className="knowledge-action knowledge-action--primary" onClick={() => void mutate(selectedItem, async () => { await rateKnowledge(selectedItem.id, true) })} disabled={mutatingId === selectedItem.id}>
+                        <CheckIcon />{t('knowledge.confirmUseful')}
+                      </button>
+                      <button type="button" className="knowledge-action" onClick={() => void refresh()} disabled={mutatingId === selectedItem.id}>
+                        {t('knowledge.deferReview')}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" className="knowledge-action" onClick={() => void mutate(selectedItem, () => setKnowledgePrivate(selectedItem.id, !selectedItem.isPrivate))} disabled={mutatingId === selectedItem.id}>
+                        {selectedItem.isPrivate ? t('knowledge.unmarkPrivate') : t('knowledge.markPrivate')}
+                      </button>
+                      <button type="button" className="knowledge-action knowledge-action--warning" onClick={() => void mutate(selectedItem, () => sendKnowledgeToReview(selectedItem.id))} disabled={mutatingId === selectedItem.id}>
+                        {t('knowledge.sendToReview')}
+                      </button>
+                    </>
+                  )}
+                  <button type="button" className="knowledge-action knowledge-action--danger" onClick={() => void remove(selectedItem)} disabled={mutatingId === selectedItem.id}>
+                    <TrashIcon />{t('common.delete')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="knowledge-detail flex items-center justify-center text-sm text-muted-foreground">
+              {t('knowledge.selectItem')}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

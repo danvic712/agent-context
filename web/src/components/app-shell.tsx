@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3Icon, BookOpenIcon, ExternalLinkIcon, FolderArchiveIcon, FolderSearchIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
+import { BarChart3Icon, BookOpenIcon, ExternalLinkIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AnalyticsOverview } from '@/components/analytics-overview'
@@ -16,8 +16,6 @@ import { cn } from '@/lib/utils'
 
 const icons: Record<AppTab, React.ReactNode> = {
   knowledge: <BookOpenIcon className="size-3.5" />,
-  review: <FolderSearchIcon className="size-3.5" />,
-  archived: <FolderArchiveIcon className="size-3.5" />,
   skills: <WrenchIcon className="size-3.5" />,
   analytics: <BarChart3Icon className="size-3.5" />,
   settings: <SettingsIcon className="size-3.5" />,
@@ -157,9 +155,7 @@ export function AppShell() {
       {/* Content — keyed so tab switches animate in */}
       <main key={tab} className="animate-in fade-in slide-in-from-bottom-1 duration-200 flex-1 p-4 md:p-6">
         <Routes>
-          <Route path="/knowledge" element={<KnowledgeManager mode="all" />} />
-          <Route path="/review" element={<KnowledgeManager mode="review" />} />
-          <Route path="/archived" element={<KnowledgeManager mode="archived" />} />
+          <Route path="/knowledge" element={<KnowledgeManager />} />
           <Route path="/skills" element={<SkillsLibraryPage />} />
           <Route path="/skills/upload" element={<SkillUploadPage />} />
           <Route path="/skills/view/:id" element={<SkillDetailPage />} />

@@ -1,5 +1,6 @@
 using AgentContext.Application.Contracts;
 using AgentContext.Application.Dtos;
+using AgentContext.Domain;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgentContext.Host.Controllers;
@@ -32,20 +33,20 @@ public sealed class KnowledgeController(
         CancellationToken cancellationToken = default)
         => Ok(await retrieval.FindSimilarSolutionAsync(domain, problem, cancellationToken));
 
-    /// <summary>All Active Knowledge with Confidence + provenance (AC1).</summary>
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<KnowledgeListItem>>> List(CancellationToken cancellationToken)
-        => Ok(await knowledge.ListAsync(cancellationToken));
-
-    /// <summary>Review-status Knowledge (T8: hygiene/rate moved items here).</summary>
-    [HttpGet("review")]
-    public async Task<ActionResult<ReviewKnowledgeResult>> Review(CancellationToken cancellationToken)
-        => Ok(await knowledge.ListReviewAsync(cancellationToken));
-
-    /// <summary>Archived Knowledge — restore or permanently remove (T8 AC4).</summary>
-    [HttpGet("archived")]
-    public async Task<ActionResult<IReadOnlyList<KnowledgeListItem>>> Archived(CancellationToken cancellationToken)
-        => Ok(await knowledge.ListArchivedAsync(cancellationToken));
+    /// <summary>
+    /// Unified Knowledge management library. The cursor is scoped to the status
+    /// and search query so scrolling cannot continue a different result set.
+    /// </summary>
+    [HttpGet("library")]
+    public async Task<ActionResult<KnowledgeLibraryResult>> Library(
+        [FromQuery] KnowledgeStatus? status,
+        [FromQuery] int? limit,
+        [FromQuery] string? cursor,
+        [FromQuery(Name = "q")] string? search,
+        CancellationToken cancellationToken)
+        => Ok(await knowledge.ListLibraryAsync(
+            new KnowledgeLibraryQuery(status, limit, cursor, search),
+            cancellationToken));
 
     /// <summary>Toggle the per-item private marker (AC2).</summary>
     [HttpPatch("{id:guid}")]
@@ -53,6 +54,14 @@ public sealed class KnowledgeController(
         Guid id, [FromBody] UpdateKnowledgeVisibilityRequest request, CancellationToken cancellationToken)
     {
         await knowledge.UpdateVisibilityAsync(id, request.IsPrivate, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Moves an Active item to Review without changing its Confidence.</summary>
+    [HttpPost("{id:guid}/review")]
+    public async Task<IActionResult> SendToReview(Guid id, CancellationToken cancellationToken)
+    {
+        await knowledge.SendToReviewAsync(id, cancellationToken);
         return NoContent();
     }
 

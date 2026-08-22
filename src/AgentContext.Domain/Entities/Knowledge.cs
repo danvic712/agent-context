@@ -45,6 +45,9 @@ public sealed class Knowledge
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastUsedAtUtc { get; set; }
 
+    /// <summary>Last time hygiene applied a confidence decay step.</summary>
+    public DateTimeOffset? LastConfidenceDecayAtUtc { get; set; }
+
     public Workspace Workspace { get; set; } = null!;
     public Domain Domain { get; set; } = null!;
     public Session? SourceSession { get; set; }
