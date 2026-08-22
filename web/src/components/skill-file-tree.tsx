@@ -101,12 +101,13 @@ function buildTree(files: SkillFileInfo[]): TreeNode[] {
       const path = parentPath ? `${parentPath}/${name}` : name
       folders.push({ kind: 'folder', name, path, children: toNodes(entry, path) })
     }
-    folders.sort((a, b) => a.name.localeCompare(b.name))
+    folders.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
 
     const filesSorted = [...bucket.files].sort((a, b) =>
-      a.path === MAIN ? -1 : b.path === MAIN ? 1 : a.path.localeCompare(b.path),
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+        || a.path.localeCompare(b.path, undefined, { numeric: true, sensitivity: 'base' }),
     )
-    return [...filesSorted, ...folders]
+    return [...folders, ...filesSorted]
   }
 
   return toNodes(root, '')
