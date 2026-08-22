@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3Icon, BookOpenIcon, ExternalLinkIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
+import { BookOpenIcon, ExternalLinkIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { AnalyticsOverview } from '@/components/analytics-overview'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillDetailPage } from '@/components/skills/skill-detail-page'
@@ -17,7 +16,6 @@ import { cn } from '@/lib/utils'
 const icons: Record<AppTab, React.ReactNode> = {
   knowledge: <BookOpenIcon className="size-3.5" />,
   skills: <WrenchIcon className="size-3.5" />,
-  analytics: <BarChart3Icon className="size-3.5" />,
   settings: <SettingsIcon className="size-3.5" />,
 }
 
@@ -159,7 +157,6 @@ export function AppShell() {
           <Route path="/skills" element={<SkillsLibraryPage />} />
           <Route path="/skills/upload" element={<SkillUploadPage />} />
           <Route path="/skills/view/:id" element={<SkillDetailPage />} />
-          <Route path="/analytics" element={<AnalyticsOverview />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/knowledge" replace />} />
         </Routes>

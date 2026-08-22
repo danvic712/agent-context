@@ -1,9 +1,8 @@
-export type AppTab = 'knowledge' | 'skills' | 'analytics' | 'settings'
+export type AppTab = 'knowledge' | 'skills' | 'settings'
 
 export const appTabs: readonly { id: AppTab; path: string }[] = [
   { id: 'knowledge', path: '/knowledge' },
   { id: 'skills', path: '/skills' },
-  { id: 'analytics', path: '/analytics' },
   { id: 'settings', path: '/settings' },
 ]
 

@@ -11,7 +11,7 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 - **Retrieval** — domain-scoped, cosine-ranked search with a Confidence threshold; conflict groups surfaced side by side.
 - **Knowledge management** — review / archive / restore, temporal decay hygiene, private markers, usage feedback (`rate_knowledge`).
 - **Skills** — versioned per `(domain, slug)`, stored as filesystem **packages** (file tree + `SKILL.md` + assets) with an in-browser file editor, drag-drop uploads and zip import.
-- **Analytics** — token-only session summaries by workspace, domain and agent.
+- **Usage recording** — source-aware session and Learning Engine token ledger; the Analytics UI/API is deferred for redesign.
 - **Settings** — LLM endpoint, platform language (`en-US` / `zh-CN`), and color theme (`light` / `dark` / `system`), all persisted in the DB and applied without restart.
 - **Localization** — full platform UI + backend errors in the configured language, one JSON store per locale (ADR 0008).
 - **Observability** — OpenTelemetry logs + traces + metrics exported to the in-app [Aspire dashboard](http://localhost:8080/monitor/resources) by default; `service.name=agent-context`.
