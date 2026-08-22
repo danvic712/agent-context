@@ -1,23 +1,39 @@
+using AgentContext.Domain;
+
 namespace AgentContext.Domain.Entities;
 
 /// <summary>
-/// A record of token consumption and cost attached to a Session, broken down by
-/// model (CONTEXT.md). Cost = tokens × maintained pricing table (spec §6.2).
+/// A source-aware token usage ledger row. Reported Session usage and Learning
+/// Engine platform usage share the token shape but keep their origins explicit.
 /// </summary>
 public sealed class Usage
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 
-    public Guid SessionId { get; set; }
+    /// <summary>Optional for platform calls that are not tied to a Session.</summary>
+    public Guid? SessionId { get; set; }
 
     public string Model { get; set; } = string.Empty;
 
-    public int TokensIn { get; set; }
-    public int TokensOut { get; set; }
+    public int InputTokens { get; set; }
+    /// <summary>A subset of <see cref="InputTokens"/>, never an additional total.</summary>
+    public int CachedInputTokens { get; set; }
+    public int OutputTokens { get; set; }
 
-    public decimal Cost { get; set; }
+    public UsageSource Source { get; set; } = UsageSource.ReportedSession;
+
+    /// <summary>
+    /// Actual platform route used by Learning Engine calls, when known. The
+    /// nullable relationship is set to null if a route is replaced or deleted,
+    /// preserving the usage ledger row.
+    /// </summary>
+    public Guid? InferenceRouteId { get; set; }
+
+    /// <summary>Capability used by a platform call; null for reported Session usage.</summary>
+    public InferenceCapability? Capability { get; set; }
 
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
-    public Session Session { get; set; } = null!;
+    public Session? Session { get; set; }
+    public InferenceRoute? InferenceRoute { get; set; }
 }

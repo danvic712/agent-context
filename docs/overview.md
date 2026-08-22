@@ -95,7 +95,10 @@ Resources: `skill://{domain}/{slug}/{file}` (T12 package files), `knowledge://{i
 
 - Agents report a **structured summary** (task, conclusion, key snippets) plus model / tokens / skills used / cost.
 - Full original context is stored only when the user explicitly says "remember" (which also marks it important).
-- `Usage` records attach per session; cost = tokens × maintained model pricing table.
+- `Usage` is a source-aware token ledger: reported Session rows attach to a Session,
+  while Learning Engine rows may be sessionless and may carry nullable route/capability
+  bindings. Cost is computed at analytics time from the maintained pricing table, not
+  persisted on Usage.
 
 ### 6.3 Learning Engine
 
@@ -123,7 +126,7 @@ Workspace ──┬── Domain ──┬── Knowledge (confidence, source s
             │            └── Skill (versioned)
             ├── Membership ── User
             └── Session ──┬── Agent
-                          ├── Usage (tokens/cost by model)
+                          ├── Usage (source-aware tokens by model)
                           └── ⟶ Knowledge (distilled into)
 ```
 

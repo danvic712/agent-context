@@ -10,7 +10,7 @@ public sealed class ModelPricingConfiguration : IEntityTypeConfiguration<ModelPr
     {
         builder.ToTable("model_pricing");
         builder.Property(p => p.Model).HasMaxLength(200).IsRequired();
-        // Per-token USD rates need far more precision than the aggregated Usage.Cost.
+        // Per-token USD rates need far more precision than report-time aggregates.
         builder.Property(p => p.InputCostPerToken).HasPrecision(38, 18);
         builder.Property(p => p.OutputCostPerToken).HasPrecision(38, 18);
         builder.HasIndex(p => p.Model).IsUnique();

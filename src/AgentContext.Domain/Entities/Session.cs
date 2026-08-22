@@ -2,9 +2,9 @@ namespace AgentContext.Domain.Entities;
 
 /// <summary>
 /// A record of one agent interaction, reported by the agent itself over MCP as a
-/// structured summary (task, conclusion, key snippets), including model, tokens,
-/// skills used, and cost (CONTEXT.md). Full original context is stored only when
-/// the user explicitly asks to remember.
+/// structured summary (task, conclusion, key snippets), including model and token
+/// usage (CONTEXT.md). Full original context is stored only when the user
+/// explicitly asks to remember.
 /// </summary>
 public sealed class Session
 {

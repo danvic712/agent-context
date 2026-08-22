@@ -22,7 +22,7 @@ public sealed class SessionsController(ISaveSessionAppService sessions) : Contro
     public async Task<ActionResult<SessionDetail>> Get(Guid id, CancellationToken cancellationToken)
         => Ok(await sessions.GetAsync(id, cancellationToken));
 
-    /// <summary>All sessions with token/cost rollups from Usage.</summary>
+    /// <summary>All sessions with token rollups from Usage.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<SessionListItem>>> List(CancellationToken cancellationToken)
         => Ok(await sessions.ListAsync(cancellationToken));

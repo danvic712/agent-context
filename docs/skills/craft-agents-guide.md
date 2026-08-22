@@ -50,8 +50,8 @@ decision, a reusable pattern, or a conclusion another session would benefit from
   full original context ("remember this"). The default is a summary — that's the
   privacy-preserving contract of the platform.
 - **Always report the model and token counts** when you know them — they power the
-  Usage view and the platform's cost computation (tokens × pricing table). The platform
-  trusts client-reported values only as a fallback when no pricing row exists.
+  Usage view and analytics-time cost computation (tokens × pricing table). Models
+  without a pricing row are reported with zero computed cost.
 
 ## How to structure a summary
 

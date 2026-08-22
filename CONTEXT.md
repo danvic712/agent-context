@@ -37,7 +37,10 @@ The platform's score for how likely a knowledge item is correct and useful — c
 _Avoid_: score, weight
 
 **Usage**:
-A record of token consumption and cost attached to a Session, broken down by model. Powers usage analytics.
+A source-aware token ledger broken down by model. Reported Session rows attach to a
+Session; Learning Engine rows may be sessionless and may retain an optional inference
+route and capability binding. Cached input tokens are a subset of input tokens. Cost
+is computed at analytics time from ModelPricing and is not persisted on Usage.
 _Avoid_: billing record, telemetry
 
 **Learning Engine**:

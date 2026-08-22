@@ -18,8 +18,8 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
 ### 2.2 Sessions & Usage (T2)
-- `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + model/tokens/cost. Sessions land `Pending` in Postgres-as-queue (ADR 0005).
-- `Usage` records per session; cost computed from token counts × maintained model pricing table (T7).
+- `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + model/token usage. Sessions land `Pending` in Postgres-as-queue (ADR 0005). The legacy client cost field remains accepted for the T27 contract transition but is not persisted.
+- `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. Cost is computed from token counts × maintained model pricing at analytics time (T7), not stored on Usage.
 
 ### 2.3 Learning Engine (T3)
 - BackgroundService polls pending Sessions → pipeline: dedup → chat extraction through the configured inference route → Knowledge (`Problem`/`Solution`/`Pattern` + Confidence) → embedding through the configured embedding route (`vector(1536)`) → pgvector.
@@ -122,9 +122,9 @@ Workspace ──┬── Domain ──┬── Knowledge (Type/Content/Confide
             │            └── Skill (versioned; package files on filesystem)
             ├── Membership ── User
             └── Session ──┬── Agent
-                          ├── Usage (tokens/cost by model)
+                          ├── Usage (source-aware tokens by model; optional route/session bindings)
                           └── ⟶ Knowledge (distilled into)
-AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider · ModelPricing (cost table)
+AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider · ModelPricing (analytics-time cost table)
 ```
 
 ## 7. Workspace & Visibility

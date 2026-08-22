@@ -53,3 +53,10 @@ public enum InferenceCapability
     Chat = 0,
     Embedding = 1,
 }
+
+/// <summary>Origin of a token usage ledger row.</summary>
+public enum UsageSource
+{
+    ReportedSession = 0,
+    LearningEngine = 1,
+}
