@@ -25,6 +25,6 @@ operators choose the best model for each capability. Custom base URLs keep the
 data-locality decision with the operator.
 
 Consequence: any provider without an OpenAI-compatible surface needs an adapter
-later; model-pricing analytics derives cost from token counts plus a maintained
-pricing table, not provider SDKs. API keys are write-only at the REST boundary
-and encrypted before storage.
+later. Analytics reports the Usage token ledger without cost estimation or a
+model-pricing table. API keys are write-only at the REST boundary and encrypted
+before storage.

@@ -51,8 +51,8 @@ decision, a reusable pattern, or a conclusion another session would benefit from
   privacy-preserving contract of the platform.
 - **Always report the optional Usage payload** when you know it — include the model
   snapshot plus input, cached input, and output token counts. These power the Usage
-  view and analytics-time cost computation (tokens × pricing table). Models without
-  a pricing row are reported with zero computed cost.
+  view. Analytics reports token counts only; no pricing table or cost estimate is
+  maintained.
 
 ## How to structure a summary
 

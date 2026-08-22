@@ -27,7 +27,7 @@ Four value axes, all supported — with a clear hierarchy:
 | Shared AI Context — cross-agent unified context via MCP | Foundation |
 | Continuous Learning — sessions become reusable knowledge | Foundation (table stakes; must be solid) |
 | AI Capability Management — skills, versioned and domain-scoped | Core feature |
-| AI Usage Intelligence — sessions, tokens, cost, effectiveness | **Differentiator** |
+| AI Usage Intelligence — sessions, tokens, effectiveness | **Differentiator** |
 
 Market research ([competitive-landscape.md](./research/competitive-landscape.md)) shows session→knowledge automation is now table stakes across the field; **usage intelligence, governance, and cross-platform unified context remain open territory**. The learning loop is the ground everything stands on; the wedge is governed, cross-agent context with usage intelligence on top.
 
@@ -97,8 +97,8 @@ Resources: `skill://{domain}/{slug}/{file}` (T12 package files), `knowledge://{i
 - Full original context is stored only when the user explicitly says "remember" (which also marks it important).
 - `Usage` is a source-aware token ledger: reported Session rows attach to a Session,
   while Learning Engine rows may be sessionless and may carry nullable route/capability
-  bindings. Cost is computed at analytics time from the maintained pricing table, not
-  persisted on Usage.
+  bindings. Analytics exposes token counts only; cost is not persisted on Usage or
+  included in the Analytics contracts.
 
 ### 6.3 Learning Engine
 
@@ -116,7 +116,7 @@ Pipeline: `save_session` → background worker → dedup → extraction LLM → 
 
 ### 6.5 Analytics (MVP)
 
-- Session overview: sessions, tokens, cost — by workspace / domain / agent.
+- Session overview: sessions and token counts — by workspace / domain / agent.
 - Data lands automatically with `save_session`; no extra collection.
 
 ## 7. Data Model

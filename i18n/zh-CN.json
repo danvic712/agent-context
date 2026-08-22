@@ -392,7 +392,7 @@
     },
     "analytics": {
       "overviewTitle": "会话概览",
-      "overviewDescription": "平台范围内的会话、token 与成本 — 成本由维护的模型定价表计算。",
+      "overviewDescription": "平台范围内的会话与 token 使用情况。",
       "domain": "领域",
       "domainPlaceholder": "所有领域",
       "agent": "代理",
@@ -402,20 +402,7 @@
       "byDomain": "按领域",
       "byAgent": "按代理",
       "noSessions": "暂无会话。",
-      "pricingTitle": "模型定价",
-      "pricingDescription": "用于计算 Usage 成本(US28)的每 token 美元费率。没有定价行的模型成本为 0。",
-      "model": "模型",
-      "modelPlaceholder": "gpt-4o",
-      "inputPerToken": "输入 / token",
-      "outputPerToken": "输出 / token",
-      "addOrUpdate": "添加 / 更新",
-      "pricingEmpty": "尚无定价记录 — 在上方添加一条以开始计算 Usage 成本。",
-      "inPerToken": "入 ${{value}}",
-      "outPerToken": "出 ${{value}}",
-      "deletePricingAria": "删除 {{model}} 的定价",
-      "failedLoad": "加载分析失败",
-      "failedSavePricing": "保存定价失败",
-      "failedDeletePricing": "删除定价失败"
+      "failedLoad": "加载分析失败"
     },
     "engineHealth": {
       "learningEngineTitle": "Learning Engine",
@@ -556,10 +543,6 @@
       "sortInvalid": "技能列表排序方式无效。",
       "versionConflict": "这个 Skill 版本已经不是最新版本。请重新加载版本 {0} 后再发布。",
       "versionReadOnly": "版本 {0} 是历史版本，只读。请从最新版本发布新版本。"
-    },
-    "pricing": {
-      "modelRequired": "需要填写模型名称。",
-      "negativeCost": "每 token 成本不能为负。"
     },
     "session": {
       "fullContextRequired": "当 Remembered 为 true 时,必须提供 FullContext。",
