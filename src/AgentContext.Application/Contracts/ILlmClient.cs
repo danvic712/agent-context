@@ -13,15 +13,16 @@ public interface ILlmClient
 {
     /// <summary>
     /// Extracts Knowledge items (Problem / Solution / Pattern) from a session
-    /// summary document. Returns zero or more items; empty means the summary
-    /// contained nothing reusable.
+    /// summary document. Returns zero or more items plus provider usage and
+    /// route/model metadata; empty means the summary contained nothing reusable.
     /// </summary>
-    Task<IReadOnlyList<KnowledgeExtraction>> ExtractKnowledgeAsync(
+    Task<LlmCallResult<IReadOnlyList<KnowledgeExtraction>>> ExtractKnowledgeAsync(
         string sessionSummaryJson, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Embeds a text into a fixed-dimension vector for pgvector storage.
+    /// Embeds a text into a fixed-dimension vector for pgvector storage and
+    /// returns provider usage plus route/model metadata.
     /// Throws when the endpoint returns a dimension different from the schema.
     /// </summary>
-    Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default);
+    Task<LlmCallResult<float[]>> EmbedAsync(string text, CancellationToken cancellationToken = default);
 }

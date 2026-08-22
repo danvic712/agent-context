@@ -27,7 +27,8 @@ public sealed class LearningPipelineAppService(
     AgentContextDbContext db,
     ILlmClient llm,
     ILogger<LearningPipelineAppService> logger,
-    IInferenceConfigurationAppService inference) : ILearningPipelineAppService
+    IInferenceConfigurationAppService inference,
+    ILearningUsageRecorder usageRecorder) : ILearningPipelineAppService
 {
     public async Task<LearningPipelineResult> ProcessNextAsync(CancellationToken cancellationToken = default)
     {
@@ -94,7 +95,9 @@ public sealed class LearningPipelineAppService(
                 return skipped;
             }
 
-            var extractions = await llm.ExtractKnowledgeAsync(session.SummaryJson, cancellationToken);
+            var extraction = await llm.ExtractKnowledgeAsync(session.SummaryJson, cancellationToken);
+            await usageRecorder.RecordAsync(session.Id, InferenceCapability.Chat, extraction, cancellationToken);
+            var extractions = extraction.Result;
 
             var created = 0;
             var corroborated = 0;
@@ -112,7 +115,13 @@ public sealed class LearningPipelineAppService(
                     continue;
                 }
 
-                var embedding = await llm.EmbedAsync($"{item.Title}\n{item.Content}", cancellationToken);
+                var embeddingResult = await llm.EmbedAsync($"{item.Title}\n{item.Content}", cancellationToken);
+                await usageRecorder.RecordAsync(
+                    session.Id,
+                    InferenceCapability.Embedding,
+                    embeddingResult,
+                    cancellationToken);
+                var embedding = embeddingResult.Result;
                 var dbNearest = await FindNearestAsync(session, embedding, cancellationToken);
                 var batchNearest = FindRelatedInBatch(batchItems, embedding);
 

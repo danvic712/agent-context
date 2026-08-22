@@ -167,9 +167,11 @@ public sealed class InferenceConfigurationAppServiceTests
 
         Assert.NotNull(options);
         Assert.Equal("https://api.openai.com/v1", options!.Chat.BaseUrl);
+        Assert.Equal(InferenceTestData.ChatRouteId, options.Chat.Id);
         Assert.Equal("sk-openai-runtime", options.Chat.ApiKey);
         Assert.Equal("gpt-4o-mini", options.Chat.Model);
         Assert.Equal("https://api.deepseek.com/v1", options.Embedding.BaseUrl);
+        Assert.Equal(InferenceTestData.EmbeddingRouteId, options.Embedding.Id);
         Assert.Equal("sk-deepseek-runtime", options.Embedding.ApiKey);
         Assert.Equal("text-embedding-3-small", options.Embedding.Model);
     }
