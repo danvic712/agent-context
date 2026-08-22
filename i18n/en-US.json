@@ -563,6 +563,7 @@
     },
     "session": {
       "fullContextRequired": "FullContext is required when Remembered is true.",
+      "usageInvalid": "Reported usage token counts must be non-negative, and cached input tokens cannot exceed input tokens.",
       "notFound": "Session {0} not found."
     },
     "knowledge": {

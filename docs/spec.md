@@ -18,7 +18,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
 ### 2.2 Sessions & Usage (T2)
-- `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + model/token usage. Sessions land `Pending` in Postgres-as-queue (ADR 0005). The legacy client cost field remains accepted for the T27 contract transition but is not persisted.
+- `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
 - `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. Cost is computed from token counts × maintained model pricing at analytics time (T7), not stored on Usage.
 
 ### 2.3 Learning Engine (T3)

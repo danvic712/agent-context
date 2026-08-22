@@ -93,7 +93,7 @@ Resources: `skill://{domain}/{slug}/{file}` (T12 package files), `knowledge://{i
 
 ### 6.2 Session Management
 
-- Agents report a **structured summary** (task, conclusion, key snippets) plus model / tokens / skills used / cost.
+- Agents report a **structured summary** (task, conclusion, key snippets) plus an optional Usage payload containing the reported model snapshot, input tokens, cached input tokens, and output tokens.
 - Full original context is stored only when the user explicitly says "remember" (which also marks it important).
 - `Usage` is a source-aware token ledger: reported Session rows attach to a Session,
   while Learning Engine rows may be sessionless and may carry nullable route/capability

@@ -563,6 +563,7 @@
     },
     "session": {
       "fullContextRequired": "当 Remembered 为 true 时,必须提供 FullContext。",
+      "usageInvalid": "上报的 Usage token 数量不能为负数，且 cached input tokens 不能超过 input tokens。",
       "notFound": "找不到会话 {0}。"
     },
     "knowledge": {

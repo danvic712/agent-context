@@ -66,6 +66,7 @@ public static class ErrorCodes
     public static class Session
     {
         public const string FullContextRequired = "session.fullContextRequired";
+        public const string UsageInvalid = "session.usageInvalid";
         public const string NotFound = "session.notFound";
     }
 
