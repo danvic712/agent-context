@@ -109,7 +109,7 @@ five v1 tools:
 ## Full loop (validated 2026-08-16, URL mode)
 
 1. `source_test` over `http://localhost:8080/mcp` → five tools visible.
-2. `save_session(domain="dev", task=…, conclusion=…, keySnippets=[…], model=…)`
+2. `save_session(domain="dev", task=…, conclusion=…, keySnippets=[…], usage={model: …, inputTokens: …, cachedInputTokens: …, outputTokens: …})`
    → Session persisted as `pending`.
 3. The in-process Learning Engine extracted → **3 Knowledge rows**,
    Confidence ≈ 0.58–0.59.

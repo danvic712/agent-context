@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AgentContext.Application.Tests/AgentContext.Application.Tests.csproj" />
+    <Project Path="tests/AgentContext.Host.Tests/AgentContext.Host.Tests.csproj" />
   </Folder>
 </Solution>

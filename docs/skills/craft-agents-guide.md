@@ -49,9 +49,10 @@ decision, a reusable pattern, or a conclusion another session would benefit from
 - **Use `remember=true` + fullContext** only when the user explicitly asks to keep the
   full original context ("remember this"). The default is a summary — that's the
   privacy-preserving contract of the platform.
-- **Always report the model and token counts** when you know them — they power the
-  Usage view and analytics-time cost computation (tokens × pricing table). Models
-  without a pricing row are reported with zero computed cost.
+- **Always report the optional Usage payload** when you know it — include the model
+  snapshot plus input, cached input, and output token counts. These power the Usage
+  view and analytics-time cost computation (tokens × pricing table). Models without
+  a pricing row are reported with zero computed cost.
 
 ## How to structure a summary
 

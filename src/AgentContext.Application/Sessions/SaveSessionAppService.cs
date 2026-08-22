@@ -20,6 +20,8 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        ValidateUsage(request.Usage);
+
         // US7: remembering a session means the full original context is stored.
         if (request.Remembered && string.IsNullOrWhiteSpace(request.FullContext))
         {
@@ -68,21 +70,17 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
         };
 
         // Reported Session usage is explicitly tagged so it cannot be confused
-        // with Learning Engine platform usage. A missing model falls back to
-        // "unknown" so the row is never silently dropped. Cost is intentionally
-        // not persisted in the source-aware Usage ledger.
-        if (!string.IsNullOrWhiteSpace(request.Model)
-            || request.TokensIn != 0
-            || request.TokensOut != 0)
+        // with Learning Engine platform usage. The reported model is a client
+        // snapshot and is deliberately not resolved through InferenceRoute.
+        if (request.Usage is not null)
         {
-            var model = string.IsNullOrWhiteSpace(request.Model) ? "unknown" : request.Model;
             session.Usage.Add(new Usage
             {
-                Model = model,
+                Model = request.Usage.Model,
                 Source = UsageSource.ReportedSession,
-                InputTokens = request.TokensIn,
-                CachedInputTokens = 0,
-                OutputTokens = request.TokensOut,
+                InputTokens = request.Usage.InputTokens,
+                CachedInputTokens = request.Usage.CachedInputTokens,
+                OutputTokens = request.Usage.OutputTokens,
                 CreatedAtUtc = now,
             });
         }
@@ -91,6 +89,24 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
         await db.SaveChangesAsync(cancellationToken);
 
         return new SaveSessionResult(session.Id, domainName, session.Remembered);
+    }
+
+    private static void ValidateUsage(SessionUsageInput? usage)
+    {
+        if (usage is null)
+        {
+            return;
+        }
+
+        if (usage.InputTokens < 0
+            || usage.CachedInputTokens < 0
+            || usage.OutputTokens < 0
+            || usage.CachedInputTokens > usage.InputTokens)
+        {
+            throw new LocalizedException(
+                HttpStatusCode.BadRequest,
+                ErrorCodes.Session.UsageInvalid);
+        }
     }
 
     public async Task<SessionDetail> GetAsync(Guid sessionId, CancellationToken cancellationToken = default)

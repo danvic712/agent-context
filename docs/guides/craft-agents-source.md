@@ -97,7 +97,7 @@ before reinventing, and load centrally-managed skills.
 
 ## Guidelines
 - Report a Session after meaningful work: task / conclusion / keySnippets + domain
-- Pass model + token counts so Usage analytics work
+- Pass the optional Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`) when those counts are known
 - Search the domain at session start; rate knowledge you actually used
 - Full-context "remember" only when the user explicitly asks
 
