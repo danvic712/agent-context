@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  ArrowLeftIcon,
   CheckIcon,
   LoaderCircleIcon,
   RotateCcwIcon,
@@ -22,6 +23,7 @@ import {
   type KnowledgeLibraryPage,
   type KnowledgeStatus,
 } from '@/lib/api'
+import { formatDate, formatDateTime } from '@/lib/formatting'
 
 const PAGE_SIZE = 30
 const STATUSES: KnowledgeStatus[] = ['Active', 'Review', 'Archived']
@@ -59,6 +61,8 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mutatingId, setMutatingId] = useState<string | null>(null)
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
+  const listScrollTopRef = useRef(0)
 
   const statusMeta: Record<KnowledgeStatus, { label: string; tone: 'blue' | 'amber' | 'red' }> = {
     Active: { label: t('knowledge.active'), tone: 'blue' },
@@ -175,6 +179,10 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
     [items, selectedId],
   )
 
+  useEffect(() => {
+    if (!selectedItem && mobileView === 'detail') setMobileView('list')
+  }, [mobileView, selectedItem])
+
   const countFor = (value: KnowledgeStatus) => {
     if (value === 'Active') return counts.active
     if (value === 'Review') return counts.review
@@ -186,6 +194,17 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
     if (items.length === 0 || selectedIndex < 0) return
     const nextIndex = (selectedIndex + direction + items.length) % items.length
     setSelectedId(items[nextIndex].id)
+  }
+  const openItem = (id: string) => {
+    setSelectedId(id)
+    if (!window.matchMedia('(max-width: 900px)').matches) return
+    listScrollTopRef.current = window.scrollY
+    setMobileView('detail')
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }))
+  }
+  const backToList = () => {
+    setMobileView('list')
+    window.requestAnimationFrame(() => window.scrollTo({ top: listScrollTopRef.current, behavior: 'auto' }))
   }
   const typeTone = (type: KnowledgeItem['type']) => type === 'Solution' ? 'blue' : type === 'Pattern' ? 'green' : 'amber'
   const detailReason = selectedItem ? t(`knowledge.detailReason${selectedItem.status}`) : ''
@@ -201,7 +220,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
         />
       )}
     >
-      <Surface as="div" className="knowledge-library-split">
+      <Surface as="div" className="knowledge-library-split" data-mobile-view={mobileView}>
         <aside className="knowledge-library-left">
           <div className="knowledge-pane-head">
             <div className="knowledge-pane-title">{t('knowledge.itemsTitle')}</div>
@@ -217,13 +236,12 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
             </label>
           </div>
 
-          <div className="knowledge-status-tabs" role="tablist" aria-label={t('knowledge.libraryTitle')}>
+          <div className="knowledge-status-tabs" role="group" aria-label={t('knowledge.libraryTitle')}>
             {STATUSES.map((value) => (
               <button
                 key={value}
                 type="button"
-                role="tab"
-                aria-selected={status === value}
+                aria-pressed={status === value}
                 onClick={() => setStatus(value)}
                 className="knowledge-status-tab"
               >
@@ -253,8 +271,8 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                 <button
                   key={item.id}
                   type="button"
-                  aria-selected={item.id === selectedItem?.id}
-                  onClick={() => setSelectedId(item.id)}
+                  data-selected={item.id === selectedItem?.id}
+                  onClick={() => openItem(item.id)}
                   className="knowledge-item"
                 >
                   <span className="knowledge-item-top">
@@ -272,7 +290,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                   <span className="knowledge-item-foot">
                     <span className="knowledge-item-domain">{item.domainName ?? t('knowledge.noDomain')}</span>
                     <span aria-hidden="true">·</span>
-                    <span>{new Date(item.updatedAtUtc).toLocaleDateString()}</span>
+                    <span>{formatDate(item.updatedAtUtc)}</span>
                   </span>
                 </button>
               ))
@@ -290,6 +308,10 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
         <section className="knowledge-library-right">
           {selectedItem ? (
             <div className="knowledge-detail">
+              <button type="button" className="knowledge-mobile-back" onClick={backToList}>
+                <ArrowLeftIcon aria-hidden="true" />
+                {t('knowledge.backToList')}
+              </button>
               <div className="knowledge-detail-top">
                 <div>
                   <div className="knowledge-detail-kicker">{t('knowledge.detailKicker')}　·　{selectedItem.domainName ?? t('knowledge.noDomain')}</div>
@@ -319,7 +341,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                     </div>
                     <div className="knowledge-meta-cell">
                       <label>{t('knowledge.updated')}</label>
-                      <strong>{new Date(selectedItem.updatedAtUtc).toLocaleString()}</strong>
+                      <strong>{formatDateTime(selectedItem.updatedAtUtc)}</strong>
                     </div>
                   </div>
                 </div>
