@@ -40,7 +40,7 @@ Market research ([competitive-landscape.md](./research/competitive-landscape.md)
 | Platform inference | Configurable OpenAI-compatible providers with independent Chat/Embedding routes | [0009](./adr/0009-platform-inference-configuration.md) |
 | MVP scope | Learning loop + thin skills + Usage recording; explicit no-list | [0004](./adr/0004-mvp-scope-and-no-list.md) |
 | Background | BackgroundService + Postgres-as-queue; Hangfire deferred | [0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md) |
-| Hosting | One project, one entrypoint: no-args startup runs the full 3-in-1 environment (portal UI/REST/MCP + Aspire dashboard + postgres) | [0006](./adr/0006-single-project-dual-mode.md) |
+| Hosting | One project, one entrypoint: no-args startup runs the ASP.NET Core Host (UI/REST/MCP); PostgreSQL is external | [0006](./adr/0006-single-project-dual-mode.md) |
 | Cache | Redis deferred from MVP stack | [0007](./adr/0007-redis-deferred-from-mvp.md) |
 
 ## 4. High Level Architecture
@@ -53,15 +53,13 @@ running the binary with no arguments starts everything:
                       |
         ┌─────────────┴─────────────┐
         │   AgentContext (single .NET project)   │
-        │   default: Aspire DistributedApp       │
-        │     ├─ portal: REST API + UI + MCP /mcp│
-        │     └─ in-process dashboard            │
+        │   default: ASP.NET Core Host            │
+        │     └─ REST API + UI + MCP /mcp         │
         │   shared: EF Core / retrieval /        │
         │   learning / BackgroundService         │
-        │   OTel exporter → dashboard            │
         └───────┬──────────────────┬─────────────┘
-                |                  |
-      PostgreSQL (+ pgvector)  Aspire dashboard
+                |
+      PostgreSQL (+ pgvector)
       (Redis deferred, ADR 0007)
                 |
          Craft Agents (Streamable HTTP /mcp)
@@ -69,13 +67,13 @@ running the binary with no arguments starts everything:
 
 ## 5. Technology Stack
 
-- **Backend**: ASP.NET Core (.NET 10), Entity Framework Core, Serilog, Microsoft Agent Framework (chat + embeddings); OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink); Aspire (AppHost mode); background processing via `BackgroundService` + Postgres-as-queue (Hangfire deferred — [ADR 0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md))
+- **Backend**: ASP.NET Core (.NET 10), Entity Framework Core, Serilog, Microsoft Agent Framework (chat + embeddings); optional OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink); background processing via `BackgroundService` + Postgres-as-queue (Hangfire deferred — [ADR 0005](./adr/0005-backgroundservice-over-hangfire-for-mvp.md))
 - **Frontend**: React, TypeScript, shadcn/ui (botanical theme, Tailwind v4), react-i18next, react-markdown + shiki
 - **Data**: PostgreSQL + pgvector (Redis deferred — [ADR 0007](./adr/0007-redis-deferred-from-mvp.md))
 - **CI/CD**: GitHub Actions — `build.yml` (build + test on push/PR), `release.yml` (v* tags → multi-arch GHCR image + GitHub Release)
-- **Integration**: one project, one mode — no-args startup runs the full
-  environment; the portal serves REST/UI + the MCP toolset over Streamable HTTP
-  at `/mcp` (Craft Agents connect by URL).
+- **Integration**: one project, one mode — no-args startup runs the Host directly;
+  it serves REST/UI + the MCP toolset over Streamable HTTP at `/mcp` (Craft
+  Agents connect by URL).
 
 ## 6. Core Components
 
@@ -138,7 +136,7 @@ Workspace ──┬── Domain ──┬── Knowledge (confidence, source s
 
 ## 9. MVP Scope
 
-**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), Usage recording, platform localization, inference/theme/language settings, OTel observability + Aspire dashboard, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
+**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), Usage recording, platform localization, inference/theme/language settings, optional OTel observability, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
 
 **Out (no-list)**: skill marketplace, enterprise SSO/audit, auto memory injection, git-synced skills, per-item ACL, built-in chat UI, traffic proxy, SaaS hosting.
 

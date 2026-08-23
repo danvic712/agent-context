@@ -124,15 +124,6 @@ export interface HealthStatus {
   database: string
 }
 
-export interface DashboardUrlDto {
-  url: string | null
-}
-
-export async function getDashboardUrl(): Promise<DashboardUrlDto> {
-  const { data } = await http.get<DashboardUrlDto>('/health/dashboard')
-  return data
-}
-
 export interface LanguageDto {
   language: string
 }

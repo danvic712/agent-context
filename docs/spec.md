@@ -1,6 +1,6 @@
 # Agent Context — Platform Spec
 
-> **Current state (2026-08-18)**: T1–T14 are delivered; T15's complete-image and same-origin dashboard implementation is present locally, with final Docker/full-loop validation pending. Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0008` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
+> **Current state (2026-08-23)**: T1–T14 are delivered; the application runs as a direct ASP.NET Core Host and Docker Compose supplies PostgreSQL. OpenTelemetry export is optional and uses a configured OTLP collector. Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0009` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
 
 ## 1. Positioning & Scope
 
@@ -13,7 +13,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 ## 2. Delivered Capabilities (T1–T15)
 
 ### 2.1 Integration — MCP gateway (T2, T6, T9)
-- One project, one entrypoint: no-args startup runs the full environment — portal (REST API + React UI + MCP over Streamable HTTP at `/mcp`) + Aspire dashboard + postgres, as one DistributedApplication (ADR 0006). Craft Agents connect to the MCP toolset by URL; the legacy stdio server remains as an internal/test path.
+- One project, one entrypoint: no-args startup runs the ASP.NET Core host — REST API + React UI + MCP over Streamable HTTP at `/mcp`. PostgreSQL is supplied through `ConnectionStrings__Default` (ADR 0006). Craft Agents connect to the MCP toolset by URL; the legacy stdio server remains as an internal/test path.
 - Five tools: `save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`. Resources: `skill://{domain}/{slug}/{file}` (T12), `knowledge://{id}`.
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
@@ -56,20 +56,17 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Botanical blue theme (day = mist-blue × amber, night = night-sky blue), top navigation, Instrument Sans / Newsreader / JetBrains Mono, CSS variables + `[data-theme]` (design exploration: `docs/design/`).
 - Color theme selector (`light` / `dark` / `system`, persisted in `settings.theme`); anti-FOUC inline script; settings page.
 
-### 2.11 Observability — OpenTelemetry + Aspire dashboard (T13)
-- Logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics, **enabled by default**; `service.name=agent-context`; resource attributes from `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
-- OTLP endpoint from `OTEL_EXPORTER_OTLP_ENDPOINT`; local Compose/AppHost wiring targets the in-process dashboard, while standalone configuration may use `localhost:4317`; `OTEL_SDK_DISABLED` is the escape hatch; pipeline spans are instrumented (`learning-pipeline.process`).
-- The dashboard is hosted by the AppHost in the current image; it is not a separate Compose service.
+### 2.11 Observability — OpenTelemetry (T13)
+- Logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics are exported when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured; `service.name=agent-context`; resource attributes can come from `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
+- `OTEL_EXPORTER_OTLP_PROTOCOL` selects gRPC or HTTP/protobuf, and `OTEL_SDK_DISABLED` disables export; pipeline spans are instrumented (`learning-pipeline.process`).
 
-### 2.12 AppHost mode + dashboard menu + CI/CD (T13/T15 follow-ups)
-- **Default (no args)**: the same binary runs as an Aspire DistributedApplication (portal + dashboard resources). Postgres is Aspire-managed locally, while the Docker image receives `ConnectionStrings__Default` and models Postgres as an external resource (`docs/guides/apphost-mode.md`).
-- The Docker image exposes the portal on `:8080`; the in-process dashboard is reached at `/monitor/resources` through the portal, while its `:18888` listener remains container-internal.
-- UI topbar "Dashboard" entry uses `DASHBOARD_URL` (`GET /api/health/dashboard`); Compose points it at `/monitor/resources`, the canonical Resources surface.
-- The Dockerfile carries target-architecture Aspire DCP/Dashboard RID packages into the runtime NuGet cache because `dotnet publish` omits them from `deps.json`; temporary staging stays outside `/app` to avoid duplicate image content.
+### 2.12 Hosting + CI/CD
+- **Default (no args)**: the Host runs directly as an ASP.NET Core application on `:8080`; PostgreSQL is an external dependency supplied by Docker Compose or another connection string.
+- The Docker image contains only the published Host and React UI. The UI, REST API, MCP endpoint, and health probe share one process and DI graph.
 - **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
 
 ### 2.13 Ops
-- Auto-creates the database + applies migrations at startup; Docker Compose = AppHost image + external Postgres(pgvector), with the dashboard in-process; 191/191 tests green (seam + adapter suites).
+- Auto-creates the database + applies migrations at startup; Docker Compose = Host image + external Postgres(pgvector); 191/191 tests green (seam + adapter suites).
 
 ## 3. Post-MVP Delivery Log
 
@@ -80,9 +77,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 | T14 (#16) | Platform inference configuration: three tables, multi-provider routes, connection validation, and three-step setup | 2026-08-19 |
 | T11 (#12) | Platform localization (en-US/zh-CN, single JSON store) | 2026-08-16 |
 | T12 (#13) | Product-grade UI + DB theme + Skill package model | 2026-08-16 |
-| T13 (#14) | OpenTelemetry + Aspire dashboard | 2026-08-16 |
-| T13 follow-ups | AppHost mode · dashboard menu · CI/CD (GHCR + Actions) | 2026-08-16 |
-| T15 (#15) | Complete AppHost image, external PostgreSQL, in-process dashboard, same-origin `/monitor` proxy | 2026-08-18 locally; final Docker/full-loop validation pending |
+| T13 (#14) | OpenTelemetry | 2026-08-16 |
 
 Earlier milestones were validated end-to-end — see `docs/validation/t11-localization-ui.md`, `docs/validation/t12-ui-skill-package.md`, `docs/validation/t12-redesign-ui.md`, `docs/validation/t13-otel.md`. Current T15 checks are recorded in `docs/validation/t15-docker-build.md`; the T13 Compose topology in that older record is historical.
 
@@ -94,23 +89,22 @@ Earlier milestones were validated end-to-end — see `docs/validation/t11-locali
         ┌───────────────────┴───────────────────┐
         │   AgentContext (single .NET project)  │
         │   default: portal REST API + UI + MCP │
-        │   default: Aspire DistributedApp      │
+        │   default: ASP.NET Core Host          │
         │   shared: EF Core / retrieval /       │
         │   learning / BackgroundService        │
-        │   in-process dashboard + /monitor     │
         └───────────────────┬─────────────────┘
                             │
                  PostgreSQL (+ pgvector)
                  (no Redis, no Hangfire)
 ```
 
-- Single project, one entrypoint — no-args startup runs the full 3-in-1 environment (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
+- Single project, one entrypoint — no-args startup runs the Host directly (ADR 0006); one DI graph, one DbContext, one config; feature folders + `AppService` convention (CODING_STANDARDS.md).
 - Background processing: `BackgroundService` + Postgres-as-queue (ADR 0005); hygiene on `PeriodicTimer`.
 - Language and theme preferences live in the `settings` table; inference configuration lives in the three inference tables (ADR 0009, superseding ADR 0003); localization resources live in one JSON store (ADR 0008).
 
 ## 5. Tech Stack
 
-- **Backend**: .NET 10, ASP.NET Core, EF Core, Serilog, Microsoft Agent Framework (chat + embeddings), OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink), Aspire (AppHost mode).
+- **Backend**: .NET 10, ASP.NET Core, EF Core, Serilog, Microsoft Agent Framework (chat + embeddings), optional OpenTelemetry (traces/metrics via OTel SDK, logs via Serilog sink).
 - **Frontend**: React + TypeScript + shadcn/ui (botanical theme, Tailwind v4), react-i18next (T11), react-markdown + shiki (T12).
 - **Data**: PostgreSQL + pgvector; Redis deferred (ADR 0007); Hangfire deferred (ADR 0005).
 - **CI/CD**: GitHub Actions (build + test · GHCR multi-arch image + GitHub Release on tags).
@@ -160,6 +154,6 @@ Skill marketplace · enterprise SSO/audit · auto memory injection · git-synced
 
 - `docs/handoffs/t1-t10-delivered.md` (context bridge for implementers)
 - `docs/design/` (UI design exploration — botanical theme lineage)
-- `docs/guides/craft-agents-source.md` · `docs/guides/apphost-mode.md` · `docs/skills/craft-agents-guide.md`
+- `docs/guides/craft-agents-source.md` · `docs/skills/craft-agents-guide.md`
 - `docs/validation/t9-full-loop.md` · `t11-localization-ui.md` · `t12-ui-skill-package.md` · `t12-redesign-ui.md` · `t13-otel.md`
 - `docs/research/competitive-landscape.md` (positioning evidence)

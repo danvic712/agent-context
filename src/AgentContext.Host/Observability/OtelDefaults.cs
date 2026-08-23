@@ -3,11 +3,9 @@ using Microsoft.Extensions.Configuration;
 namespace AgentContext.Host.Observability;
 
 /// <summary>
-/// T13 (issue #14): OpenTelemetry configuration shared by the Serilog OTLP sink
-/// and the OTel SDK (traces + metrics). All three signals are on by default and
-/// export to the Aspire dashboard; the standard escape hatches
-/// (<c>OTEL_SDK_DISABLED=true</c>, or an empty <c>OTEL_EXPORTER_OTLP_ENDPOINT</c>)
-/// disable export without changing app behaviour.
+/// OpenTelemetry configuration shared by the Serilog OTLP sink and the OTel SDK
+/// (traces + metrics). Export is opt-in through the standard OTLP environment
+/// variables and can be disabled with <c>OTEL_SDK_DISABLED=true</c>.
 /// </summary>
 public static class OtelDefaults
 {
@@ -21,21 +19,14 @@ public static class OtelDefaults
 
     /// <summary>
     /// service.name for every signal: the standard <c>OTEL_SERVICE_NAME</c> when
-    /// the host environment sets it (e.g. Aspire's WithOtlpExporter injects the
-    /// resource name), otherwise the fixed <see cref="ServiceName"/> default.
+    /// the host environment sets it, otherwise the fixed <see cref="ServiceName"/>
+    /// default.
     /// </summary>
     public static string GetServiceName(IConfiguration configuration)
     {
         var fromEnvironment = configuration["OTEL_SERVICE_NAME"];
         return string.IsNullOrWhiteSpace(fromEnvironment) ? ServiceName : fromEnvironment;
     }
-
-    /// <summary>
-    /// Standalone default OTLP/gRPC endpoint. AppHost injects the in-process
-    /// dashboard endpoint for local and container runs; this fallback remains for
-    /// a portal launched without AppHost wiring.
-    /// </summary>
-    public const string DefaultOtlpEndpoint = "http://localhost:4317";
 
     /// <summary>
     /// Custom ActivitySource emitted by the Learning Engine pipeline
@@ -45,16 +36,16 @@ public static class OtelDefaults
     public const string LearningPipelineActivitySource = "AgentContext.LearningPipeline";
 
     /// <summary>
-    /// The standard OTLP endpoint override (spec-conformant env var). Returns the
-    /// standalone default when unset; a null/whitespace value disables export.
+    /// The standard OTLP endpoint override (spec-conformant env var). A
+    /// null/whitespace value disables export.
     /// </summary>
     public static string? GetOtlpEndpoint(IConfiguration configuration) =>
-        configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? DefaultOtlpEndpoint;
+        configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 
     /// <summary>
-    /// Escape hatch: <c>OTEL_SDK_DISABLED=true</c> or an empty endpoint turns the
-    /// whole OpenTelemetry stack (Serilog sink + traces + metrics) off while the
-    /// app itself behaves identically.
+    /// <c>OTEL_SDK_DISABLED=true</c> or an empty endpoint turns the whole
+    /// OpenTelemetry stack (Serilog sink + traces + metrics) off while the app
+    /// itself behaves identically.
     /// </summary>
     public static bool IsOtlpExportEnabled(IConfiguration configuration)
     {

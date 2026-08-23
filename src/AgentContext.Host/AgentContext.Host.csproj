@@ -1,15 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web;Aspire.AppHost.Sdk/13.4.6">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\..\web\</SpaRoot>
-    <!-- The apphost mode (Aspire.AppHost.Sdk) defaults TreatProjectReferencesAsResources=true and
-         IsPublishable=false — this Host must keep its normal ProjectReference to Application and
-         stay publishable for the Dockerfile, so both defaults are overridden here. -->
-    <TreatProjectReferencesAsResources>false</TreatProjectReferencesAsResources>
-    <IsPublishable>true</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,20 +19,12 @@
     <PackageReference Include="ModelContextProtocol" />
     <!-- T14: Streamable HTTP MCP transport — serves the v1 toolset over /mcp in web mode. -->
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="Yarp.ReverseProxy" />
     <PackageReference Include="Serilog.AspNetCore" />
     <!-- T13 (issue #14): OpenTelemetry — logs (Serilog dual-write) + traces + metrics on by default. -->
     <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-    <!-- T13 follow-up: the apphost mode (args flag) runs this same binary as an Aspire
-         DistributedApplication — Resources view + service graph in the dashboard.
-         Aspire.Hosting.AppHost (not the bare Aspire.Hosting) ships the DCP + dashboard
-         binaries the AppHost needs at runtime; it also keeps publish/ProjectReference
-         untouched (Aspire.AppHost.Sdk would disable both). -->
-    <PackageReference Include="Aspire.Hosting.AppHost" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
   </ItemGroup>
 
   <!--
@@ -48,22 +35,6 @@
   <Target Name="BuildSpa" BeforeTargets="BeforeBuild" Condition="'$(SkipSpaBuild)' != 'true' And Exists('$(SpaRoot)package.json')">
     <Exec Command="npm ci" WorkingDirectory="$(SpaRoot)" Condition="!Exists('$(SpaRoot)node_modules\.package-lock.json')" />
     <Exec Command="npm run build" WorkingDirectory="$(SpaRoot)" />
-  </Target>
-
-  <!--
-    Aspire.AppHost.Sdk (the apphost mode) perturbs the Web SDK's StaticWebAssets
-    ordering (its own docs warn about this), so wwwroot stops landing in the output
-    directory. Copy it explicitly so both the apphost child process and the
-    Dockerfile publish keep serving the built UI.
-  -->
-  <Target Name="CopyWwwrootToOutput" AfterTargets="Build"
-          Condition="Exists('$(MSBuildProjectDirectory)\wwwroot')">
-    <ItemGroup>
-      <_WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_WwwrootFiles)"
-          DestinationFiles="@(_WwwrootFiles->'$(OutDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

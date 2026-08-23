@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookOpenIcon, ExternalLinkIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
+import { BookOpenIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ActionFeedbackProvider } from '@/components/ui/action-feedback'
@@ -11,7 +11,7 @@ import { SkillDetailPage } from '@/components/skills/skill-detail-page'
 import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
 import { SkillUploadPage } from '@/components/skills/skill-upload-page'
 import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
-import { getDashboardUrl, getEngineHealth, type EngineHealth } from '@/lib/api'
+import { getEngineHealth, type EngineHealth } from '@/lib/api'
 import { getEngineHealthState } from '@/lib/engine-health-state'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +27,6 @@ export function AppShell() {
   const tab = getTabFromPath(pathname)
   const [engineHealth, setEngineHealth] = useState<EngineHealth | null>(null)
   const [engineHealthError, setEngineHealthError] = useState(false)
-  const [dashboardUrl, setDashboardUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -40,13 +39,6 @@ export function AppShell() {
       })
       .catch(() => {
         if (!cancelled) setEngineHealthError(true)
-      })
-    getDashboardUrl()
-      .then((dto) => {
-        if (!cancelled) setDashboardUrl(dto.url)
-      })
-      .catch(() => {
-        // Dashboard URL is optional — the entry stays hidden when unconfigured.
       })
     return () => {
       cancelled = true
@@ -98,32 +90,8 @@ export function AppShell() {
               ))}
             </nav>
 
-            {/* Status + dashboard + theme */}
+            {/* Status + theme */}
             <div className="ui-shell__utilities">
-              {dashboardUrl && (
-                <button
-                  type="button"
-                  // Single-port model: when DASHBOARD_URL points at the portal's
-                  // own prefix (same origin, e.g. /monitor), navigate in-place;
-                  // an external dashboard URL opens in a new window instead.
-                  onClick={() => {
-                    const dash = new URL(dashboardUrl, window.location.href)
-                    const inPlace = dash.origin === window.location.origin && dash.pathname !== '/'
-                    if (inPlace) {
-                      // Preserve any dashboard query/hash state while keeping the
-                      // navigation on the portal's same-origin surface.
-                      window.location.href = `${dash.pathname}${dash.search}${dash.hash}`
-                    } else {
-                      window.open(dash.href, '_blank', 'noopener,noreferrer')
-                    }
-                  }}
-                  title={dashboardUrl}
-                  className="ui-shell__dashboard"
-                >
-                  <ExternalLinkIcon className="size-3.5" />
-                  {t('appShell.dashboard')}
-                </button>
-              )}
               <NavLink
                 to="/settings#engine-health"
                 aria-label={t('appShell.engineStatusLabel')}

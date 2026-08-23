@@ -1,11 +1,19 @@
-# Dual-mode entrypoint across layered class libraries (one host project, one DI graph)
+# Single Host entrypoint across layered class libraries
 
-The platform is one **host project** (`AgentContext.Host`) with a single public entrypoint: running the binary with **no arguments starts the complete environment** — the portal (ASP.NET Core host: REST API, UI, and the MCP toolset over Streamable HTTP at `/mcp`) plus the Aspire dashboard and PostgreSQL, orchestrated as one DistributedApplication. Bare local runs let Aspire manage PostgreSQL; deployments provide it through `ConnectionStrings__Default`. One service registration (`AddApplicationServices`) — one DI graph, one DbContext, one config.
+**Status: accepted; revised 2026-08-23.**
 
-Why: the API and MCP server are the same domain logic seen through two surfaces; splitting them into two hosts would duplicate wiring for no benefit at this scale. `ModelContextProtocol.AspNetCore` maps the same toolset in-process over Streamable HTTP, so remote clients (Craft Agents) connect by URL with no process-mode switches. The dashboard is useless alone, so it always starts together with the UI; there are no portal-only or mcp-only startup modes. (The orchestrator's portal child process is scoped via the internal `HOST_MODE=portal` env role. In the container, the dashboard is in-process and browser traffic uses the portal's same-origin `/monitor` proxy.)
+`AgentContext.Host` is the single public entrypoint. Running the binary with no
+arguments starts one ASP.NET Core process that serves the REST API, React UI,
+and Streamable HTTP MCP endpoint at `/mcp`. PostgreSQL is an external
+dependency supplied through `ConnectionStrings__Default`, normally by Docker
+Compose.
 
-> **Revision (2026-08):** the codebase is split by system function into layered class libraries — `AgentContext.Domain` (entities/enums), `AgentContext.Infrastructure` (EF Core + migrations), `AgentContext.Application` (application services + `AddApplicationServices`), and `AgentContext.Host` (the single no-args entrypoint, REST controllers, and Streamable HTTP MCP host). The shared DI graph is preserved; the frontend lives outside the backend tree at repo-root `web/`, built into the host's `wwwroot`. The internal `HOST_MODE=portal` value only scopes the child process created by AppHost.
+The API and MCP server share the same application services, DbContext, and
+configuration. `ModelContextProtocol.AspNetCore` maps the MCP toolset in the
+same process, so remote clients connect by URL without a second host or mode.
+The frontend is built into the Host's `wwwroot`.
 
-> **T15 deployment revision:** the Docker Compose topology is `postgres` plus the complete AppHost image. The in-process dashboard listens on the fixed internal port `18888` and is exposed to users through the portal's same-origin `/monitor/resources` route; Compose deliberately does not publish a second dashboard port. `DASHBOARD_URL` is therefore a relative `/monitor/resources` URL so reverse-proxied domains remain on their public origin.
-
-Consequence: the same binary serves both roles. If the two surfaces ever diverge, splitting into thin hosts over the shared Application/Infrastructure projects is a cheap, well-seamed migration.
+This revision supersedes the former Aspire-based dual-mode orchestration and
+same-origin dashboard proxy. Observability remains available through standard
+OpenTelemetry OTLP environment variables when an external collector is
+configured.

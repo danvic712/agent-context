@@ -10,9 +10,9 @@
 The platform hosts **UI + REST API + MCP in one process** (the portal):
 `ModelContextProtocol.AspNetCore` maps the v1 toolset at `/mcp` (stateless
 Streamable HTTP — the SDK's recommended remote transport, no session affinity).
-Running the binary with **no arguments starts the full environment** as an
-Aspire DistributedApplication — postgres + portal + Aspire dashboard, one
-command, no flags to remember.
+Running the binary with **no arguments starts the ASP.NET Core Host** — UI,
+REST API, and MCP in one process. PostgreSQL is supplied as an external
+connection, normally by Docker Compose.
 
 ```mermaid
 graph LR
@@ -25,12 +25,12 @@ graph LR
     D --> SK[(skills<br/>data:/data/agent-context/skills)]
 ```
 
-## Run options (3-in-1 startup)
+## Run options
 
 | Style | Command | What comes up |
 |---|---|---|
-| Local / default | `dotnet run` (no args) | Aspire-managed postgres + portal (UI+MCP on :8080) + in-process dashboard (internal :18888, browser route `/monitor/resources`) |
-| Docker compose | `docker compose up -d` | AppHost image with portal (UI+MCP on :8080, dashboard at `/monitor/resources`, internal :18888) + external postgres — db and skills share one `data` volume under `/data/agent-context/` |
+| Local / default | `docker compose up -d` | Host (UI+MCP on :8080) + PostgreSQL — db and skills share one `data` volume under `/data/agent-context/` |
+| Direct Host | `dotnet run --project src/AgentContext.Host` | ASP.NET Core Host on the configured port; requires a reachable PostgreSQL connection string |
 
 ## Craft Agents source — config.json (URL mode)
 
@@ -52,15 +52,14 @@ graph LR
 ```
 
 Point `url` at the reachable surface: `http://localhost:8080/mcp` for a local
-no-args run, or `https://agent-context.orb.local/mcp` behind the compose
-proxy. No `env` needed — the portal child already receives its database
-connection from the AppHost.
+Compose run, or `https://agent-context.orb.local/mcp` behind the Compose proxy.
+No `env` is needed when the Host is configured through Compose.
 
 ## Docker image build
 
 The Dockerfile has three stages: Node builds the React UI, the .NET SDK
-publishes the Host, and the `aspnet` runtime image runs the AppHost. BuildKit
-caches npm packages and target-architecture NuGet packages:
+publishes the Host, and the `aspnet` runtime image runs the Host directly.
+BuildKit caches npm and NuGet packages:
 
 ```bash
 docker compose up -d --build
@@ -68,12 +67,6 @@ docker compose up -d --build
 docker buildx build --platform linux/arm64 --load -t agent-context:local .
 ```
 
-The Aspire AppHost SDK's DCP and Dashboard RID packages are tooling dependencies
-that `dotnet publish` omits from `deps.json`, so the build stages the selected
-packages into the runtime NuGet cache. The temporary staging directory is kept
-outside `/app`; otherwise the final image would contain a duplicate copy of
-roughly 229 MB. Missing RID packages fail the build instead of producing an
-image that only fails at AppHost startup.
 
 ## permissions.json — Explore-mode access
 

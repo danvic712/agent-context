@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace AgentContext.Application.Learning;
 
 /// <summary>
-/// T13 (issue #14): ActivitySource for the Learning Engine pipeline so pipeline
-/// runs surface as traces in the OpenTelemetry dashboard. Uses only
+/// ActivitySource for the Learning Engine pipeline so pipeline runs surface as
+/// traces in an OpenTelemetry-compatible backend. Uses only
 /// System.Diagnostics (BCL, no OTel dependency) — the host's trace provider
-/// subscribes via OtelDefaults.LearningPipelineActivitySource.
+/// subscribes via the shared ActivitySource name.
 /// </summary>
 public static class LearningPipelineTelemetry
 {

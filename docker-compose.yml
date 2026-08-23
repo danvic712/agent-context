@@ -33,12 +33,8 @@ services:
     restart: unless-stopped
 
   agent-context:
-    # T15 (issue #15): the image is COMPLETE — one container runs the full
-    # AppHost orchestration: the portal child process (React UI + REST + MCP
-    # /mcp) on :8080 and the in-process Aspire dashboard on :18888 (fixed port,
-    # with the AppHost-only Resources view). Postgres stays an external service
-    # above, wired via ConnectionStrings__Default; the dashboard no longer ships
-    # as a compose sibling (it lives inside the image).
+    # The image runs the portal directly (React UI + REST + MCP /mcp) on :8080.
+    # Postgres stays an external service above, wired via ConnectionStrings__Default.
     # Fixed container name (no compose -1 suffix): on OrbStack the UI is also
     # reachable at agent-context.orb.local (stable alias).
     container_name: agent-context
@@ -50,24 +46,14 @@ services:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=agent_context;Username=agent_context;Password=agent_context
       # Skill packages (T12) live on the filesystem. Single shared data volume:
       # everything under /data/agent-context (program name) — postgres owns the
-      # db subdirectory, this service owns skills. The AppHost passes the value
-      # straight to the portal child (T15 follow-up).
+      # db subdirectory, this service owns skills.
       Skills__Directory: /data/agent-context/skills
       # Data Protection key ring for provider API-key encryption. It must live
       # on the shared volume so database ciphertext remains decryptable after
       # this container is recreated.
       DataProtection__KeysDirectory: /data/agent-context/data-protection-keys
-      # Browser-facing dashboard URL for the UI's "open dashboard" menu entry.
-      # Keep navigation on the portal's same-origin proxy so the dashboard uses
-      # the single-port /monitor surface instead of bypassing the portal.
-      DASHBOARD_URL: /monitor/resources
-      # OTLP export is injected by the AppHost's WithOtlpExporter() — the portal
-      # child process gets OTEL_EXPORTER_OTLP_ENDPOINT pointing at the in-process
-      # dashboard automatically (T13). No env surface needed here.
     ports:
-      - "8080:8080"   # portal + same-origin dashboard proxy at /monitor
-      # Aspire dashboard listens on 18888 inside the container; it is intentionally
-      # not exposed separately so all browser navigation stays under the portal.
+      - "8080:8080"
     volumes:
       - data:/data
     depends_on:
@@ -76,8 +62,7 @@ services:
     healthcheck:
       # The aspnet image ships no curl/wget (noble-slim base), so probe with
       # bash /dev/tcp. GET /api/health returns HTTP 200 only when the portal is
-      # up AND the database is reachable (HealthController). The AppHost needs
-      # time to start DCP + the dashboard + the portal child first.
+      # up AND the database is reachable (HealthController).
       test:
         - CMD-SHELL
         - 'bash -c ''exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /api/health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3'''

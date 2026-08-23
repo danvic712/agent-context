@@ -14,7 +14,7 @@ A shared context layer for AI agents — manage skills, memory, sessions, and kn
 - **Usage recording** — source-aware session and Learning Engine token ledger; the Analytics UI/API is deferred for redesign.
 - **Settings** — LLM endpoint, platform language (`en-US` / `zh-CN`), and color theme (`light` / `dark` / `system`), all persisted in the DB and applied without restart.
 - **Localization** — full platform UI + backend errors in the configured language, one JSON store per locale (ADR 0008).
-- **Observability** — OpenTelemetry logs + traces + metrics exported to the in-app [Aspire dashboard](http://localhost:8080/monitor/resources) by default; `service.name=agent-context`.
+- **Observability** — optional OpenTelemetry logs + traces + metrics exported to any OTLP collector; `service.name=agent-context`.
 
 ## Quick start
 
@@ -26,8 +26,7 @@ This starts everything with no manual steps:
 
 | Service | Address | Notes |
 |---|---|---|
-| Agent Context image | http://localhost:8080 | AppHost container with portal UI + REST API + Streamable HTTP MCP at `/mcp`; applies EF Core migrations at startup |
-| Aspire dashboard | http://localhost:8080/monitor/resources | In-process dashboard with Resources, logs, traces and metrics; raw :18888 stays container-internal |
+| Agent Context image | http://localhost:8080 | ASP.NET Core host with UI + REST API + Streamable HTTP MCP at `/mcp`; applies EF Core migrations at startup |
 | Postgres (pgvector) | localhost:5432 | `agent_context` / `agent_context`; external to the application image |
 
 Open http://localhost:8080 and the **first-run wizard** creates your admin account
@@ -43,16 +42,13 @@ changes locally.
 ## Architecture
 
 One .NET project has one public startup contract: **run with no arguments**.
-It starts the complete environment as an Aspire DistributedApplication:
+It starts the ASP.NET Core host directly:
 
-- portal child process — REST API (`/api/*`), React UI, health at `/api/health`, and Streamable HTTP MCP at `/mcp`;
-- in-process Aspire dashboard with the Resources view;
-- pgvector Postgres when no external `ConnectionStrings__Default` is supplied.
+- REST API (`/api/*`), React UI, health at `/api/health`, and Streamable HTTP MCP at `/mcp`;
+- PostgreSQL supplied through `ConnectionStrings__Default`.
 
-In Docker Compose, Postgres is external to the image and is passed through
-`ConnectionStrings__Default`; the image still starts the portal and dashboard.
-`HOST_MODE=portal` is an internal child-process marker, not a user-facing mode.
-See [`docs/guides/apphost-mode.md`](docs/guides/apphost-mode.md).
+Docker Compose starts PostgreSQL beside the application and passes it through
+`ConnectionStrings__Default`.
 
 All processes share one DI graph (`AddApplicationServices`).
 
@@ -61,9 +57,9 @@ Users (React UI / Craft Agents)
           │
           ▼
 ┌──────────────────────────────────────────┐
-│ AgentContext image / AppHost             │
-│  portal: UI + REST + MCP /mcp (:8080)   │
-│  dashboard: Resources + OTel (:18888)   │
+│ AgentContext ASP.NET Core host            │
+│  UI + REST + MCP /mcp (:8080)             │
+│  optional OTLP export                     │
 └──────────────┬───────────────────────────┘
                │ SQL
                ▼
@@ -73,21 +69,18 @@ Users (React UI / Craft Agents)
 ## Development
 
 ```bash
-# Full environment: portal + dashboard + local pgvector Postgres
+# Full environment: portal + local pgvector Postgres
 dotnet run --project src/AgentContext.Host
 
-# UI dev server with /api, /monitor (including websockets), and /navfix.js proxied to http://localhost:8080
+# UI dev server with /api proxied to http://localhost:8080
 cd web && npm run dev
 ```
 
 ### Docker build notes
 
 The [Dockerfile](Dockerfile) uses three stages: Node builds the React UI,
-.NET publishes the Host, and the `aspnet` runtime image runs the AppHost.
-BuildKit caches npm packages and target-architecture NuGet packages. Aspire's
-DCP and Dashboard RID packages are staged into the runtime NuGet cache because
-they are tooling packages omitted from `deps.json`; the temporary staging area
-is kept outside `/app` so the final image does not contain a duplicate copy.
+.NET publishes the Host, and the `aspnet` runtime image runs the Host directly.
+BuildKit caches npm and NuGet packages.
 
 Tests run against a real Postgres with pgvector via Testcontainers (Docker required):
 
@@ -108,10 +101,10 @@ src/AgentContext.Domain/        entities + enums (no dependencies beyond pgvecto
 src/AgentContext.Infrastructure/ EF Core DbContext + migrations + design-time factory
 src/AgentContext.Application/   application services (primary test seam) + AddApplicationServices
                                 + localization resources (embedded i18n JSON)
-src/AgentContext.Host/          single no-args entrypoint: Program (AppHost + portal child),
+src/AgentContext.Host/          single no-args entrypoint: Program (ASP.NET Core host),
                                 Controllers/ (REST), Mcp/ (HTTP tools),
                                 Workers/ (session processing, knowledge hygiene),
-                                Observability/ (OTel), AppHost/ (Aspire), wwwroot (built UI)
+                                Observability/ (OTel), wwwroot (built UI)
 web/                            React UI (Vite + TS + shadcn/ui + react-i18next + shiki),
                                 built into the host's wwwroot
 i18n/                           single-store localization (ADR 0008): en-US.json, zh-CN.json
@@ -120,7 +113,7 @@ docs/                           spec, ADRs, guides, design exploration, validati
 tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)
                                 + adapter smoke tests (REST / MCP stdio / OTel / web host)
 AgentContext.slnx               solution (new XML format)
-Dockerfile · docker-compose.yml AppHost image + Postgres(pgvector) + in-process Aspire dashboard
+Dockerfile · docker-compose.yml ASP.NET Core image + Postgres(pgvector)
 .github/workflows/              build.yml (test) · release.yml (GHCR image + GitHub Release)
 ```
 

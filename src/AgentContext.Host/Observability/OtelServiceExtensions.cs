@@ -8,11 +8,11 @@ using OpenTelemetry.Trace;
 namespace AgentContext.Host.Observability;
 
 /// <summary>
-/// T13 (issue #14): the three-signal OpenTelemetry stack, on by default. Traces and
-/// metrics go through the OTel SDK (ASP.NET Core instrumentation + the Learning
-/// Engine ActivitySource + the runtime's default meters); logs are written by
-/// Serilog's OTLP sink in Program.cs. Both share the endpoint/protocol/resource
-/// from <see cref="OtelDefaults"/>.
+/// The three-signal OpenTelemetry stack. Traces and metrics go through the OTel
+/// SDK (ASP.NET Core instrumentation + the Learning Engine ActivitySource + the
+/// runtime's default meters); logs are written by Serilog's OTLP sink in
+/// Program.cs. Both share the endpoint/protocol/resource from
+/// <see cref="OtelDefaults"/>.
 /// </summary>
 public static class OtelServiceExtensions
 {
@@ -34,9 +34,8 @@ public static class OtelServiceExtensions
                 .AddEnvironmentVariableDetector()
                 // service.name defaults to agent-context, but a host-provided
                 // OTEL_SERVICE_NAME wins (spec-conformant). This keeps logs and traces
-                // attributed to the same name: the Serilog OTLP sink already prefers
-                // OTEL_SERVICE_NAME, and Aspire's WithOtlpExporter injects the resource
-                // name (e.g. "portal") so the dashboard groups both signals together.
+                // attributed to the same name: the Serilog OTLP sink also honors
+                // OTEL_SERVICE_NAME.
                 .AddAttributes(new Dictionary<string, object>
                 {
                     ["service.name"] = OtelDefaults.GetServiceName(configuration),

@@ -73,8 +73,7 @@ public sealed class LearningPipelineAppService(
             return new LearningPipelineResult(sessionId, PipelineOutcome.NotClaimed);
         }
 
-        // T13 (issue #14): one span per pipeline run so the work shows up as traces
-        // in the Aspire dashboard (the source is subscribed by the host's trace provider).
+        // Emit one span per pipeline run when an OpenTelemetry backend is configured.
         using var activity = LearningPipelineTelemetry.Source.StartActivity("learning-pipeline.process");
         activity?.SetTag("session.id", sessionId);
 

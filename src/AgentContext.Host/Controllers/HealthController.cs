@@ -7,7 +7,7 @@ namespace AgentContext.Host.Controllers;
 /// <summary>Liveness/readiness probe used by the UI and Docker health checks.</summary>
 [ApiController]
 [Route("api/health")]
-public sealed class HealthController(AgentContextDbContext db, IConfiguration configuration) : ControllerBase
+public sealed class HealthController(AgentContextDbContext db) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult> Get(CancellationToken cancellationToken)
@@ -23,14 +23,4 @@ public sealed class HealthController(AgentContextDbContext db, IConfiguration co
         }
     }
 
-    /// <summary>
-    /// The observability dashboard URL for the UI's "open dashboard" entry — the
-    /// portal doesn't know it (it only has the OTLP endpoint), so the deploy
-    /// surface injects it: Compose sets the same-origin
-    /// <c>DASHBOARD_URL=/monitor/resources</c>, while AppHost mode injects the
-    /// same-origin in-process dashboard surface. Relative URLs are intentional:
-    /// the browser resolves them against the current domain.
-    /// </summary>
-    [HttpGet("dashboard")]
-    public ActionResult GetDashboardUrl() => Ok(new { url = configuration["DASHBOARD_URL"] });
 }
