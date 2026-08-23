@@ -82,7 +82,7 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
   return (
     <section
       id="engine-health"
-      className={`c-panel c-engine-panel${className ? ` ${className}` : ''}`}
+      className={`c-panel c-engine-panel c-settings-anchor${className ? ` ${className}` : ''}`}
       data-engine-state={state}
       aria-labelledby="engine-health-title"
     >

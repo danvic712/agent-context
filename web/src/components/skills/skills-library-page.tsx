@@ -3,9 +3,9 @@ import { CheckCircle2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import { SkillActionBar } from './skill-action-bar'
 import { SkillLibraryList } from './skill-library-list'
-import { SkillPageHeader } from './skill-page-header'
 import { SkillSearchFilters, type InstalledSkillFilters } from './skill-search-filters'
 import { listSkills, type SkillItem } from '@/lib/api'
 
@@ -168,13 +168,16 @@ export function SkillsLibraryPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <SkillPageHeader
+    <PageFrame
+      header={(
+      <PageHeader
         eyebrow={t('skills.libraryKicker')}
         title={t('skills.libraryTitle')}
         description={t('skills.libraryDescription')}
         actions={<Badge variant="accent" className="font-mono text-[10px]">{t('skills.localOnly')}</Badge>}
       />
+      )}
+    >
 
       {notice && (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-ok/30 bg-ok/10 px-4 py-3 text-sm" role="status">
@@ -191,11 +194,6 @@ export function SkillsLibraryPage() {
         onUpload={() => navigate('/skills/upload')}
         onRefresh={() => void refresh()}
       />
-
-      <div className="mb-4">
-        <p className="kicker">{t('skills.installedKicker')}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t('skills.installedDescription')}</p>
-      </div>
 
       <SkillSearchFilters
         filters={draftFilters}
@@ -217,6 +215,6 @@ export function SkillsLibraryPage() {
         onUpload={() => navigate('/skills/upload')}
         onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
       />
-    </div>
+    </PageFrame>
   )
 }

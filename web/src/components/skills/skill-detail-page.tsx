@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import { SkillFilePreview } from './skill-file-preview'
 import { SkillLanguageBadge } from './skill-language-badge'
 import { getSkillById, readSkillFile, type SkillDetail, type SkillFileInfo } from '@/lib/api'
@@ -95,35 +96,38 @@ export function SkillDetailPage() {
   }
 
   if (loading) {
-    return <div className="mx-auto max-w-5xl py-12 text-sm text-muted-foreground">{t('skills.loadingDetail')}</div>
+    return <PageFrame><div className="ui-page-state">{t('skills.loadingDetail')}</div></PageFrame>
   }
 
   if (error && !detail) {
     return (
-      <div className="mx-auto max-w-5xl">
+      <PageFrame>
         <Alert variant="destructive">
           <AlertCircleIcon className="size-4" />
           <AlertTitle>{t('skills.detailLoadFailed')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      </div>
+      </PageFrame>
     )
   }
 
   if (!detail) return null
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="kicker mb-2">{t('skills.detailKicker')}</p>
-          <h1 className="serif text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{detail.name}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{detail.description || t('skills.noDescription')}</p>
-        </div>
-        <Link to="/skills" className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <ArrowLeftIcon className="size-3.5" />{t('skills.backToLibrary')}
-        </Link>
-      </div>
+    <PageFrame
+      header={(
+        <PageHeader
+          eyebrow={t('skills.detailKicker')}
+          title={detail.name}
+          description={detail.description || t('skills.noDescription')}
+          actions={(
+            <Link to="/skills" className="ui-inline-action">
+              <ArrowLeftIcon className="size-3.5" />{t('skills.backToLibrary')}
+            </Link>
+          )}
+        />
+      )}
+    >
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Badge variant="accent">{detail.domainName}</Badge>
@@ -195,6 +199,6 @@ export function SkillDetailPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageFrame>
   )
 }

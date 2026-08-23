@@ -17,7 +17,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label={t('settings.theme')}
-      className="flex items-center gap-1 rounded-lg border border-border bg-secondary p-1"
+      className="ui-theme-toggle flex items-center gap-1 rounded-lg border border-border bg-secondary p-1"
     >
       <Button
         type="button"
@@ -26,7 +26,7 @@ export function ThemeToggle() {
         onClick={() => void setMode('light')}
         aria-label={t('settings.themeToggleLight')}
         aria-pressed={resolved === 'light'}
-        className={cn('h-7 px-2.5', resolved === 'light' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}
+        className={cn('h-7 min-h-8 min-w-8 px-2.5', resolved === 'light' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}
       >
         <SunIcon className="size-3.5" />
       </Button>
@@ -37,7 +37,7 @@ export function ThemeToggle() {
         onClick={() => void setMode('dark')}
         aria-label={t('settings.themeToggleDark')}
         aria-pressed={resolved === 'dark'}
-        className={cn('h-7 px-2.5', resolved === 'dark' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}
+        className={cn('h-7 min-h-8 min-w-8 px-2.5', resolved === 'dark' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}
       >
         <MoonIcon className="size-3.5" />
       </Button>

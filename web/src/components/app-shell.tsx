@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { BookOpenIcon, ExternalLinkIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ActionFeedbackProvider } from '@/components/ui/action-feedback'
+import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings-page'
 import { SkillDetailPage } from '@/components/skills/skill-detail-page'
@@ -62,105 +64,93 @@ export function AppShell() {
         : t('appShell.engineDegraded')
 
   return (
-    <div className="flex min-h-svh flex-col">
-      {/* Topbar navigation (Botanical) */}
-      <header
-        className="sticky top-0 z-20 border-b backdrop-blur"
-        style={{ borderColor: 'var(--line)', background: 'var(--topbg)' }}
-      >
-        <div className="flex items-center gap-3 px-4 py-2.5 md:px-6">
-          {/* Brand */}
-          <div className="flex shrink-0 items-center gap-2.5">
-            <div
-              className="flex size-7 items-center justify-center rounded-[13px_17px_13px_17px] text-white"
-              style={{ background: 'linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--hi)))', boxShadow: '0 4px 12px var(--accent-shadow)', border: '1px solid var(--line2)', transform: 'rotate(-4deg)' }}
-            >
-              <SparklesIcon className="size-4" />
-            </div>
-            <div className="hidden sm:block">
-              <div className="serif text-[16px] font-semibold leading-none">{t('appShell.title')}</div>
-              <div className="mt-1 font-mono text-[7.5px] uppercase tracking-[0.14em] text-muted-foreground">
-                CONTEXT LAYER
+    <ActionFeedbackProvider>
+      <div className="ui-shell">
+        <header className="ui-shell__header">
+          <div className="ui-shell__inner">
+            {/* Brand */}
+            <div className="ui-shell__brand">
+              <div className="ui-shell__mark" aria-hidden="true">
+                <SparklesIcon className="size-4" />
+              </div>
+              <div className="ui-shell__brand-copy">
+                <div className="ui-shell__brand-name">{t('appShell.title')}</div>
+                <div className="ui-shell__brand-sub">{t('appShell.brandTagline')}</div>
               </div>
             </div>
-          </div>
 
-          {/* Nav pills */}
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-            {tabs.map((item) => (
+            {/* Nav pills */}
+            <nav className="ui-shell__nav" aria-label={t('appShell.primaryNavigation')}>
+              {tabs.map((item) => (
+                <NavLink
+                  key={item.id}
+                  to={item.path}
+                  end={item.id !== 'skills'}
+                  className={({ isActive }) => cn('ui-shell__nav-link', isActive && 'ui-shell__nav-link--active')}
+                >
+                  {icons[item.id]}
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+
+            {/* Status + dashboard + theme */}
+            <div className="ui-shell__utilities">
+              {dashboardUrl && (
+                <button
+                  type="button"
+                  // Single-port model: when DASHBOARD_URL points at the portal's
+                  // own prefix (same origin, e.g. /monitor), navigate in-place;
+                  // an external dashboard URL opens in a new window instead.
+                  onClick={() => {
+                    const dash = new URL(dashboardUrl, window.location.href)
+                    const inPlace = dash.origin === window.location.origin && dash.pathname !== '/'
+                    if (inPlace) {
+                      // Preserve any dashboard query/hash state while keeping the
+                      // navigation on the portal's same-origin surface.
+                      window.location.href = `${dash.pathname}${dash.search}${dash.hash}`
+                    } else {
+                      window.open(dash.href, '_blank', 'noopener,noreferrer')
+                    }
+                  }}
+                  title={dashboardUrl}
+                  className="ui-shell__dashboard"
+                >
+                  <ExternalLinkIcon className="size-3.5" />
+                  {t('appShell.dashboard')}
+                </button>
+              )}
               <NavLink
-                key={item.id}
-                to={item.path}
-                end={item.id !== 'skills'}
-                className={({ isActive }) => cn(
-                  'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all duration-150',
-                  isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground',
-                )}
-                style={({ isActive }) => isActive ? { background: 'var(--accent)', boxShadow: '0 3px 10px var(--accent-shadow)' } : undefined}
+                to="/settings#engine-health"
+                aria-label={t('appShell.engineStatusLabel')}
+                className="ui-shell__engine-status"
               >
-                {icons[item.id]}
-                {item.label}
+                <span
+                  className={cn(
+                    'inline-block size-1.5 rounded-full',
+                    engineState === 'loading' ? 'bg-warn' : engineState === 'healthy' ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : engineState === 'attention' ? 'bg-warn' : 'bg-destructive',
+                  )}
+                />
+                {engineLabel}
               </NavLink>
-            ))}
-          </nav>
-
-          {/* Status + dashboard + theme */}
-          <div className="flex shrink-0 items-center gap-2">
-            {dashboardUrl && (
-              <button
-                type="button"
-                // Single-port model: when DASHBOARD_URL points at the portal's
-                // own prefix (same origin, e.g. /monitor), navigate in-place;
-                // an external dashboard URL opens in a new window instead.
-                onClick={() => {
-                  const dash = new URL(dashboardUrl, window.location.href)
-                  const inPlace = dash.origin === window.location.origin && dash.pathname !== '/'
-                  if (inPlace) {
-                    // Preserve any dashboard query/hash state while keeping the
-                    // navigation on the portal's same-origin surface.
-                    window.location.href = `${dash.pathname}${dash.search}${dash.hash}`
-                  } else {
-                    window.open(dash.href, '_blank', 'noopener,noreferrer')
-                  }
-                }}
-                title={dashboardUrl}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11.5px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground"
-                style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}
-              >
-                <ExternalLinkIcon className="size-3.5" />
-                {t('appShell.dashboard')}
-              </button>
-            )}
-            <NavLink
-              to="/settings#engine-health"
-              aria-label={t('appShell.engineStatusLabel')}
-              className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] text-muted-foreground transition-colors hover:text-foreground lg:flex"
-              style={{ borderColor: 'var(--line)', background: 'var(--card2-paper)' }}
-            >
-              <span
-                className={cn(
-                  'inline-block size-1.5 rounded-full',
-                  engineState === 'loading' ? 'bg-warn' : engineState === 'healthy' ? 'bg-ok shadow-[0_0_5px_var(--ok)]' : engineState === 'attention' ? 'bg-warn' : 'bg-destructive',
-                )}
-              />
-              {engineLabel}
-            </NavLink>
-            <ThemeToggle />
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Content — keyed so tab switches animate in */}
-      <main key={tab} className="animate-in fade-in slide-in-from-bottom-1 duration-200 flex-1 p-4 md:p-6">
-        <Routes>
-          <Route path="/knowledge" element={<KnowledgeManager />} />
-          <Route path="/skills" element={<SkillsLibraryPage />} />
-          <Route path="/skills/upload" element={<SkillUploadPage />} />
-          <Route path="/skills/view/:id" element={<SkillDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/knowledge" replace />} />
-        </Routes>
-      </main>
-    </div>
+        {/* Content — keyed so tab switches animate in */}
+        <main key={tab} className="ui-shell__main animate-in fade-in slide-in-from-bottom-1 duration-200">
+          <Routes>
+            <Route path="/knowledge" element={<KnowledgeManager />} />
+            <Route path="/skills" element={<SkillsLibraryPage />} />
+            <Route path="/skills/upload" element={<SkillUploadPage />} />
+            <Route path="/skills/view/:id" element={<SkillDetailPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<Navigate to="/knowledge" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </ActionFeedbackProvider>
   )
 }

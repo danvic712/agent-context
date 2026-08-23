@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { ActionBar } from '@/components/ui/action-bar'
 import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -192,11 +193,11 @@ export function SkillUploadForm({ onSubmit }: SkillUploadFormProps) {
         </div>
       )}
 
-      <div className="flex justify-end">
+      <ActionBar>
         <Button type="submit" size="lg" disabled={uploading}>
           {uploading ? t('skills.uploading') : t('skills.uploadAction')}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   )
 }

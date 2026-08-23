@@ -8,6 +8,9 @@ import {
   TrashIcon,
 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ActionBar } from '@/components/ui/action-bar'
+import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import { Surface } from '@/components/ui/surface'
 import {
   deleteKnowledge,
   listKnowledgeLibrary,
@@ -188,16 +191,17 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
   const detailReason = selectedItem ? t(`knowledge.detailReason${selectedItem.status}`) : ''
 
   return (
-    <div className="knowledge-page -mx-4 -my-4 md:-mx-6 md:-my-6">
-      <div className="knowledge-page__title-row">
-        <div>
-          <p className="knowledge-page__eyebrow">{t('knowledge.libraryKicker')}</p>
-          <h1 className="knowledge-page__title">{t('knowledge.libraryTitle')}</h1>
-          <p className="knowledge-page__lede">{t('knowledge.libraryDescription')}</p>
-        </div>
-      </div>
-
-      <div className="knowledge-library-split">
+    <PageFrame
+      className="knowledge-page"
+      header={(
+        <PageHeader
+          eyebrow={t('knowledge.libraryKicker')}
+          title={t('knowledge.libraryTitle')}
+          description={t('knowledge.libraryDescription')}
+        />
+      )}
+    >
+      <Surface as="div" className="knowledge-library-split">
         <aside className="knowledge-library-left">
           <div className="knowledge-pane-head">
             <div className="knowledge-pane-title">{t('knowledge.itemsTitle')}</div>
@@ -320,8 +324,11 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                   </div>
                 </div>
 
-                <div className="knowledge-detail-footer">
-                  <span className="knowledge-detail-footer-label">{t('knowledge.operationLabel')}</span>
+                <ActionBar
+                  sticky
+                  className="knowledge-detail-footer"
+                  status={<span className="knowledge-detail-footer-label">{t('knowledge.operationLabel')}</span>}
+                >
                   {selectedItem.status === 'Archived' ? (
                     <button type="button" className="knowledge-action knowledge-action--primary" onClick={() => void mutate(selectedItem, () => restoreKnowledge(selectedItem.id))} disabled={mutatingId === selectedItem.id}>
                       <RotateCcwIcon />{t('knowledge.restoreToActive')}
@@ -348,7 +355,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                   <button type="button" className="knowledge-action knowledge-action--danger" onClick={() => void remove(selectedItem)} disabled={mutatingId === selectedItem.id}>
                     <TrashIcon />{t('common.delete')}
                   </button>
-                </div>
+                </ActionBar>
               </div>
             </div>
           ) : (
@@ -357,7 +364,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
             </div>
           )}
         </section>
-      </div>
-    </div>
+      </Surface>
+    </PageFrame>
   )
 }

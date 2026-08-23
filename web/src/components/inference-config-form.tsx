@@ -15,6 +15,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
 import type {
   InferenceCapability,
   InferenceConfiguration,
@@ -425,7 +426,7 @@ export function InferenceConfigForm({
                 <div key={capability} className={`c-verify-row ${passed ? 'c-verify-row--pass' : ''}`}>
                   {passed ? <CheckIcon /> : <RouteIcon />}
                   <span className="c-verify-row__label">{routeLabel(capability)}</span>
-                  <span className="c-verify-code">{passed ? 'PASS' : check ? 'FAIL' : 'READY'}</span>
+                  <span className="c-verify-code">{passed ? t('inference.statusPass') : check ? t('inference.statusFail') : t('inference.statusReady')}</span>
                 </div>
               )
             })}
@@ -449,17 +450,14 @@ export function InferenceConfigForm({
         </section>
 
         {onSave && (
-          <div className="c-actions">
-            <div className="c-action-status"><span className="c-action-status__dot" />{t('inference.settingsActionHint')}</div>
-            <div className="c-action-buttons">
-              {onReset && <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={onReset}>
-                {t('inference.resetDraft')}
-              </Button>}
-              <Button type="button" className="c-button c-button--primary" onClick={onSave} disabled={saving || saveDisabled}>
-                {saving ? t('inference.saving') : t('inference.saveConfiguration')}
-              </Button>
-            </div>
-          </div>
+          <ActionBar status={<ActionBarStatus>{t('inference.settingsActionHint')}</ActionBarStatus>}>
+            {onReset && <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={onReset}>
+              {t('inference.resetDraft')}
+            </Button>}
+            <Button type="button" className="c-button c-button--primary" onClick={onSave} disabled={saving || saveDisabled}>
+              {saving ? t('inference.saving') : t('inference.saveConfiguration')}
+            </Button>
+          </ActionBar>
         )}
       </div>
     </div>

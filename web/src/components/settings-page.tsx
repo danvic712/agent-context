@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EngineHealthPanel } from '@/components/engine-health'
+import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import {
   createInferenceDraft,
   InferenceConfigForm,
@@ -152,29 +153,34 @@ export function SettingsPage() {
   ]
 
   return (
-    <div className="c-page">
-      <section className="c-hero">
-        <div className="c-hero__copy">
-          <div className="kicker c-kicker">{t('settings.pageKicker')}</div>
-          <h1 className="c-hero__title">{t('settings.pageTitle')}</h1>
-          <p className="c-hero__description">{t('settings.pageDescription')}</p>
-        </div>
-        <div className="c-hero__aside">
-          <span className="c-badge"><span className="c-dot" />{t('settings.platformBadge')}</span>
-          <span className="c-status-badge">{t('settings.noRestart')}</span>
-        </div>
-      </section>
-
-      <div className="c-settings-layout">
-        <aside className="c-settings-index" aria-label={t('settings.sectionNavigation')}>
+    <PageFrame
+      className="c-page"
+      header={(
+        <PageHeader
+          eyebrow={t('settings.pageKicker')}
+          title={t('settings.pageTitle')}
+          description={t('settings.pageDescription')}
+          actions={(
+            <div className="c-hero__aside">
+              <span className="c-badge"><span className="c-dot" />{t('settings.platformBadge')}</span>
+              <span className="c-status-badge">{t('settings.noRestart')}</span>
+            </div>
+          )}
+        />
+      )}
+      indexClassName="c-settings-index"
+      index={(
+        <>
           <div className="c-settings-index__label">{t('settings.onThisPage')}</div>
           <a href="#engine-health" aria-current={activeSection === 'engine-health' ? 'location' : undefined}>{t('settings.runtimeSection')}</a>
           <a href="#preferences" aria-current={activeSection === 'preferences' ? 'location' : undefined}>{t('settings.preferencesSection')}</a>
           <a href="#inference" aria-current={activeSection === 'inference' ? 'location' : undefined}>{t('settings.inferenceSection')}</a>
           <p className="c-settings-index__note">{t('settings.sectionNavigationNote')}</p>
-        </aside>
+        </>
+      )}
+    >
 
-        <div className="c-settings-stack">
+      <div className="c-settings-stack">
           <div className="c-section-label">
             <h2>{t('settings.runtimeSection')}</h2>
             <p className="c-runtime-caption"><span className="c-dot c-dot--ok" />{t('settings.runtimeSectionHint')}</p>
@@ -260,7 +266,6 @@ export function SettingsPage() {
               />
             )}
           </section>
-        </div>
       </div>
 
       {saved && <p className="mt-3 text-xs text-ok">{t('settings.saved')}</p>}
@@ -270,6 +275,6 @@ export function SettingsPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-    </div>
+    </PageFrame>
   )
 }

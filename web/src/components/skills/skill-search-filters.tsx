@@ -2,6 +2,7 @@ import { ListFilterIcon, XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SectionHeading, Surface } from '@/components/ui/surface'
 import type { SkillListSort, SkillSourceType } from '@/lib/api'
 
 export interface InstalledSkillFilters {
@@ -33,16 +34,18 @@ export function SkillSearchFilters({ filters, onChange, onClear }: SkillSearchFi
   const activeFilterCount = [filters.search.trim(), filters.domain.trim(), filters.sourceType, filters.sort !== 'updated-desc' ? filters.sort : ''].filter(Boolean).length
 
   return (
-    <section className="mb-5 rounded-2xl border border-border/80 bg-card/70 p-4 shadow-sm" aria-labelledby="skill-search-filters-title">
+    <Surface className="mb-5 p-4" aria-labelledby="skill-search-filters-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-2.5">
+        <div className="flex min-w-0 items-start gap-2.5">
           <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <ListFilterIcon className="size-4" />
           </div>
-          <div>
-            <h2 id="skill-search-filters-title" className="text-sm font-semibold text-foreground">{t('skills.searchFiltersTitle')}</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('skills.searchFiltersDescription')}</p>
-          </div>
+          <SectionHeading
+            titleId="skill-search-filters-title"
+            title={t('skills.searchFiltersTitle')}
+            description={t('skills.searchFiltersDescription')}
+            className="min-w-0"
+          />
         </div>
         {activeFilterCount > 0 && (
           <Button type="button" size="sm" variant="ghost" onClick={onClear}>
@@ -100,6 +103,6 @@ export function SkillSearchFilters({ filters, onChange, onClear }: SkillSearchFi
           </select>
         </label>
       </div>
-    </section>
+    </Surface>
   )
 }

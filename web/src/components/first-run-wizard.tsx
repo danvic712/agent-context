@@ -13,6 +13,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
+import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import {
   createInferenceDraft,
   InferenceConfigForm,
@@ -115,18 +117,22 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
         : t('wizard.stepReviewDescription')
 
   return (
-    <div className="c-page c-page--setup">
-      <section className="c-hero">
-        <div className="c-hero__copy">
-          <div className="kicker c-kicker">{t('wizard.pageKicker')}</div>
-          <h1 className="c-hero__title">{pageTitle}</h1>
-          <p className="c-hero__description">{stepDescription}</p>
-        </div>
-        <div className="c-hero__aside">
-          <span className="c-badge"><span className="c-dot" />{t('wizard.firstSetup')}</span>
-          <span className="c-status-badge">{t('wizard.stepCounter', { step })}</span>
-        </div>
-      </section>
+    <PageFrame
+      className="c-page c-page--setup"
+      header={(
+        <PageHeader
+          eyebrow={t('wizard.pageKicker')}
+          title={pageTitle}
+          description={stepDescription}
+          actions={(
+            <div className="c-hero__aside">
+              <span className="c-badge"><span className="c-dot" />{t('wizard.firstSetup')}</span>
+              <span className="c-status-badge">{t('wizard.stepCounter', { step })}</span>
+            </div>
+          )}
+        />
+      )}
+    >
 
       <div className="c-setup-progress" aria-label={t('wizard.progressLabel')}>
         {[1, 2, 3].map((item, index) => {
@@ -202,10 +208,9 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
                 </div>
               </section>
               {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="c-actions">
-                <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.stepOneActionHint')}</div>
-                <div className="c-action-buttons"><Button type="submit" className="c-button c-button--primary">{t('wizard.continue')} <ArrowRightIcon /></Button></div>
-              </div>
+              <ActionBar status={<ActionBarStatus>{t('wizard.stepOneActionHint')}</ActionBarStatus>}>
+                <Button type="submit" className="c-button c-button--primary">{t('wizard.continue')} <ArrowRightIcon /></Button>
+              </ActionBar>
             </div>
           </div>
         </form>
@@ -223,13 +228,10 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
             compact
           />
           {error && <Alert variant="destructive" className="c-validation-alert mt-4"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-          <div className="c-actions">
-            <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.stepTwoActionHint')}</div>
-            <div className="c-action-buttons">
-              <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(1)} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
-              <Button type="submit" className="c-button c-button--primary" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
-            </div>
-          </div>
+          <ActionBar status={<ActionBarStatus>{t('wizard.stepTwoActionHint')}</ActionBarStatus>}>
+            <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(1)} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
+            <Button type="submit" className="c-button c-button--primary" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
+          </ActionBar>
         </form>
       ) : (
         <form onSubmit={(event) => { event.preventDefault(); void finish() }}>
@@ -274,17 +276,14 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
                 </div>
               </section>
               {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <div className="c-actions">
-                <div className="c-action-status"><span className="c-action-status__dot" />{t('wizard.reviewActionHint')}</div>
-                <div className="c-action-buttons">
-                  <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(2)} disabled={submitting}><ArrowLeftIcon />{t('wizard.back')}</Button>
-                  <Button type="submit" className="c-button c-button--primary" disabled={submitting || !validation?.valid}>{submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}</Button>
-                </div>
-              </div>
+              <ActionBar status={<ActionBarStatus>{t('wizard.reviewActionHint')}</ActionBarStatus>}>
+                <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(2)} disabled={submitting}><ArrowLeftIcon />{t('wizard.back')}</Button>
+                <Button type="submit" className="c-button c-button--primary" disabled={submitting || !validation?.valid}>{submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}</Button>
+              </ActionBar>
             </div>
           </div>
         </form>
       )}
-    </div>
+    </PageFrame>
   )
 }
