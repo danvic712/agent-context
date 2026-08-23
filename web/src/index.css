@@ -1113,15 +1113,15 @@ html *::after {
 
 /* ---------- First-run setup workflow (T34) ---------- */
 .ui-step-indicator { min-width: 0; }
-.ui-step-indicator__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ui-step-indicator__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .ui-step-indicator__item { position: relative; min-width: 0; }
-.ui-step-indicator__item:not(:last-child)::after { position: absolute; top: 50%; right: -7px; width: 14px; height: 1px; content: ''; background: var(--line2); }
-.ui-step-indicator__step { display: flex; width: 100%; min-width: 0; min-height: 50px; align-items: center; justify-content: flex-start; gap: 10px; border: 1px solid var(--line); border-radius: 13px; padding: 10px 12px; color: var(--mut); background: var(--card2-paper); text-align: left; white-space: normal; }
-.ui-step-indicator__step:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); color: var(--ink); background: var(--accent-soft); }
+.ui-step-indicator__item:not(:last-child)::after { position: absolute; top: 50%; right: -16px; z-index: 0; width: 16px; height: 1px; content: ''; background: var(--line2); }
+.ui-step-indicator__step { position: relative; z-index: 1; display: flex; width: 100%; min-width: 0; min-height: 46px; align-items: center; justify-content: flex-start; gap: 10px; border: 1px solid transparent; border-bottom-color: var(--line); border-radius: 8px 8px 0 0; padding: 8px 4px; color: var(--mut); background: transparent; text-align: left; white-space: normal; }
+.ui-step-indicator__step:hover:not(:disabled) { border-color: transparent; border-bottom-color: color-mix(in srgb, var(--accent) 48%, var(--line)); color: var(--ink); background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
 .ui-step-indicator__number { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line2); border-radius: 50%; color: var(--mut); background: var(--card-paper); font: 10px var(--font-mono); }
 .ui-step-indicator__number svg { width: 14px; height: 14px; color: var(--ok); }
 .ui-step-indicator__label { min-width: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 650; line-height: 1.35; }
-.ui-step-indicator__item[data-current="true"] .ui-step-indicator__step { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); color: var(--accent-ink); background: var(--accent-soft); box-shadow: 0 6px 18px var(--accent-shadow); }
+.ui-step-indicator__item[data-current="true"] .ui-step-indicator__step { border-color: transparent; border-bottom: 2px solid var(--accent); color: var(--accent-ink); background: var(--accent-soft); box-shadow: none; }
 .ui-step-indicator__item[data-current="true"] .ui-step-indicator__number { border-color: var(--accent); color: var(--primary-foreground); background: var(--accent); }
 .ui-step-indicator__item[data-complete="true"] .ui-step-indicator__number { border-color: color-mix(in srgb, var(--ok) 42%, var(--line)); background: color-mix(in srgb, var(--ok) 10%, var(--card-paper)); }
 .ui-step-indicator__step:disabled { cursor: default; opacity: .56; }

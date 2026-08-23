@@ -177,7 +177,6 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
                 <ThemeToggle />
               </div>
               <div className="setup-header-meta">
-                <span className="setup-badge"><span className="setup-badge__dot" />{t('wizard.firstSetup')}</span>
                 <span className="setup-step-counter">{t('wizard.stepCounter', { step: setupSteps.findIndex((item) => item.id === step) + 1 })}</span>
               </div>
             </div>
