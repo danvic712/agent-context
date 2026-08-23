@@ -10,7 +10,8 @@
     },
     "appShell": {
       "title": "Agent Context",
-      "brandTagline": "SHARED CONTEXT FOR EVERY AGENT",
+      "brandTagline": "Shared context for agents",
+      "home": "Go to Knowledge home",
       "checking": "checking…",
       "healthy": "healthy",
       "degraded": "degraded",

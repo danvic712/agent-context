@@ -69,7 +69,11 @@ export function AppShell() {
         <header className="ui-shell__header">
           <div className="ui-shell__inner">
             {/* Brand */}
-            <div className="ui-shell__brand">
+            <NavLink
+              to="/knowledge"
+              className="ui-shell__brand"
+              aria-label={t('appShell.home')}
+            >
               <div className="ui-shell__mark" aria-hidden="true">
                 <SparklesIcon className="size-4" />
               </div>
@@ -77,7 +81,7 @@ export function AppShell() {
                 <div className="ui-shell__brand-name">{t('appShell.title')}</div>
                 <div className="ui-shell__brand-sub">{t('appShell.brandTagline')}</div>
               </div>
-            </div>
+            </NavLink>
 
             {/* Nav pills */}
             <nav className="ui-shell__nav" aria-label={t('appShell.primaryNavigation')}>

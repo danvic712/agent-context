@@ -875,7 +875,7 @@ html *::after {
     align-items: center;
     gap: 18px;
 }
-.ui-shell__brand { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 10px; }
+.ui-shell__brand { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 10px; color: inherit; cursor: pointer; text-decoration: none; }
 .ui-shell__mark {
     display: grid;
     width: 32px;
@@ -1021,7 +1021,7 @@ html *::after {
 .ui-feedback--info { color: var(--accent-ink); }
 .ui-feedback__dismiss { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 6px; padding: 4px; color: currentColor; opacity: .65; }
 .ui-feedback__dismiss:hover { background: var(--hover); opacity: 1; }
-.ui-back-to-top { position: fixed; right: max(20px, var(--ui-page-gutter)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 56px); z-index: var(--ui-z-top); display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border: 1px solid var(--line2); border-radius: 12px; color: var(--primary-foreground); background: var(--accent); box-shadow: 0 8px 20px var(--accent-shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease, background .18s ease; }
+.ui-back-to-top { position: fixed; right: max(20px, var(--ui-page-gutter)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 56px); z-index: var(--ui-z-top); display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border: 1px solid var(--line2); border-radius: 12px; color: var(--primary-foreground); background: var(--accent); box-shadow: 0 8px 20px var(--accent-shadow); cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease, background .18s ease; }
 .ui-back-to-top[data-visible="true"] { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .ui-back-to-top:hover { background: color-mix(in srgb, var(--accent) 86%, var(--ink)); }
 .ui-back-to-top:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 3px; }

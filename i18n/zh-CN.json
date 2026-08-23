@@ -10,7 +10,8 @@
     },
     "appShell": {
       "title": "Agent Context",
-      "brandTagline": "每个代理共享的上下文",
+      "brandTagline": "代理共享上下文",
+      "home": "返回知识首页",
       "checking": "检查中…",
       "healthy": "正常",
       "degraded": "异常",
