@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowLeftIcon,
@@ -11,10 +11,14 @@ import {
   UserRoundIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
+import { Button } from '@/components/ui/button'
+import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import { SectionHeading, Surface } from '@/components/ui/surface'
+import { StepIndicator, type StepIndicatorItem } from '@/components/ui/step-indicator'
+import { ThemeToggle } from '@/components/theme-toggle'
 import {
   createInferenceDraft,
   InferenceConfigForm,
@@ -37,9 +41,17 @@ interface AccountForm {
 const emptyAccount: AccountForm = { displayName: '', email: '', password: '' }
 const languages = ['en-US', 'zh-CN'] as const
 
+const setupSteps = [
+  { id: 'account', labelKey: 'wizard.stepAccountShort' },
+  { id: 'service', labelKey: 'wizard.stepServiceShort' },
+  { id: 'review', labelKey: 'wizard.stepReviewShort' },
+] as const
+
+type SetupStep = (typeof setupSteps)[number]['id']
+
 export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const { t } = useTranslation()
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<SetupStep>('account')
   const [account, setAccount] = useState<AccountForm>(emptyAccount)
   const [draft, setDraft] = useState<InferenceDraft>(() => createInferenceDraft())
   const [validation, setValidation] = useState<InferenceValidationResult | null>(null)
@@ -47,8 +59,29 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const [validating, setValidating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const completionStartedRef = useRef(false)
+
+  const accountReady = Boolean(account.displayName.trim() && account.email.includes('@') && account.password.length >= 8)
+  const serviceReady = validation?.valid === true
+  const stepItems: StepIndicatorItem[] = setupSteps.map((item) => ({ id: item.id, label: t(item.labelKey) }))
+  const completedSteps: string[] = []
+  if (accountReady && step !== 'account') completedSteps.push('account')
+  if (serviceReady && step === 'review') completedSteps.push('service')
+
+  const canOpenStep = (nextStep: string) => {
+    if (nextStep === 'account') return true
+    if (nextStep === 'service') return accountReady
+    return serviceReady
+  }
+
+  const chooseStep = (nextStep: string) => {
+    if (!canOpenStep(nextStep) || submitting || validating) return
+    setError(null)
+    setStep(nextStep as SetupStep)
+  }
 
   const chooseLanguage = async (locale: string) => {
+    if (!languages.includes(locale as (typeof languages)[number]) || locale === language) return
     setError(null)
     try {
       await i18n.changeLanguage(locale)
@@ -75,6 +108,8 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   }
 
   const finish = async () => {
+    if (completionStartedRef.current || submitting || !validation?.valid) return
+    completionStartedRef.current = true
     setError(null)
     setSubmitting(true)
     try {
@@ -87,203 +122,223 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       )
       onComplete()
     } catch (cause) {
+      completionStartedRef.current = false
       setError(cause instanceof Error ? cause.message : t('wizard.failedGeneric'))
     } finally {
       setSubmitting(false)
     }
   }
 
-  const submitAccount = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    if (!account.displayName.trim() || !account.email.trim() || account.password.length < 8) {
+    if (!accountReady) {
       setError(t('wizard.validationError'))
       return
     }
-    setStep(2)
+    setStep('service')
   }
 
-  const submitModelService = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitModelService = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (await validate()) setStep(3)
+    if (await validate()) setStep('review')
   }
 
-  const pageTitle = step === 1 ? t('wizard.pageTitleAccount') : step === 2 ? t('wizard.pageTitleService') : t('wizard.pageTitleReview')
-  const stepDescription =
-    step === 1
-      ? t('wizard.stepAccountPreferencesDescription')
-      : step === 2
-        ? t('wizard.stepModelServiceDescription')
-        : t('wizard.stepReviewDescription')
+  const pageTitle = step === 'account'
+    ? t('wizard.pageTitleAccount')
+    : step === 'service'
+      ? t('wizard.pageTitleService')
+      : t('wizard.pageTitleReview')
+  const stepDescription = step === 'account'
+    ? t('wizard.stepAccountPreferencesDescription')
+    : step === 'service'
+      ? t('wizard.stepModelServiceDescription')
+      : t('wizard.stepReviewDescription')
 
   return (
     <PageFrame
-      className="c-page c-page--setup"
+      className="setup-page"
       header={(
         <PageHeader
           eyebrow={t('wizard.pageKicker')}
           title={pageTitle}
           description={stepDescription}
           actions={(
-            <div className="c-hero__aside">
-              <span className="c-badge"><span className="c-dot" />{t('wizard.firstSetup')}</span>
-              <span className="c-status-badge">{t('wizard.stepCounter', { step })}</span>
+            <div className="setup-header-actions">
+              <div className="setup-header-tools">
+                <label className="setup-locale-control">
+                  <LanguagesIcon aria-hidden="true" />
+                  <span className="sr-only">{t('wizard.language')}</span>
+                  <select value={language} onChange={(event) => void chooseLanguage(event.target.value)} aria-label={t('wizard.language')}>
+                    <option value="en-US">{t('wizard.english')}</option>
+                    <option value="zh-CN">{t('wizard.chinese')}</option>
+                  </select>
+                </label>
+                <ThemeToggle />
+              </div>
+              <div className="setup-header-meta">
+                <span className="setup-badge"><span className="setup-badge__dot" />{t('wizard.firstSetup')}</span>
+                <span className="setup-step-counter">{t('wizard.stepCounter', { step: setupSteps.findIndex((item) => item.id === step) + 1 })}</span>
+              </div>
             </div>
           )}
         />
       )}
     >
+      <div className="setup-workspace">
+        <StepIndicator
+          steps={stepItems}
+          currentId={step}
+          completedIds={completedSteps}
+          ariaLabel={t('wizard.progressLabel')}
+          onSelect={chooseStep}
+          isSelectable={canOpenStep}
+          disabled={submitting || validating}
+        />
 
-      <div className="c-setup-progress" aria-label={t('wizard.progressLabel')}>
-        {[1, 2, 3].map((item, index) => {
-          const isDone = item < step
-          const isCurrent = item === step
-          return (
-            <span key={item} className="contents">
-              <button
-                type="button"
-                className={`c-progress-step ${isCurrent ? 'c-progress-step--current' : ''} ${isDone ? 'c-progress-step--done' : ''}`}
-                onClick={() => {
-                  if (item < step) setStep(item as 1 | 2 | 3)
-                }}
-              >
-                {isDone ? <CheckIcon size={14} /> : <span className="c-progress-number">{item}</span>}
-                {item === 1 ? t('wizard.stepAccountShort') : item === 2 ? t('wizard.stepServiceShort') : t('wizard.stepReviewShort')}
-              </button>
-              {index < 2 && <span className="c-progress-separator">/</span>}
-            </span>
-          )
-        })}
-      </div>
-
-      {step === 1 ? (
-        <form onSubmit={submitAccount}>
-          <div className="c-layout">
-            <aside className="c-readiness">
-              <div className="c-readiness__icon"><SparklesIcon size={21} /></div>
-              <h2 className="c-readiness__title">{t('wizard.accountAsideTitle')}</h2>
-              <p className="c-readiness__description">{t('wizard.accountAsideDescription')}</p>
-              <div className="c-account-aside__list">
-                <div className="c-account-aside__item"><UserRoundIcon />{t('wizard.accountAsideItemAccount')}</div>
-                <div className="c-account-aside__item"><LanguagesIcon />{t('wizard.accountAsideItemLanguage')}</div>
-                <div className="c-account-aside__item"><LockKeyholeIcon />{t('wizard.accountAsideItemProtected')}</div>
-              </div>
-            </aside>
-
-            <div className="c-stack">
-              <section className="c-panel">
-                <div className="c-panel__header">
-                  <div>
-                    <div className="c-panel__title"><UserRoundIcon /> {t('wizard.accountSummary')}</div>
-                    <p className="c-panel__description">{t('wizard.stepAccountDescription')}</p>
-                  </div>
-                  <span className="c-status-badge">{t('wizard.stepOneLabel')}</span>
+        {step === 'account' ? (
+          <form className="setup-step-form" onSubmit={submitAccount}>
+            <div className="setup-content-grid">
+              <Surface as="aside" tone="muted" className="setup-assistant">
+                <div className="setup-assistant__icon"><SparklesIcon aria-hidden="true" /></div>
+                <SectionHeading
+                  title={t('wizard.accountAsideTitle')}
+                  description={t('wizard.accountAsideDescription')}
+                  className="setup-assistant__heading"
+                />
+                <div className="setup-check-list">
+                  <div className="setup-check-item"><UserRoundIcon aria-hidden="true" />{t('wizard.accountAsideItemAccount')}</div>
+                  <div className="setup-check-item"><LanguagesIcon aria-hidden="true" />{t('wizard.accountAsideItemLanguage')}</div>
+                  <div className="setup-check-item"><LockKeyholeIcon aria-hidden="true" />{t('wizard.accountAsideItemProtected')}</div>
                 </div>
-                <div className="c-panel__body c-form-grid">
-                  <div className="c-form-grid c-form-grid--two">
-                    <label className="c-field" htmlFor="display-name">
-                      <span className="c-field__label">{t('wizard.displayName')}</span>
-                      <Input id="display-name" className="c-input" value={account.displayName} onChange={(event) => setAccount({ ...account, displayName: event.target.value })} autoComplete="name" placeholder={t('wizard.displayNamePlaceholder')} />
-                    </label>
-                    <label className="c-field" htmlFor="email">
-                      <span className="c-field__label">{t('wizard.email')}</span>
-                      <Input id="email" className="c-input" type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} autoComplete="email" placeholder={t('wizard.emailPlaceholder')} />
-                    </label>
+              </Surface>
+
+              <Surface as="section" className="setup-form-surface" aria-labelledby="setup-account-title">
+                <div className="setup-surface-header">
+                  <SectionHeading
+                    titleId="setup-account-title"
+                    title={t('wizard.accountSummary')}
+                    description={t('wizard.stepAccountDescription')}
+                    aside={<span className="setup-section-badge">{t('wizard.stepOneLabel')}</span>}
+                  />
+                </div>
+                <div className="setup-surface-body">
+                  <div className="setup-field-grid">
+                    <Field className="setup-field">
+                      <FieldLabel htmlFor="display-name" className="setup-field-label">{t('wizard.displayName')}</FieldLabel>
+                      <FieldContent>
+                        <Input id="display-name" value={account.displayName} onChange={(event) => setAccount({ ...account, displayName: event.target.value })} autoComplete="name" placeholder={t('wizard.displayNamePlaceholder')} />
+                      </FieldContent>
+                    </Field>
+                    <Field className="setup-field">
+                      <FieldLabel htmlFor="email" className="setup-field-label">{t('wizard.email')}</FieldLabel>
+                      <FieldContent>
+                        <Input id="email" type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} autoComplete="email" placeholder={t('wizard.emailPlaceholder')} />
+                      </FieldContent>
+                    </Field>
                   </div>
-                  <label className="c-field" htmlFor="password">
-                    <span className="c-field__label">{t('wizard.password')}</span>
-                    <Input id="password" className="c-input" type="password" value={account.password} onChange={(event) => setAccount({ ...account, password: event.target.value })} autoComplete="new-password" placeholder={t('wizard.passwordPlaceholder')} />
-                  </label>
-                  <p className="c-form-help">{t('wizard.passwordHelp')}</p>
-                  <div className="c-field">
-                    <span className="c-field__label">{t('wizard.language')}</span>
-                    <div className="c-segmented">
-                      {languages.map((locale) => (
-                        <Button key={locale} type="button" variant="ghost" className="c-segmented__item" aria-pressed={language === locale} onClick={() => void chooseLanguage(locale)}>
-                          {locale === 'en-US' ? t('wizard.english') : t('wizard.chinese')}
-                        </Button>
-                      ))}
+                  <Field className="setup-field">
+                    <FieldLabel htmlFor="password" className="setup-field-label">{t('wizard.password')}</FieldLabel>
+                    <FieldContent>
+                      <Input id="password" type="password" value={account.password} onChange={(event) => setAccount({ ...account, password: event.target.value })} autoComplete="new-password" placeholder={t('wizard.passwordPlaceholder')} />
+                      <FieldDescription className="setup-field-description">{t('wizard.passwordHelp')}</FieldDescription>
+                    </FieldContent>
+                  </Field>
+                  <Field className="setup-field">
+                    <FieldLabel id="setup-language-label" className="setup-field-label">{t('wizard.language')}</FieldLabel>
+                    <FieldContent>
+                      <div id="setup-language" className="setup-language-options" role="group" aria-labelledby="setup-language-label">
+                        {languages.map((locale) => (
+                          <Button key={locale} type="button" variant="ghost" aria-pressed={language === locale} className="setup-language-option" onClick={() => void chooseLanguage(locale)}>
+                            {locale === 'en-US' ? t('wizard.english') : t('wizard.chinese')}
+                          </Button>
+                        ))}
+                      </div>
+                    </FieldContent>
+                  </Field>
+                </div>
+              </Surface>
+            </div>
+
+            {error && <Alert variant="destructive" className="setup-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+            <ActionBar sticky className="setup-action-bar" status={<ActionBarStatus>{t('wizard.stepOneActionHint')}</ActionBarStatus>}>
+              <Button type="submit" size="lg">{t('wizard.continue')} <ArrowRightIcon /></Button>
+            </ActionBar>
+          </form>
+        ) : step === 'service' ? (
+          <form className="setup-step-form" onSubmit={(event) => void submitModelService(event)}>
+            <InferenceConfigForm
+              className="setup-inference-form"
+              draft={draft}
+              onChange={(next) => {
+                setDraft(next)
+                setValidation(null)
+              }}
+              validation={validation}
+              validating={validating}
+              onValidate={() => void validate()}
+              showVerifyAction={false}
+              compact
+            />
+            {error && <Alert variant="destructive" className="setup-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+            <ActionBar sticky className="setup-action-bar" status={<ActionBarStatus>{t('wizard.stepTwoActionHint')}</ActionBarStatus>}>
+              <Button type="button" variant="ghost" onClick={() => { setError(null); setStep('account') }} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
+              <Button type="submit" size="lg" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
+            </ActionBar>
+          </form>
+        ) : (
+          <form className="setup-step-form" onSubmit={(event) => { event.preventDefault(); void finish() }}>
+            <div className="setup-review-layout">
+              <Surface as="section" className="setup-review-surface" aria-labelledby="setup-review-title">
+                <div className="setup-surface-header">
+                  <SectionHeading titleId="setup-review-title" title={t('wizard.reviewTitle')} description={t('wizard.reviewDescription')} />
+                </div>
+                <div className="setup-surface-body setup-review-body">
+                  <div className="setup-review-overview">
+                    <div className="setup-review-item"><span>{t('wizard.displayName')}</span><strong>{account.displayName}</strong></div>
+                    <div className="setup-review-item"><span>{t('wizard.language')}</span><strong>{language}</strong></div>
+                    <div className="setup-review-item"><span>{t('inference.providersTitle')}</span><strong>{t('wizard.providerCount', { count: draft.providers.length })}</strong></div>
+                  </div>
+
+                  <div className="setup-review-block">
+                    <div className="setup-review-block__heading"><UserRoundIcon aria-hidden="true" /><div><h3>{t('wizard.accountSummary')}</h3><p>{t('wizard.reviewAccountDescription')}</p></div></div>
+                    <div className="setup-review-details">
+                      <div><span>{t('wizard.displayName')}</span><strong>{account.displayName}</strong></div>
+                      <div><span>{t('wizard.email')}</span><strong>{account.email}</strong></div>
+                      <div><span>{t('wizard.language')}</span><strong>{language}</strong></div>
+                    </div>
+                  </div>
+
+                  <div className="setup-review-block">
+                    <div className="setup-review-block__heading"><SparklesIcon aria-hidden="true" /><div><h3>{t('wizard.inferenceSummary')}</h3><p>{t('wizard.reviewInferenceDescription')}</p></div><span className="setup-section-badge setup-section-badge--success"><CheckIcon aria-hidden="true" />{t('wizard.verifiedBeforeCreate')}</span></div>
+                    <div className="setup-review-details">
+                      {draft.routes.map((route) => {
+                        const provider = draft.providers.find((item) => item.id === route.providerId)
+                        return <div key={route.id}><span>{route.capability === 'Chat' ? t('inference.chatRoute') : t('inference.embeddingRoute')}</span><strong>{provider?.name || t('inference.provider')} · {route.model}</strong></div>
+                      })}
                     </div>
                   </div>
                 </div>
-              </section>
-              {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <ActionBar status={<ActionBarStatus>{t('wizard.stepOneActionHint')}</ActionBarStatus>}>
-                <Button type="submit" className="c-button c-button--primary">{t('wizard.continue')} <ArrowRightIcon /></Button>
-              </ActionBar>
-            </div>
-          </div>
-        </form>
-      ) : step === 2 ? (
-        <form onSubmit={(event) => void submitModelService(event)}>
-          <InferenceConfigForm
-            draft={draft}
-            onChange={(next) => {
-              setDraft(next)
-              setValidation(null)
-            }}
-            validation={validation}
-            validating={validating}
-            onValidate={() => void validate()}
-            compact
-          />
-          {error && <Alert variant="destructive" className="c-validation-alert mt-4"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-          <ActionBar status={<ActionBarStatus>{t('wizard.stepTwoActionHint')}</ActionBarStatus>}>
-            <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(1)} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
-            <Button type="submit" className="c-button c-button--primary" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
-          </ActionBar>
-        </form>
-      ) : (
-        <form onSubmit={(event) => { event.preventDefault(); void finish() }}>
-          <div className="c-review-card">
-            <div>
-              <div className="kicker c-kicker">{t('wizard.stepReviewShort')}</div>
-              <h2 className="c-review-card__title">{t('wizard.reviewTitle')}</h2>
-              <p className="c-review-card__description">{t('wizard.reviewDescription')}</p>
-            </div>
-            <div className="c-review-grid">
-              <div className="c-review-item"><div className="c-review-item__label">{t('wizard.displayName')}</div><div className="c-review-item__value">{account.displayName}</div></div>
-              <div className="c-review-item"><div className="c-review-item__label">{t('wizard.language')}</div><div className="c-review-item__value">{language}</div></div>
-              <div className="c-review-item"><div className="c-review-item__label">{t('inference.providersTitle')}</div><div className="c-review-item__value">{t('wizard.providerCount', { count: draft.providers.length })}</div></div>
-            </div>
-          </div>
-          <div className="c-layout">
-            <aside className="c-readiness">
-              <div className="c-readiness__icon"><CheckCircle2Icon size={21} /></div>
-              <h2 className="c-readiness__title">{t('wizard.reviewAsideTitle')}</h2>
-              <p className="c-readiness__description">{t('wizard.atomicCreateHint')}</p>
-              <div className="c-checks">
-                <div className="c-check c-check--ok"><CheckIcon className="c-check__icon" /><div><div className="c-check__label">{t('wizard.accountSummary')}</div><div className="c-check__detail">{account.email}</div></div></div>
-                <div className="c-check c-check--ok"><CheckIcon className="c-check__icon" /><div><div className="c-check__label">{t('wizard.inferenceSummary')}</div><div className="c-check__detail">{t('wizard.verifiedBeforeCreate')}</div></div></div>
-              </div>
-            </aside>
-            <div className="c-stack">
-              <section className="c-panel">
-                <div className="c-panel__header"><div><div className="c-panel__title"><UserRoundIcon /> {t('wizard.accountSummary')}</div><p className="c-panel__description">{t('wizard.reviewAccountDescription')}</p></div></div>
-                <div className="c-panel__body c-review-grid">
-                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.displayName')}</div><div className="c-review-item__value">{account.displayName}</div></div>
-                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.email')}</div><div className="c-review-item__value">{account.email}</div></div>
-                  <div className="c-review-item"><div className="c-review-item__label">{t('wizard.language')}</div><div className="c-review-item__value">{language}</div></div>
+              </Surface>
+
+              <Surface as="aside" tone="muted" className="setup-assistant setup-review-assistant">
+                <div className="setup-assistant__icon setup-assistant__icon--success"><CheckCircle2Icon aria-hidden="true" /></div>
+                <SectionHeading title={t('wizard.reviewAsideTitle')} description={t('wizard.atomicCreateHint')} className="setup-assistant__heading" />
+                <div className="setup-check-list">
+                  <div className="setup-check-item setup-check-item--success"><CheckIcon aria-hidden="true" /><span><strong>{t('wizard.accountSummary')}</strong><small>{account.email}</small></span></div>
+                  <div className="setup-check-item setup-check-item--success"><CheckIcon aria-hidden="true" /><span><strong>{t('wizard.inferenceSummary')}</strong><small>{t('wizard.verifiedBeforeCreate')}</small></span></div>
                 </div>
-              </section>
-              <section className="c-panel">
-                <div className="c-panel__header"><div><div className="c-panel__title"><SparklesIcon /> {t('wizard.inferenceSummary')}</div><p className="c-panel__description">{t('wizard.reviewInferenceDescription')}</p></div><span className="c-status-badge c-status-badge--ready"><span className="c-dot c-dot--ok" />{t('wizard.verifiedBeforeCreate')}</span></div>
-                <div className="c-panel__body c-route-grid">
-                  {draft.routes.map((route) => {
-                    const provider = draft.providers.find((item) => item.id === route.providerId)
-                    return <div key={route.id} className="c-review-item"><div className="c-review-item__label">{route.capability === 'Chat' ? t('inference.chatRoute') : t('inference.embeddingRoute')}</div><div className="c-review-item__value">{provider?.name || t('inference.provider')} · {route.model}</div></div>
-                  })}
-                </div>
-              </section>
-              {error && <Alert variant="destructive" className="c-validation-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-              <ActionBar status={<ActionBarStatus>{t('wizard.reviewActionHint')}</ActionBarStatus>}>
-                <Button type="button" variant="ghost" className="c-button c-button--ghost" onClick={() => setStep(2)} disabled={submitting}><ArrowLeftIcon />{t('wizard.back')}</Button>
-                <Button type="submit" className="c-button c-button--primary" disabled={submitting || !validation?.valid}>{submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}</Button>
-              </ActionBar>
+              </Surface>
             </div>
-          </div>
-        </form>
-      )}
+
+            {error && <Alert variant="destructive" className="setup-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+            <ActionBar sticky className="setup-action-bar" status={<ActionBarStatus>{t('wizard.reviewActionHint')}</ActionBarStatus>}>
+              <Button type="button" variant="ghost" onClick={() => { setError(null); setStep('service') }} disabled={submitting}><ArrowLeftIcon />{t('wizard.back')}</Button>
+              <Button type="submit" size="lg" disabled={submitting || !serviceReady}>{submitting ? t('wizard.settingUp') : t('wizard.createWorkspace')}</Button>
+            </ActionBar>
+          </form>
+        )}
+      </div>
     </PageFrame>
   )
 }

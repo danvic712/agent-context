@@ -14,8 +14,11 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
+import { Surface } from '@/components/ui/surface'
+import { cn } from '@/lib/utils'
 import type {
   InferenceCapability,
   InferenceConfiguration,
@@ -97,7 +100,9 @@ interface InferenceConfigFormProps {
   onReset?: () => void
   saving?: boolean
   saveDisabled?: boolean
+  showVerifyAction?: boolean
   compact?: boolean
+  className?: string
 }
 
 const routeIcon = (capability: InferenceCapability) =>
@@ -113,7 +118,9 @@ export function InferenceConfigForm({
   onReset,
   saving = false,
   saveDisabled = false,
+  showVerifyAction = true,
   compact = false,
+  className,
 }: InferenceConfigFormProps) {
   const { t } = useTranslation()
   const [selectedProviderId, setSelectedProviderId] = useState(draft.providers[0]?.id ?? '')
@@ -198,8 +205,8 @@ export function InferenceConfigForm({
   const selectedProvider = providerFor(selectedProviderId)
 
   return (
-    <div className="c-layout">
-      <aside className="c-readiness">
+    <div className={cn('c-layout', className)}>
+      <Surface as="aside" className="c-readiness">
         <div className="c-readiness__icon"><FlaskConicalIcon size={21} /></div>
         <h2 className="c-readiness__title">{t('inference.readinessTitle')}</h2>
         <p className="c-readiness__description">{t('inference.readinessDescription')}</p>
@@ -226,7 +233,7 @@ export function InferenceConfigForm({
             </div>
           </div>
         </div>
-      </aside>
+      </Surface>
 
       <div className="c-stack">
         {!compact && (
@@ -235,20 +242,22 @@ export function InferenceConfigForm({
               <div className="c-identity__title">{t('inference.configurationName')}</div>
               <div className="c-identity__note">{t('inference.configurationNameDescription')}</div>
             </div>
-            <label className="c-field" htmlFor="inference-name">
-              <span className="c-field__label">{t('inference.configurationName')}</span>
-              <Input
-                id="inference-name"
-                className="c-input"
-                value={draft.name}
-                onChange={(event) => onChange({ ...draft, name: event.target.value })}
-                placeholder={t('inference.configurationNamePlaceholder')}
-              />
-            </label>
+            <Field className="c-field">
+              <FieldLabel htmlFor="inference-name" className="c-field__label">{t('inference.configurationName')}</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="inference-name"
+                  className="c-input"
+                  value={draft.name}
+                  onChange={(event) => onChange({ ...draft, name: event.target.value })}
+                  placeholder={t('inference.configurationNamePlaceholder')}
+                />
+              </FieldContent>
+            </Field>
           </div>
         )}
 
-        <section className="c-panel">
+        <Surface as="section" className="c-panel">
           <div className="c-panel__header">
             <div>
               <div className="c-panel__title"><RouteIcon /> {t('inference.routesTitle')}</div>
@@ -275,31 +284,35 @@ export function InferenceConfigForm({
                       <span className="c-role-badge">{t('inference.required')}</span>
                     </div>
                     <div className="c-field-grid">
-                      <label className="c-field" htmlFor={`route-provider-${capability}`}>
-                        <span className="c-field__label">{t('inference.provider')}</span>
-                        <select
-                          id={`route-provider-${capability}`}
-                          className="c-select"
-                          value={route.providerId}
-                          onChange={(event) => updateRoute(capability, { providerId: event.target.value })}
-                        >
-                          {draft.providers.map((item, index) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name || t('inference.providerNumber', { number: index + 1 })}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="c-field" htmlFor={`route-model-${capability}`}>
-                        <span className="c-field__label">{t('inference.model')}</span>
-                        <Input
-                          id={`route-model-${capability}`}
-                          className="c-input"
-                          value={route.model}
-                          onChange={(event) => updateRoute(capability, { model: event.target.value })}
-                          placeholder={capability === 'Chat' ? t('inference.chatModelPlaceholder') : t('inference.embeddingModelPlaceholder')}
-                        />
-                      </label>
+                      <Field className="c-field">
+                        <FieldLabel htmlFor={`route-provider-${capability}`} className="c-field__label">{t('inference.provider')}</FieldLabel>
+                        <FieldContent>
+                          <select
+                            id={`route-provider-${capability}`}
+                            className="c-select"
+                            value={route.providerId}
+                            onChange={(event) => updateRoute(capability, { providerId: event.target.value })}
+                          >
+                            {draft.providers.map((item, index) => (
+                              <option key={item.id} value={item.id}>
+                                {item.name || t('inference.providerNumber', { number: index + 1 })}
+                              </option>
+                            ))}
+                          </select>
+                        </FieldContent>
+                      </Field>
+                      <Field className="c-field">
+                        <FieldLabel htmlFor={`route-model-${capability}`} className="c-field__label">{t('inference.model')}</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={`route-model-${capability}`}
+                            className="c-input"
+                            value={route.model}
+                            onChange={(event) => updateRoute(capability, { model: event.target.value })}
+                            placeholder={capability === 'Chat' ? t('inference.chatModelPlaceholder') : t('inference.embeddingModelPlaceholder')}
+                          />
+                        </FieldContent>
+                      </Field>
                     </div>
                     <div className="c-endpoint">
                       <Link2Icon /> {provider?.baseUrl || t('inference.missingEndpoint')}
@@ -309,9 +322,9 @@ export function InferenceConfigForm({
               })}
             </div>
           </div>
-        </section>
+        </Surface>
 
-        <section className="c-panel">
+        <Surface as="section" className="c-panel">
           <div className="c-panel__header">
             <div>
               <div className="c-panel__title"><ServerIcon /> {t('inference.providersTitle')}</div>
@@ -363,43 +376,51 @@ export function InferenceConfigForm({
                         <Trash2Icon /> {t('inference.removeProvider')}
                       </Button>
                     </div>
-                    <label className="c-field" htmlFor={`provider-name-${selectedProvider.id}`}>
-                      <span className="c-field__label">{t('inference.providerName')}</span>
-                      <Input
-                        id={`provider-name-${selectedProvider.id}`}
-                        className="c-input"
-                        value={selectedProvider.name}
-                        onChange={(event) => updateProvider(selectedProvider.id, { name: event.target.value })}
-                        placeholder={t('inference.providerNamePlaceholder')}
-                      />
-                    </label>
-                    <label className="c-field" htmlFor={`provider-type-${selectedProvider.id}`}>
-                      <span className="c-field__label">{t('inference.providerType')}</span>
-                      <Input id={`provider-type-${selectedProvider.id}`} className="c-input font-mono" value={selectedProvider.providerType} readOnly />
-                    </label>
-                    <label className="c-field" htmlFor={`provider-url-${selectedProvider.id}`}>
-                      <span className="c-field__label">{t('inference.baseUrl')}</span>
-                      <Input
-                        id={`provider-url-${selectedProvider.id}`}
-                        className="c-input font-mono"
-                        value={selectedProvider.baseUrl}
-                        onChange={(event) => updateProvider(selectedProvider.id, { baseUrl: event.target.value })}
-                        placeholder={t('inference.baseUrlPlaceholder')}
-                        inputMode="url"
-                      />
-                    </label>
-                    <label className="c-field" htmlFor={`provider-key-${selectedProvider.id}`}>
-                      <span className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</span>
-                      <Input
-                        id={`provider-key-${selectedProvider.id}`}
-                        className="c-input font-mono"
-                        type="password"
-                        value={selectedProvider.apiKey}
-                        onChange={(event) => updateProvider(selectedProvider.id, { apiKey: event.target.value })}
-                        placeholder={selectedProvider.apiKey === '' && draft.configuredProviderIds.includes(selectedProvider.id) ? t('inference.apiKeyRetain') : t('inference.apiKeyPlaceholder')}
-                        autoComplete="off"
-                      />
-                    </label>
+                    <Field className="c-field">
+                      <FieldLabel htmlFor={`provider-name-${selectedProvider.id}`} className="c-field__label">{t('inference.providerName')}</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id={`provider-name-${selectedProvider.id}`}
+                          className="c-input"
+                          value={selectedProvider.name}
+                          onChange={(event) => updateProvider(selectedProvider.id, { name: event.target.value })}
+                          placeholder={t('inference.providerNamePlaceholder')}
+                        />
+                      </FieldContent>
+                    </Field>
+                    <Field className="c-field">
+                      <FieldLabel htmlFor={`provider-type-${selectedProvider.id}`} className="c-field__label">{t('inference.providerType')}</FieldLabel>
+                      <FieldContent>
+                        <Input id={`provider-type-${selectedProvider.id}`} className="c-input font-mono" value={selectedProvider.providerType} readOnly />
+                      </FieldContent>
+                    </Field>
+                    <Field className="c-field">
+                      <FieldLabel htmlFor={`provider-url-${selectedProvider.id}`} className="c-field__label">{t('inference.baseUrl')}</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id={`provider-url-${selectedProvider.id}`}
+                          className="c-input font-mono"
+                          value={selectedProvider.baseUrl}
+                          onChange={(event) => updateProvider(selectedProvider.id, { baseUrl: event.target.value })}
+                          placeholder={t('inference.baseUrlPlaceholder')}
+                          inputMode="url"
+                        />
+                      </FieldContent>
+                    </Field>
+                    <Field className="c-field">
+                      <FieldLabel htmlFor={`provider-key-${selectedProvider.id}`} className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id={`provider-key-${selectedProvider.id}`}
+                          className="c-input font-mono"
+                          type="password"
+                          value={selectedProvider.apiKey}
+                          onChange={(event) => updateProvider(selectedProvider.id, { apiKey: event.target.value })}
+                          placeholder={selectedProvider.apiKey === '' && draft.configuredProviderIds.includes(selectedProvider.id) ? t('inference.apiKeyRetain') : t('inference.apiKeyPlaceholder')}
+                          autoComplete="off"
+                        />
+                      </FieldContent>
+                    </Field>
                     <div className="c-endpoint"><Link2Icon /> {t('inference.routeTableNote')}</div>
                   </>
                 ) : (
@@ -408,9 +429,9 @@ export function InferenceConfigForm({
               </div>
             </div>
           </div>
-        </section>
+        </Surface>
 
-        <section className="c-panel c-panel--verify">
+        <Surface as="section" className="c-panel c-panel--verify">
           <div className="c-panel__header">
             <div>
               <div className="c-panel__title"><FlaskConicalIcon /> {t('inference.verifyDraftTitle')}</div>
@@ -430,12 +451,14 @@ export function InferenceConfigForm({
                 </div>
               )
             })}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" className="c-button c-button--secondary" onClick={onValidate} disabled={validating}>
-                <FlaskConicalIcon /> {validating ? t('inference.verifying') : testPassed ? t('inference.verificationPassed') : t('inference.verifyConfiguration')}
-              </Button>
-              {testPassed && <span className="c-verify-message">{t('inference.verifiedDetail')}</span>}
-            </div>
+            {showVerifyAction && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" className="c-button c-button--secondary" onClick={onValidate} disabled={validating}>
+                  <FlaskConicalIcon /> {validating ? t('inference.verifying') : testPassed ? t('inference.verificationPassed') : t('inference.verifyConfiguration')}
+                </Button>
+                {testPassed && <span className="c-verify-message">{t('inference.verifiedDetail')}</span>}
+              </div>
+            )}
             {validation && !validation.valid && (
               <Alert variant="destructive" className="c-validation-alert">
                 <AlertTitle>{t('inference.validationFailed')}</AlertTitle>
@@ -447,7 +470,7 @@ export function InferenceConfigForm({
               </Alert>
             )}
           </div>
-        </section>
+        </Surface>
 
         {onSave && (
           <ActionBar status={<ActionBarStatus>{t('inference.settingsActionHint')}</ActionBarStatus>}>
