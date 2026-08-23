@@ -43,6 +43,18 @@ seam (the `AddApplicationServices` boundary) stays visible in one place.
 
 - Application services end in `AppService` (`SetupAppService`, not `SetupService`).
 
+## Testing — isolated unit tests without containers
+
+- Tests must not use Testcontainers, Docker, or any other containerized external
+  service as a test dependency.
+- New or changed tests must isolate external dependencies with Moq mocks and
+  exercise the application seam through those mocks. Do not add a real
+  PostgreSQL, HTTP, filesystem, or other infrastructure dependency merely to
+  make a unit test pass.
+- If an integration boundary cannot be covered with a mock, document the gap
+  in the test or validation notes instead of introducing a container-backed
+  test fixture.
+
 ## PostgreSQL persistence naming
 
 All new PostgreSQL schema introduced by a feature must use unquoted lowercase

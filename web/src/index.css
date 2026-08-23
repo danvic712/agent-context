@@ -1082,3 +1082,94 @@ html *::after {
 @media (prefers-reduced-motion: reduce) {
     html, html * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* ---------- Skill upload workspace (T38) ---------- */
+.skill-upload-workspace,
+.skill-upload-form,
+.skill-upload-layout { min-width: 0; }
+.skill-upload-form { display: grid; gap: 16px; }
+.skill-upload-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 12px; align-items: stretch; }
+.skill-upload-panel,
+.skill-upload-check-panel { min-width: 0; overflow: hidden; }
+.skill-upload-panel-head { padding: 20px 22px; border-bottom: 1px solid var(--line); }
+.skill-upload-panel-head .ui-section-heading { align-items: flex-start; }
+.skill-upload-panel-head .ui-section-heading__title { font-size: clamp(20px, 2.4vw, 26px); }
+.skill-upload-panel-head .ui-section-heading__description { margin-top: 6px; font-size: 12px; }
+.skill-upload-panel-body { display: grid; gap: 20px; padding: 22px; }
+.skill-upload-field-label { display: block; margin: 0 0 8px; color: var(--mut); font-size: 11px; font-weight: 700; }
+.skill-upload-dropzone { display: flex; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed color-mix(in srgb, var(--accent) 52%, var(--line)); border-radius: 14px; padding: 24px; color: var(--accent-ink); background: var(--accent-soft); cursor: pointer; text-align: center; transition: border-color .16s ease, background-color .16s ease, transform .16s ease; }
+.skill-upload-dropzone:hover,
+.skill-upload-dropzone--dragging { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--card-paper)); transform: translateY(-1px); }
+.skill-upload-dropzone__icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 15px; color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, var(--card-paper)); }
+.skill-upload-dropzone__icon svg { width: 24px; height: 24px; }
+.skill-upload-dropzone strong { margin-top: 13px; color: var(--ink); font-size: 14px; }
+.skill-upload-dropzone > span:not(.skill-upload-dropzone__icon):not(.skill-upload-dropzone__action) { max-width: 36rem; margin-top: 6px; color: var(--mut); font-size: 11px; line-height: 1.5; }
+.skill-upload-dropzone__action { margin-top: 14px; border: 1px solid var(--line2); border-radius: 9px; padding: 8px 11px; color: var(--accent-ink); background: var(--card-paper); font-size: 11px; font-weight: 700; }
+.skill-upload-file-row { display: flex; min-width: 0; align-items: center; gap: 9px; margin-top: 10px; border: 1px solid var(--line); border-radius: 11px; padding: 5px 6px 5px 10px; color: var(--mut); background: var(--card2-paper); }
+.skill-upload-file-row > svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--accent); }
+.skill-upload-file-name { min-width: 0; flex: 1 1 auto; overflow: hidden; color: var(--ink); font: 10px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.skill-upload-file-size { flex: 0 0 auto; color: var(--dim); font: 10px var(--font-mono); white-space: nowrap; }
+.skill-upload-file-row [data-slot="button"] { flex: 0 0 auto; }
+.skill-upload-kind-group { min-width: 0; border: 0; padding: 0; }
+.skill-upload-kind-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.skill-upload-kind-option { display: grid; min-width: 0; min-height: 84px; gap: 7px; border: 1px solid var(--line); border-radius: 12px; padding: 13px; color: var(--mut); background: var(--card2-paper); cursor: pointer; text-align: left; transition: border-color .16s ease, background-color .16s ease, color .16s ease; }
+.skill-upload-kind-option:hover { border-color: color-mix(in srgb, var(--accent) 42%, var(--line)); color: var(--ink); }
+.skill-upload-kind-option[data-selected="true"] { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--ink); background: var(--accent-soft); box-shadow: 0 5px 16px var(--accent-shadow); }
+.skill-upload-kind-option__title { display: flex; min-width: 0; align-items: center; gap: 7px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.skill-upload-kind-option__title svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--accent); }
+.skill-upload-kind-option > span:last-child { color: var(--mut); font-size: 10px; line-height: 1.5; }
+.skill-upload-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.skill-upload-field--wide { grid-column: 1 / -1; }
+.skill-upload-check-panel { display: flex; min-height: 100%; flex-direction: column; }
+.skill-upload-check-list { display: grid; flex: 1; align-content: start; gap: 12px; padding: 20px; }
+.skill-upload-check { display: flex; min-width: 0; align-items: flex-start; gap: 9px; color: var(--mut); font-size: 12px; line-height: 1.5; }
+.skill-upload-check svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--warn); }
+.skill-upload-check--ready { color: var(--ink); }
+.skill-upload-check--ready svg { color: var(--ok); }
+.skill-upload-check--neutral svg { color: var(--dim); }
+.skill-upload-ready-note { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--mut); font-size: 11px; line-height: 1.55; }
+.skill-upload-ready-note--ready { color: var(--ok); font-weight: 700; }
+.skill-upload-error { min-width: 0; }
+.skill-upload-progress { border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 12px; padding: 12px 14px; color: var(--mut); background: var(--accent-soft); font-size: 11px; }
+.skill-upload-progress__line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.skill-upload-progress__track { height: 6px; overflow: hidden; margin-top: 9px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.skill-upload-progress__track span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .2s ease; }
+.skill-upload-actions { margin-top: 0; }
+.skill-upload-index { display: grid; gap: 7px; }
+.skill-upload-index__label { margin-bottom: 5px; color: var(--mut); font: 600 10px var(--font-mono); letter-spacing: .15em; text-transform: uppercase; }
+.skill-upload-index__step { display: flex; min-width: 0; align-items: center; gap: 9px; border: 0; border-left: 2px solid transparent; border-radius: 0 11px 11px 0; padding: 9px 10px; color: var(--mut); background: transparent; cursor: pointer; font-size: 12px; text-align: left; transition: color .16s ease, background-color .16s ease, border-color .16s ease; }
+.skill-upload-index__step:hover:not(:disabled) { color: var(--ink); background: var(--hover); }
+.skill-upload-index__step[data-current="true"] { border-left-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); font-weight: 700; }
+.skill-upload-index__step:disabled { cursor: default; opacity: .52; }
+.skill-upload-index__number { display: grid; width: 22px; height: 22px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line2); border-radius: 50%; color: var(--mut); background: var(--card-paper); font: 10px var(--font-mono); }
+.skill-upload-index__number svg { width: 13px; height: 13px; color: var(--ok); }
+.skill-upload-index__step[data-current="true"] .skill-upload-index__number { border-color: var(--accent); color: var(--primary-foreground); background: var(--accent); }
+.skill-upload-index__step[data-complete="true"] .skill-upload-index__number { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); background: color-mix(in srgb, var(--ok) 12%, var(--card-paper)); }
+.skill-upload-index__note { margin: 16px 0 0; border-top: 1px solid var(--line); padding-top: 14px; color: var(--dim); font-size: 11px; line-height: 1.55; }
+
+@media (max-width: 980px) {
+    .skill-upload-layout { grid-template-columns: 1fr; }
+    .skill-upload-index { display: flex; gap: 5px; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 2px 0 7px; border-bottom: 1px solid var(--line); }
+    .skill-upload-index__label,
+    .skill-upload-index__note { display: none; }
+    .skill-upload-index__step { flex: 0 0 auto; border-left: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 10px; white-space: nowrap; }
+    .skill-upload-index__step[data-current="true"] { border-bottom-color: var(--accent); background: transparent; }
+}
+
+@media (max-width: 720px) {
+    .skill-upload-actions .ui-action-bar__actions { display: flex; flex-wrap: wrap; justify-content: stretch; }
+    .skill-upload-actions .ui-action-bar__actions > [data-slot="button"] { min-width: 0; flex: 1 1 120px; }
+}
+
+@media (max-width: 560px) {
+    .skill-upload-panel-head { padding: 17px; }
+    .skill-upload-panel-body,
+    .skill-upload-check-list { padding: 17px; }
+    .skill-upload-form-grid,
+    .skill-upload-kind-grid { grid-template-columns: 1fr; }
+    .skill-upload-field--wide { grid-column: auto; }
+    .skill-upload-dropzone { min-height: 190px; padding: 19px; }
+    .skill-upload-actions .ui-action-bar__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .skill-upload-actions .ui-action-bar__actions > [data-slot="button"] { width: 100%; }
+    .skill-upload-actions .ui-action-bar__actions > [data-slot="button"]:first-child:nth-last-child(2) { grid-column: 1 / -1; }
+}
