@@ -1,6 +1,7 @@
 import { CheckIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import './step-indicator.css'
 
 export interface StepIndicatorItem {
   id: string

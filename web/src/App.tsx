@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter } from 'react-router-dom'
 import { AppShell } from './components/app-shell'
-import { FirstRunWizard } from './components/first-run-wizard'
+import { FirstRunWizard } from './components/setup/first-run-wizard'
 import { getLanguage, getSetupStatus } from './lib/api'
 import i18n from './i18n'
 
