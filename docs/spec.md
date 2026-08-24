@@ -1,6 +1,6 @@
 # Agent Context — Platform Spec
 
-> **Current state (2026-08-23)**: T1–T14 are delivered; the application runs as a direct ASP.NET Core Host and Docker Compose supplies PostgreSQL. OpenTelemetry export is optional and uses a configured OTLP collector. Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0009` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
+> **Current state (2026-08-23)**: T1–T14 are delivered; the application runs as a direct ASP.NET Core Host and Docker Compose supplies PostgreSQL. OpenTelemetry export is optional and uses a configured OTLP collector. Terminology: `CONTEXT.md` · Decisions: `docs/adr/0001–0010` · Context bridge: `docs/handoffs/t1-t10-delivered.md` · Validation records: `docs/validation/` · Research: `docs/research/competitive-landscape.md`.
 
 ## 1. Positioning & Scope
 
@@ -60,12 +60,17 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Logs (Serilog.Sinks.OpenTelemetry dual-write) + traces + metrics are exported when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured; `service.name=agent-context`; resource attributes can come from `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
 - `OTEL_EXPORTER_OTLP_PROTOCOL` selects gRPC or HTTP/protobuf, and `OTEL_SDK_DISABLED` disables export; pipeline spans are instrumented (`learning-pipeline.process`).
 
-### 2.12 Hosting + CI/CD
+### 2.12 Embedded Observability — accepted target, implementation pending
+- The accepted next design makes Trace the primary diagnostic record and persists in-process HTTP, MCP, Learning Engine, and background-work Traces, Spans, and sanitized Serilog Observability Logs locally in PostgreSQL.
+- Local persistence is independent of external OTLP export. The target external-only switch is `OTLP_COLLECTOR_EXPORT_DISABLED`; it must not disable local Trace capture. The detailed spec and sequenced tickets live in `.scratch/embedded-observability/`.
+- This section records the accepted target and does not claim that the current T13 runtime already has local Trace persistence.
+
+### 2.13 Hosting + CI/CD
 - **Default (no args)**: the Host runs directly as an ASP.NET Core application on `:8080`; PostgreSQL is an external dependency supplied by Docker Compose or another connection string.
 - The Docker image contains only the published Host and React UI. The UI, REST API, MCP endpoint, and health probe share one process and DI graph.
 - **GitHub Actions**: `build.yml` (web build → dotnet build/test on push/PR, one retry for Testcontainers flakiness) and `release.yml` (v* tags → multi-arch linux/amd64+arm64 image to GHCR `ghcr.io/danvic712/agent-context:latest` + tag, then a GitHub Release).
 
-### 2.13 Ops
+### 2.14 Ops
 - Auto-creates the database + applies migrations at startup; Docker Compose = Host image + external Postgres(pgvector); 191/191 tests green (seam + adapter suites).
 
 ## 3. Post-MVP Delivery Log
@@ -139,6 +144,7 @@ AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ─
 | 0007 | Redis deferred from MVP stack |
 | 0008 | Localization resources in one JSON file per locale, shared frontend/backend |
 | 0009 | Platform inference via configurable OpenAI-compatible providers and capability routes |
+| 0010 | Embedded Observability: local Trace persistence independent of external OTLP export |
 
 ## 9. Testing
 
@@ -156,4 +162,5 @@ Skill marketplace · enterprise SSO/audit · auto memory injection · git-synced
 - `docs/design/` (UI design exploration — botanical theme lineage)
 - `docs/guides/craft-agents-source.md` · `docs/skills/craft-agents-guide.md`
 - `docs/validation/t9-full-loop.md` · `t11-localization-ui.md` · `t12-ui-skill-package.md` · `t12-redesign-ui.md` · `t13-otel.md`
+- `docs/adr/0010-embedded-observability-local-diagnostics.md` · `.scratch/embedded-observability/spec.md`
 - `docs/research/competitive-landscape.md` (positioning evidence)

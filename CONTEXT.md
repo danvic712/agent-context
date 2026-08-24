@@ -43,6 +43,26 @@ route and capability binding. Cached input tokens are a subset of input tokens. 
 Analytics surface is deferred for redesign; Usage does not contain cost data.
 _Avoid_: billing record, telemetry
 
+**Trace**:
+A complete diagnostic context for one in-process operation, identified by a `trace_id` and containing one or more timed Spans and related Observability Logs. HTTP requests, MCP calls, Learning Engine runs, and background work can each produce a Trace.
+_Avoid_: request, when referring to the complete diagnostic context
+
+**Span**:
+A timed operation within a Trace, such as an HTTP server call, outbound HTTP call, database command, or application activity.
+_Avoid_: trace, log
+
+**Request**:
+An HTTP or MCP view of a Trace rooted at a server operation; it is a query projection for the UI, not a separate diagnostic record.
+_Avoid_: separate request record
+
+**Observability Log**:
+A persisted Serilog event associated with a Trace or Span when an Activity context exists, retaining structured fields only after the platform's sensitivity and size rules are applied.
+_Avoid_: application log, raw log
+
+**Embedded Observability**:
+The platform-local diagnostic surface for capturing and persisting Traces, Spans, and Observability Logs in PostgreSQL, independently of optional external OTLP export.
+_Avoid_: dashboard replacement, telemetry backend
+
 **Learning Engine**:
 The background pipeline that turns session summaries into knowledge — deduplication, chat extraction, conflict detection, embedding, and vector storage — running on the platform's configured inference routes.
 _Avoid_: extraction pipeline, knowledge worker
