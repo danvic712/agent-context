@@ -243,10 +243,11 @@ export function InferenceConfigForm({
               <div className="c-identity__note">{t('inference.configurationNameDescription')}</div>
             </div>
             <Field className="c-field">
-              <FieldLabel htmlFor="inference-name" className="c-field__label">{t('inference.configurationName')}</FieldLabel>
+              <FieldLabel htmlFor="inference-name" required className="c-field__label">{t('inference.configurationName')}</FieldLabel>
               <FieldContent>
                 <Input
                   id="inference-name"
+                  aria-required="true"
                   className="c-input"
                   value={draft.name}
                   onChange={(event) => onChange({ ...draft, name: event.target.value })}
@@ -285,10 +286,11 @@ export function InferenceConfigForm({
                     </div>
                     <div className="c-field-grid">
                       <Field className="c-field">
-                        <FieldLabel htmlFor={`route-provider-${capability}`} className="c-field__label">{t('inference.provider')}</FieldLabel>
+                        <FieldLabel htmlFor={`route-provider-${capability}`} required className="c-field__label">{t('inference.provider')}</FieldLabel>
                         <FieldContent>
                           <select
                             id={`route-provider-${capability}`}
+                            aria-required="true"
                             className="c-select"
                             value={route.providerId}
                             onChange={(event) => updateRoute(capability, { providerId: event.target.value })}
@@ -302,10 +304,11 @@ export function InferenceConfigForm({
                         </FieldContent>
                       </Field>
                       <Field className="c-field">
-                        <FieldLabel htmlFor={`route-model-${capability}`} className="c-field__label">{t('inference.model')}</FieldLabel>
+                        <FieldLabel htmlFor={`route-model-${capability}`} required className="c-field__label">{t('inference.model')}</FieldLabel>
                         <FieldContent>
                           <Input
                             id={`route-model-${capability}`}
+                            aria-required="true"
                             className="c-input"
                             value={route.model}
                             onChange={(event) => updateRoute(capability, { model: event.target.value })}
@@ -377,10 +380,11 @@ export function InferenceConfigForm({
                       </Button>
                     </div>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-name-${selectedProvider.id}`} className="c-field__label">{t('inference.providerName')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-name-${selectedProvider.id}`} required className="c-field__label">{t('inference.providerName')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-name-${selectedProvider.id}`}
+                          aria-required="true"
                           className="c-input"
                           value={selectedProvider.name}
                           onChange={(event) => updateProvider(selectedProvider.id, { name: event.target.value })}
@@ -395,10 +399,11 @@ export function InferenceConfigForm({
                       </FieldContent>
                     </Field>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-url-${selectedProvider.id}`} className="c-field__label">{t('inference.baseUrl')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-url-${selectedProvider.id}`} required className="c-field__label">{t('inference.baseUrl')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-url-${selectedProvider.id}`}
+                          aria-required="true"
                           className="c-input font-mono"
                           value={selectedProvider.baseUrl}
                           onChange={(event) => updateProvider(selectedProvider.id, { baseUrl: event.target.value })}
@@ -408,10 +413,11 @@ export function InferenceConfigForm({
                       </FieldContent>
                     </Field>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-key-${selectedProvider.id}`} className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-key-${selectedProvider.id}`} required={!draft.configuredProviderIds.includes(selectedProvider.id)} className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-key-${selectedProvider.id}`}
+                          aria-required={!draft.configuredProviderIds.includes(selectedProvider.id)}
                           className="c-input font-mono"
                           type="password"
                           value={selectedProvider.apiKey}

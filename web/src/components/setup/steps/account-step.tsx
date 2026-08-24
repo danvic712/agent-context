@@ -57,22 +57,22 @@ export function AccountStep({
           <div className="setup-surface-body">
             <div className="setup-field-grid">
               <Field className="setup-field">
-                <FieldLabel htmlFor="display-name" className="setup-field-label">{t('wizard.displayName')}</FieldLabel>
+                <FieldLabel htmlFor="display-name" required className="setup-field-label">{t('wizard.displayName')}</FieldLabel>
                 <FieldContent>
-                  <Input id="display-name" value={account.displayName} onChange={(event) => onAccountChange({ ...account, displayName: event.target.value })} autoComplete="name" placeholder={t('wizard.displayNamePlaceholder')} />
+                  <Input id="display-name" aria-required="true" value={account.displayName} onChange={(event) => onAccountChange({ ...account, displayName: event.target.value })} autoComplete="name" placeholder={t('wizard.displayNamePlaceholder')} />
                 </FieldContent>
               </Field>
               <Field className="setup-field">
-                <FieldLabel htmlFor="email" className="setup-field-label">{t('wizard.email')}</FieldLabel>
+                <FieldLabel htmlFor="email" required className="setup-field-label">{t('wizard.email')}</FieldLabel>
                 <FieldContent>
-                  <Input id="email" type="email" value={account.email} onChange={(event) => onAccountChange({ ...account, email: event.target.value })} autoComplete="email" placeholder={t('wizard.emailPlaceholder')} />
+                  <Input id="email" type="email" aria-required="true" value={account.email} onChange={(event) => onAccountChange({ ...account, email: event.target.value })} autoComplete="email" placeholder={t('wizard.emailPlaceholder')} />
                 </FieldContent>
               </Field>
             </div>
             <Field className="setup-field">
-              <FieldLabel htmlFor="password" className="setup-field-label">{t('wizard.password')}</FieldLabel>
+              <FieldLabel htmlFor="password" required className="setup-field-label">{t('wizard.password')}</FieldLabel>
               <FieldContent>
-                <Input id="password" type="password" value={account.password} onChange={(event) => onAccountChange({ ...account, password: event.target.value })} autoComplete="new-password" placeholder={t('wizard.passwordPlaceholder')} />
+                <Input id="password" type="password" aria-required="true" value={account.password} onChange={(event) => onAccountChange({ ...account, password: event.target.value })} autoComplete="new-password" placeholder={t('wizard.passwordPlaceholder')} />
                 <FieldDescription className="setup-field-description">{t('wizard.passwordHelp')}</FieldDescription>
               </FieldContent>
             </Field>

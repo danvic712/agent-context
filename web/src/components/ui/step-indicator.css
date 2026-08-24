@@ -7,7 +7,7 @@
 .ui-step-indicator__number { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line2); border-radius: 50%; color: var(--mut); background: var(--card-paper); font: 10px var(--font-mono); }
 .ui-step-indicator__number svg { width: 14px; height: 14px; color: var(--ok); }
 .ui-step-indicator__label { min-width: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 650; line-height: 1.35; }
-.ui-step-indicator__item[data-current="true"] .ui-step-indicator__step { border-color: transparent; border-bottom: 2px solid var(--accent); color: var(--accent-ink); background: var(--accent-soft); box-shadow: none; }
+.ui-step-indicator__item[data-current="true"] .ui-step-indicator__step { border-color: transparent; border-bottom: 2px solid var(--accent); color: var(--accent-ink); background: transparent; box-shadow: none; }
 .ui-step-indicator__item[data-current="true"] .ui-step-indicator__number { border-color: var(--accent); color: var(--primary-foreground); background: var(--accent); }
 .ui-step-indicator__item[data-complete="true"] .ui-step-indicator__number { border-color: color-mix(in srgb, var(--ok) 42%, var(--line)); background: color-mix(in srgb, var(--ok) 10%, var(--card-paper)); }
 .ui-step-indicator__step:disabled { cursor: default; opacity: .56; }
