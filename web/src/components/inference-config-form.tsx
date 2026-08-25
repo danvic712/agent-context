@@ -203,6 +203,8 @@ export function InferenceConfigForm({
   const allTargetsReady = routeReady('Chat') && routeReady('Embedding')
 
   const selectedProvider = providerFor(selectedProviderId)
+  const selectedProviderIsUsed = selectedProvider ? usedBy(selectedProvider.id).length > 0 : false
+  const selectedProviderKeyIsRequired = selectedProviderIsUsed && !draft.configuredProviderIds.includes(selectedProviderId)
 
   return (
     <div className={cn('c-layout', className)}>
@@ -380,11 +382,11 @@ export function InferenceConfigForm({
                       </Button>
                     </div>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-name-${selectedProvider.id}`} required className="c-field__label">{t('inference.providerName')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-name-${selectedProvider.id}`} required={selectedProviderIsUsed} className="c-field__label">{t('inference.providerName')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-name-${selectedProvider.id}`}
-                          aria-required="true"
+                          aria-required={selectedProviderIsUsed || undefined}
                           className="c-input"
                           value={selectedProvider.name}
                           onChange={(event) => updateProvider(selectedProvider.id, { name: event.target.value })}
@@ -399,11 +401,11 @@ export function InferenceConfigForm({
                       </FieldContent>
                     </Field>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-url-${selectedProvider.id}`} required className="c-field__label">{t('inference.baseUrl')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-url-${selectedProvider.id}`} required={selectedProviderIsUsed} className="c-field__label">{t('inference.baseUrl')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-url-${selectedProvider.id}`}
-                          aria-required="true"
+                          aria-required={selectedProviderIsUsed || undefined}
                           className="c-input font-mono"
                           value={selectedProvider.baseUrl}
                           onChange={(event) => updateProvider(selectedProvider.id, { baseUrl: event.target.value })}
@@ -413,11 +415,11 @@ export function InferenceConfigForm({
                       </FieldContent>
                     </Field>
                     <Field className="c-field">
-                      <FieldLabel htmlFor={`provider-key-${selectedProvider.id}`} required={!draft.configuredProviderIds.includes(selectedProvider.id)} className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</FieldLabel>
+                      <FieldLabel htmlFor={`provider-key-${selectedProvider.id}`} required={selectedProviderKeyIsRequired} className="c-field__label"><KeyRoundIcon size={13} /> {t('inference.apiKey')}</FieldLabel>
                       <FieldContent>
                         <Input
                           id={`provider-key-${selectedProvider.id}`}
-                          aria-required={!draft.configuredProviderIds.includes(selectedProvider.id)}
+                          aria-required={selectedProviderKeyIsRequired || undefined}
                           className="c-input font-mono"
                           type="password"
                           value={selectedProvider.apiKey}

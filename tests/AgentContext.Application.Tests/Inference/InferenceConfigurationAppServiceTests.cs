@@ -146,6 +146,42 @@ public sealed class InferenceConfigurationAppServiceTests
     }
 
     [Fact]
+    public async Task Verify_ignores_an_unconfigured_provider_not_used_by_any_route()
+    {
+        var requests = new List<(string Uri, string Authorization, string Body)>();
+        using var client = CreateValidationClient(requests, embeddingDimensions: 1536);
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(item => item.CreateClient("inference-validation")).Returns(client);
+        var secrets = new Mock<IInferenceSecretProtector>(MockBehavior.Strict);
+        var input = InferenceTestData.ValidInput(deepSeekApiKey: null) with
+        {
+            Providers =
+            [
+                InferenceTestData.ValidInput().Providers[0],
+                new(
+                    InferenceTestData.DeepSeekProviderId,
+                    "",
+                    "",
+                    "",
+                    null),
+            ],
+            Routes =
+            [
+                new(InferenceTestData.ChatRouteId, InferenceCapability.Chat, InferenceTestData.OpenAiProviderId, "gpt-4o-mini"),
+                new(InferenceTestData.EmbeddingRouteId, InferenceCapability.Embedding, InferenceTestData.OpenAiProviderId, "text-embedding-3-small"),
+            ],
+        };
+        var context = MockInferenceDbContext.Create();
+        var service = new InferenceConfigurationAppService(context.Object, secrets.Object, factory.Object);
+
+        var result = await service.VerifyAsync(input);
+
+        Assert.True(result.Valid);
+        Assert.Equal(2, requests.Count);
+        Assert.All(requests, request => Assert.StartsWith("https://api.openai.com/v1/", request.Uri));
+    }
+
+    [Fact]
     public async Task GetRuntimeOptions_resolves_chat_and_embedding_from_different_providers()
     {
         var configuration = InferenceTestData.ConfiguredConfiguration();

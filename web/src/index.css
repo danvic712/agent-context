@@ -215,6 +215,13 @@ html *::after {
         color 0.25s ease;
 }
 
+:where(
+    button:not(:disabled):not([aria-disabled="true"]),
+    [role="button"]:not(:disabled):not([aria-disabled="true"])
+) {
+    cursor: pointer;
+}
+
 /* ---------- Botanical helpers ---------- */
 .kicker {
     font-family: var(--font-mono);

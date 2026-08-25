@@ -134,14 +134,15 @@ public sealed class InferenceConfigurationAppService(
         }
 
         var existingProviders = await db.InferenceProviders.ToListAsync(cancellationToken);
-        var inputProviderIds = input.Providers.Select(provider => provider.Id).ToHashSet();
+        var usedProviderIds = input.Routes.Select(route => route.ProviderId).ToHashSet();
+        var inputProviderIds = usedProviderIds;
 
         foreach (var provider in existingProviders.Where(provider => !inputProviderIds.Contains(provider.Id)))
         {
             db.InferenceProviders.Remove(provider);
         }
 
-        foreach (var providerInput in input.Providers)
+        foreach (var providerInput in input.Providers.Where(provider => usedProviderIds.Contains(provider.Id)))
         {
             var provider = existingProviders.FirstOrDefault(item => item.Id == providerInput.Id);
             var apiKey = await ResolveApiKeyAsync(providerInput, provider);
@@ -188,12 +189,13 @@ public sealed class InferenceConfigurationAppService(
         ArgumentNullException.ThrowIfNull(input);
         ValidateShape(input);
 
+        var usedProviderIds = input.Routes.Select(route => route.ProviderId).ToHashSet();
         var existingProviders = await db.InferenceProviders
-            .Where(provider => input.Providers.Select(item => item.Id).Contains(provider.Id))
+            .Where(provider => usedProviderIds.Contains(provider.Id))
             .ToDictionaryAsync(provider => provider.Id, cancellationToken);
 
         var credentials = new Dictionary<Guid, string>();
-        foreach (var provider in input.Providers)
+        foreach (var provider in input.Providers.Where(provider => usedProviderIds.Contains(provider.Id)))
         {
             var existing = existingProviders.GetValueOrDefault(provider.Id);
             var key = await ResolveApiKeyAsync(provider, existing);
@@ -319,25 +321,6 @@ public sealed class InferenceConfigurationAppService(
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ProviderIdDuplicate);
         }
 
-        foreach (var provider in input.Providers)
-        {
-            if (string.IsNullOrWhiteSpace(provider.Name))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ProviderNameRequired);
-            }
-
-            if (!string.Equals(provider.ProviderType, OpenAiCompatibleProviderType, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ProviderTypeUnsupported);
-            }
-
-            if (!Uri.TryCreate(provider.BaseUrl?.Trim().TrimEnd('/'), UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-            {
-                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.BaseUrlInvalid);
-            }
-        }
-
         if (input.Routes is null || input.Routes.Count != 2)
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.RoutesRequired);
@@ -354,6 +337,26 @@ public sealed class InferenceConfigurationAppService(
         if (input.Routes.Select(route => route.Id).Distinct().Count() != input.Routes.Count)
         {
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.RouteIdDuplicate);
+        }
+
+        var usedProviderIds = input.Routes.Select(route => route.ProviderId).ToHashSet();
+        foreach (var provider in input.Providers.Where(provider => usedProviderIds.Contains(provider.Id)))
+        {
+            if (string.IsNullOrWhiteSpace(provider.Name))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ProviderNameRequired);
+            }
+
+            if (!string.Equals(provider.ProviderType, OpenAiCompatibleProviderType, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ProviderTypeUnsupported);
+            }
+
+            if (!Uri.TryCreate(provider.BaseUrl?.Trim().TrimEnd('/'), UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.BaseUrlInvalid);
+            }
         }
 
         foreach (var route in input.Routes)
