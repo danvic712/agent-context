@@ -19,6 +19,7 @@ interface ModelServiceStepProps {
   onChange: (draft: InferenceDraft) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onValidate: () => void
+  onSkip: () => void
 }
 
 export function ModelServiceStep({
@@ -30,6 +31,7 @@ export function ModelServiceStep({
   onChange,
   onSubmit,
   onValidate,
+  onSkip,
 }: ModelServiceStepProps) {
   const { t } = useTranslation()
 
@@ -48,6 +50,7 @@ export function ModelServiceStep({
       {error && <Alert variant="destructive" className="setup-alert"><AlertTitle>{t('wizard.setupFailed')}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
       <ActionBar sticky className="setup-action-bar" status={<ActionBarStatus>{t('wizard.stepTwoActionHint')}</ActionBarStatus>}>
         <Button type="button" variant="ghost" onClick={onBack} disabled={validating}><ArrowLeftIcon />{t('wizard.back')}</Button>
+        <Button type="button" variant="ghost" onClick={onSkip} disabled={validating}>{t('wizard.skipForNow')}</Button>
         <Button type="submit" size="lg" disabled={validating}>{validating ? t('inference.verifying') : t('wizard.testAndReview')} <ArrowRightIcon /></Button>
       </ActionBar>
     </form>

@@ -197,14 +197,14 @@ export async function postSetup(
   email: string,
   password: string,
   language: string,
-  inferenceConfiguration: InferenceConfigurationInput,
+  inferenceConfiguration?: InferenceConfigurationInput,
 ): Promise<SetupResult> {
   const { data } = await http.post<SetupResult>('/setup', {
     displayName,
     email,
     password,
     language,
-    inferenceConfiguration,
+    inferenceConfiguration: inferenceConfiguration ?? null,
   })
   return data
 }

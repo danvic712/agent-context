@@ -17,7 +17,7 @@ public sealed class SetupController(ISetupAppService setup) : ControllerBase
     public async Task<ActionResult<SetupStatus>> GetStatus(CancellationToken cancellationToken)
         => Ok(await setup.GetStatusAsync(cancellationToken));
 
-    /// <summary>Configure the platform: creates the admin User and a Personal Workspace.</summary>
+    /// <summary>Configure the platform: creates the admin User and Personal Workspace; inference setup is optional.</summary>
     [HttpPost]
     public async Task<ActionResult<SetupResult>> Configure([FromBody] SetupRequest request, CancellationToken cancellationToken)
         => Ok(await setup.ConfigureAsync(request, cancellationToken));

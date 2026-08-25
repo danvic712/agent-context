@@ -34,6 +34,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const [account, setAccount] = useState<AccountForm>(emptyAccount)
   const [draft, setDraft] = useState<InferenceDraft>(() => createInferenceDraft())
   const [validation, setValidation] = useState<InferenceValidationResult | null>(null)
+  const [inferenceSkipped, setInferenceSkipped] = useState(false)
   const [language, setLanguage] = useState<string>(i18n.language)
   const [validating, setValidating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -41,7 +42,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const completionStartedRef = useRef(false)
 
   const accountReady = Boolean(account.displayName.trim() && account.email.includes('@') && account.password.length >= 8)
-  const serviceReady = validation?.valid === true
+  const serviceReady = inferenceSkipped || validation?.valid === true
   const stepItems: StepIndicatorItem[] = setupSteps.map((item) => ({ id: item.id, label: t(item.labelKey) }))
   const completedSteps: string[] = []
   if (accountReady && step !== 'account') completedSteps.push('account')
@@ -72,6 +73,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
 
   const validate = async () => {
     setError(null)
+    setInferenceSkipped(false)
     setValidating(true)
     try {
       const result = await verifyInferenceConfiguration(toInferenceInput(draft))
@@ -87,7 +89,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   }
 
   const finish = async () => {
-    if (completionStartedRef.current || submitting || !validation?.valid) return
+    if (completionStartedRef.current || submitting || !serviceReady) return
     completionStartedRef.current = true
     setError(null)
     setSubmitting(true)
@@ -97,7 +99,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
         account.email.trim(),
         account.password,
         language,
-        toInferenceInput(draft),
+        inferenceSkipped ? undefined : toInferenceInput(draft),
       )
       onComplete()
     } catch (cause) {
@@ -123,6 +125,14 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
     if (await validate()) setStep('review')
   }
 
+  const skipInference = () => {
+    if (validating || submitting) return
+    setError(null)
+    setValidation(null)
+    setInferenceSkipped(true)
+    setStep('review')
+  }
+
   const pageTitle = step === 'account'
     ? t('wizard.pageTitleAccount')
     : step === 'service'
@@ -132,7 +142,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
     ? t('wizard.stepAccountPreferencesDescription')
     : step === 'service'
       ? t('wizard.stepModelServiceDescription')
-      : t('wizard.stepReviewDescription')
+      : t(inferenceSkipped ? 'wizard.reviewSkippedDescription' : 'wizard.stepReviewDescription')
 
   return (
     <PageFrame
@@ -193,9 +203,11 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
             onChange={(next) => {
               setDraft(next)
               setValidation(null)
+              setInferenceSkipped(false)
             }}
             onSubmit={(event) => void submitModelService(event)}
             onValidate={() => void validate()}
+            onSkip={skipInference}
           />
         ) : (
           <ReviewStep
@@ -204,8 +216,9 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
             error={error}
             language={language}
             serviceReady={serviceReady}
+            inferenceSkipped={inferenceSkipped}
             submitting={submitting}
-            onBack={() => { setError(null); setStep('service') }}
+            onBack={() => { setError(null); setInferenceSkipped(false); setStep('service') }}
             onFinish={finish}
           />
         )}

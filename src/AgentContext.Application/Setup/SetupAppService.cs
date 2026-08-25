@@ -26,11 +26,6 @@ public sealed class SetupAppService(
         ArgumentNullException.ThrowIfNull(request);
         Validate(request);
 
-        if (request.InferenceConfiguration is null)
-        {
-            throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Inference.ConfigurationRequired);
-        }
-
         if (await db.Users.AnyAsync(cancellationToken))
         {
             throw new LocalizedException(HttpStatusCode.Conflict, ErrorCodes.Setup.AlreadyConfigured);
