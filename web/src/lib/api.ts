@@ -363,6 +363,11 @@ export async function readSkillFile(id: string, path: string): Promise<Blob> {
   return data
 }
 
+export async function downloadSkillPackage(id: string): Promise<Blob> {
+  const { data } = await http.get<Blob>(`/skills/${id}/download`, { responseType: 'blob' })
+  return data
+}
+
 export interface EngineHealth {
   queuedSessions: number
   processingSessions: number
