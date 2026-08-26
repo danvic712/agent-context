@@ -3,21 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import type { SkillItem, SkillSourceType } from '@/lib/api'
+import type { SkillItem } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { skillSourceKey } from './skill-source'
 
 interface SkillCardProps {
   item: SkillItem
   highlighted?: boolean
-}
-
-const sourceKey = (sourceType: SkillSourceType | null): string => {
-  if (sourceType === 'manual') return 'skills.sourceManual'
-  if (sourceType === 'file') return 'skills.sourceFile'
-  if (sourceType === 'zip') return 'skills.sourceZip'
-  if (sourceType === 'skills_sh') return 'skills.sourceSkillsSh'
-  if (sourceType === 'local_copy') return 'skills.sourceLocalCopy'
-  return 'skills.sourceUnknown'
 }
 
 export function SkillCard({ item, highlighted = false }: SkillCardProps) {
@@ -64,7 +56,7 @@ export function SkillCard({ item, highlighted = false }: SkillCardProps) {
           <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/70 pt-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
               <Badge variant="accent" className="font-mono text-[9px]">
-                {t(sourceKey(item.sourceType))}
+                {t(skillSourceKey(item.sourceType))}
               </Badge>
               <Badge variant="outline" className="font-mono text-[9px]">
                 {t('skills.statusInstalled')}
