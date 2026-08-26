@@ -41,6 +41,39 @@ public sealed class SkillPackageStoreTests
     }
 
     [Fact]
+    public async Task Create_package_archive_contains_the_persisted_files_and_preserves_binary_content()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var store = new SkillPackageStore(root);
+            var binary = new byte[] { 0, 1, 2, 255 };
+
+            await store.CreatePackageFromZipAsync(
+                "dev",
+                "downloadable-guide",
+                3,
+                Zip(
+                    ("downloadable-guide/SKILL.md", Encoding.UTF8.GetBytes("# Guide")),
+                    ("downloadable-guide/examples/run.bin", binary)),
+                CancellationToken.None);
+
+            await using var stream = await store.CreatePackageArchiveAsync(
+                "dev", "downloadable-guide", 3, CancellationToken.None);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+
+            Assert.Equal(["SKILL.md", "examples/run.bin"],
+                archive.Entries.Select(entry => entry.FullName));
+            Assert.Equal(Encoding.UTF8.GetBytes("# Guide"), await ReadEntryAsync(archive, "SKILL.md"));
+            Assert.Equal(binary, await ReadEntryAsync(archive, "examples/run.bin"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Create_from_zip_seeds_skill_md_when_the_archive_omits_it()
     {
         var root = CreateTempDirectory();
@@ -245,6 +278,14 @@ public sealed class SkillPackageStoreTests
 
         stream.Position = 0;
         return stream;
+    }
+
+    private static async Task<byte[]> ReadEntryAsync(ZipArchive archive, string path)
+    {
+        await using var stream = archive.GetEntry(path)!.Open();
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+        return buffer.ToArray();
     }
 
     private static string CreateTempDirectory()

@@ -331,6 +331,15 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         return packages.ReadFile(domainName, slug, version, path);
     }
 
+    public async Task<SkillPackageDownload> DownloadPackageAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var (domainName, slug, version) = await ResolvePackageLocationAsync(id, cancellationToken);
+        var content = await packages.CreatePackageArchiveAsync(domainName, slug, version, cancellationToken);
+        return new SkillPackageDownload(content, $"{slug}-v{version}.zip");
+    }
+
     private async Task<Skill?> FindLatestAsync(string domainName, string slug, CancellationToken cancellationToken)
     {
         var workspaceId = await FirstWorkspaceIdAsync(cancellationToken);

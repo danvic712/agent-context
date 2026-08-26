@@ -100,6 +100,14 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
         return File(content, ContentType(path));
     }
 
+    /// <summary>Downloads the persisted package as a ZIP archive.</summary>
+    [HttpGet("{id:guid}/download")]
+    public async Task<IActionResult> Download(Guid id, CancellationToken cancellationToken)
+    {
+        var package = await skills.DownloadPackageAsync(id, cancellationToken);
+        return File(package.Content, "application/zip", package.FileName);
+    }
+
     private static string ContentType(string path)
     {
         return Path.GetExtension(path).ToLowerInvariant() switch

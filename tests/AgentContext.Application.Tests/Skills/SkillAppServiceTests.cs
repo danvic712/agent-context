@@ -14,6 +14,31 @@ namespace AgentContext.Application.Tests.Skills;
 public sealed class SkillAppServiceTests
 {
     [Fact]
+    public async Task Download_package_resolves_the_skill_location_and_returns_a_versioned_zip_name()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var skillId = Guid.NewGuid();
+        var skill = Skill("downloadable-guide", 3, domain, skillId, DateTimeOffset.UtcNow);
+        skill.SourceType = "zip";
+        var archive = new MemoryStream([1, 2, 3]);
+        var packages = new Mock<ISkillPackageStore>();
+        packages.Setup(store => store.CreatePackageArchiveAsync(
+                "dev", "downloadable-guide", 3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(archive);
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [skill]).Object,
+            packages.Object);
+
+        var result = await service.DownloadPackageAsync(skillId);
+
+        Assert.Same(archive, result.Content);
+        Assert.Equal("downloadable-guide-v3.zip", result.FileName);
+        packages.Verify(store => store.CreatePackageArchiveAsync(
+            "dev", "downloadable-guide", 3, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Create_from_zip_creates_a_zip_skill_and_uses_the_imported_main_file()
     {
         var workspace = Workspace("workspace");

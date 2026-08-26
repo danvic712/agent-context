@@ -93,6 +93,48 @@ public sealed class SkillPackageStore(string rootDirectory) : ISkillPackageStore
         return File.ReadAllBytes(file);
     }
 
+    public async Task<Stream> CreatePackageArchiveAsync(
+        string domainName,
+        string slug,
+        int version,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var directory = PackageDirectory(domainName, slug, version);
+        if (!Directory.Exists(directory))
+        {
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.FileNotFound, "package");
+        }
+
+        var archiveStream = new MemoryStream();
+        try
+        {
+            using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+                    .OrderBy(file => file, StringComparer.Ordinal))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var relativePath = Path.GetRelativePath(directory, file)
+                        .Replace(Path.DirectorySeparatorChar, '/');
+                    var entry = archive.CreateEntry(relativePath, CompressionLevel.Fastest);
+                    await using var input = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    await using var output = entry.Open();
+                    await input.CopyToAsync(output, cancellationToken);
+                }
+            }
+
+            archiveStream.Position = 0;
+            return archiveStream;
+        }
+        catch
+        {
+            await archiveStream.DisposeAsync();
+            throw;
+        }
+    }
+
     public void AddFile(string domainName, string slug, int version, string path, byte[] content)
     {
         if (content.Length > MaxFileBytes)

@@ -63,4 +63,7 @@ public interface ISkillAppService
 
     /// <summary>Reads one package file as raw bytes.</summary>
     Task<byte[]> ReadFileAsync(Guid id, string path, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the persisted Skill package as a downloadable ZIP archive.</summary>
+    Task<SkillPackageDownload> DownloadPackageAsync(Guid id, CancellationToken cancellationToken = default);
 }

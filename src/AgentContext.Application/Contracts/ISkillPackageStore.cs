@@ -31,6 +31,13 @@ public interface ISkillPackageStore
     /// <summary>Reads a file's raw bytes.</summary>
     byte[] ReadFile(string domainName, string slug, int version, string path);
 
+    /// <summary>Creates a ZIP archive from the persisted package files.</summary>
+    Task<Stream> CreatePackageArchiveAsync(
+        string domainName,
+        string slug,
+        int version,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Adds the uploaded file to a new package.</summary>
     void AddFile(string domainName, string slug, int version, string path, byte[] content);
 

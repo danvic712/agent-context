@@ -57,7 +57,7 @@ public sealed class SkillConfiguration : IEntityTypeConfiguration<Skill>
             table.HasCheckConstraint("ck_skills_version_positive", "version >= 1");
             table.HasCheckConstraint(
                 "ck_skills_source_type",
-                "source_type IS NULL OR source_type IN ('manual', 'zip', 'skills_sh', 'local_copy')");
+                "source_type IS NULL OR source_type IN ('manual', 'file', 'zip', 'skills_sh', 'local_copy')");
         });
     }
 }
