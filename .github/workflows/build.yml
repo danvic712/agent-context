@@ -38,11 +38,29 @@ jobs:
           npm ci
           npm run build
       - name: Build
-        run: dotnet build tests/AgentContext.Tests/AgentContext.Tests.csproj -c Release -p:SkipSpaBuild=true
+        run: dotnet build AgentContext.slnx -c Release -p:SkipSpaBuild=true
       - name: Test
         run: |
+          mapfile -t test_projects < <(find tests -type f -name '*.csproj' | sort)
+          if ((${#test_projects[@]} == 0)); then
+            echo "No test projects found under tests/"
+            exit 1
+          fi
+
+          run_tests() {
+            local failed=0
+            for project in "${test_projects[@]}"; do
+              echo "Testing ${project}"
+              if ! dotnet test "${project}" -c Release --no-build; then
+                failed=1
+              fi
+            done
+            return "${failed}"
+          }
+
           # Testcontainers flakiness (a pgvector container occasionally dies mid-run,
           # surfacing as a transient Npgsql connection reset) is not a product
           # failure — retry once before failing the build.
-          dotnet test tests/AgentContext.Tests/AgentContext.Tests.csproj -c Release --no-build \
-            || dotnet test tests/AgentContext.Tests/AgentContext.Tests.csproj -c Release --no-build
+          if ! run_tests; then
+            run_tests
+          fi
