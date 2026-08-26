@@ -122,6 +122,15 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
 
   const submitModelService = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    // The form starts with provider suggestions and empty route/API-key
+    // values. Treat that untouched state as an intentional deferred setup so
+    // the first-run flow does not send an incomplete inference draft.
+    const hasInferenceInput = draft.routes.some((route) => route.model.trim()) ||
+      draft.providers.some((provider) => provider.apiKey.trim())
+    if (!hasInferenceInput) {
+      skipInference()
+      return
+    }
     if (await validate()) setStep('review')
   }
 

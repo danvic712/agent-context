@@ -15,8 +15,8 @@ public class AgentContextDbContext(DbContextOptions<AgentContextDbContext> optio
 {
     public virtual DbSet<Workspace> Workspaces => Set<Workspace>();
     public virtual DbSet<DomainEntity> Domains => Set<DomainEntity>();
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Membership> Memberships => Set<Membership>();
+    public virtual DbSet<User> Users => Set<User>();
+    public virtual DbSet<Membership> Memberships => Set<Membership>();
     public virtual DbSet<Session> Sessions => Set<Session>();
     public virtual DbSet<Knowledge> Knowledge => Set<Knowledge>();
     public virtual DbSet<Skill> Skills => Set<Skill>();

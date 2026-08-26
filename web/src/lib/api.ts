@@ -199,13 +199,14 @@ export async function postSetup(
   language: string,
   inferenceConfiguration?: InferenceConfigurationInput,
 ): Promise<SetupResult> {
-  const { data } = await http.post<SetupResult>('/setup', {
+  const request = {
     displayName,
     email,
     password,
     language,
-    inferenceConfiguration: inferenceConfiguration ?? null,
-  })
+    ...(inferenceConfiguration ? { inferenceConfiguration } : {}),
+  }
+  const { data } = await http.post<SetupResult>('/setup', request)
   return data
 }
 

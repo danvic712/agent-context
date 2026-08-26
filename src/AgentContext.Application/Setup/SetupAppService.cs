@@ -64,7 +64,7 @@ public sealed class SetupAppService(
         db.AppSettings.Add(new AppSetting { Key = SettingKeys.Language, Value = language });
 
         await db.SaveChangesAsync(cancellationToken);
-        if (request.InferenceConfiguration is not null)
+        if (HasInferenceInput(request.InferenceConfiguration))
         {
             if (inference is null)
             {
@@ -73,7 +73,7 @@ public sealed class SetupAppService(
 
             // The inference service joins the current transaction, so account,
             // workspace, membership, and model configuration are all-or-nothing.
-            await inference.SaveAsync(request.InferenceConfiguration, cancellationToken);
+            await inference.SaveAsync(request.InferenceConfiguration!, cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -103,4 +103,9 @@ public sealed class SetupAppService(
             throw new LocalizedException(HttpStatusCode.BadRequest, ErrorCodes.Settings.UnsupportedLanguage, request.Language);
         }
     }
+
+    private static bool HasInferenceInput(InferenceConfigurationInput? configuration)
+        => configuration is not null &&
+           (configuration.Routes?.Any(route => !string.IsNullOrWhiteSpace(route.Model)) == true ||
+            configuration.Providers?.Any(provider => !string.IsNullOrWhiteSpace(provider.ApiKey)) == true);
 }
