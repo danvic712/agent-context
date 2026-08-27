@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { LanguagesIcon } from 'lucide-react'
 import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import { StepIndicator, type StepIndicatorItem } from '@/components/ui/step-indicator'
+import { NativeSelect } from '@/components/ui/native-select'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { createInferenceDraft, toInferenceInput, type InferenceDraft } from '@/components/inference-config-form'
 import { postSetup, verifyInferenceConfiguration, type InferenceValidationResult } from '@/lib/api'
@@ -167,10 +168,10 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
                 <label className="setup-locale-control">
                   <LanguagesIcon aria-hidden="true" />
                   <span className="sr-only">{t('wizard.language')}</span>
-                  <select value={language} onChange={(event) => void chooseLanguage(event.target.value)} aria-label={t('wizard.language')}>
+                  <NativeSelect value={language} onChange={(event) => void chooseLanguage(event.target.value)} aria-label={t('wizard.language')} wrapperClassName="setup-locale-control__select">
                     <option value="en-US">{t('wizard.english')}</option>
                     <option value="zh-CN">{t('wizard.chinese')}</option>
-                  </select>
+                  </NativeSelect>
                 </label>
                 <ThemeToggle />
               </div>

@@ -2,6 +2,7 @@ import { LanguagesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useActionFeedback } from './action-feedback'
+import { NativeSelect } from './native-select'
 import { saveLanguage } from '@/lib/api'
 import i18n from '@/i18n'
 
@@ -30,10 +31,10 @@ export function LanguageSwitcher() {
   return (
     <label className="ui-language-switcher" aria-label={t('appShell.language')}>
       <LanguagesIcon className="size-3.5 shrink-0" aria-hidden="true" />
-      <select value={language} onChange={(event) => void changeLanguage(event.target.value)} disabled={saving} aria-label={t('appShell.language')}>
+      <NativeSelect value={language} onChange={(event) => void changeLanguage(event.target.value)} disabled={saving} aria-label={t('appShell.language')} wrapperClassName="ui-language-switcher__select">
         <option value="en-US">{t('appShell.languageEnglishShort')}</option>
         <option value="zh-CN">{t('appShell.languageChineseShort')}</option>
-      </select>
+      </NativeSelect>
     </label>
   )
 }

@@ -4,6 +4,7 @@ import { ActivityIcon, CheckIcon, RefreshCwIcon, SparklesIcon } from 'lucide-rea
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Surface } from '@/components/ui/surface'
 import { getEngineHealth, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
 import { getEngineHealthState } from '@/lib/engine-health-state'
 
@@ -80,8 +81,8 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
       : t('engineHealth.statusDegradedDetail')
 
   return (
-    <section
-      id="engine-health"
+    <Surface
+      as="section"
       className={`c-panel c-engine-panel c-settings-anchor${className ? ` ${className}` : ''}`}
       data-engine-state={state}
       aria-labelledby="engine-health-title"
@@ -175,7 +176,7 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
           </div>
         )}
       </div>
-    </section>
+    </Surface>
   )
 }
 

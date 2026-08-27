@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SectionHeading, Surface } from '@/components/ui/surface'
+import { NativeSelect } from '@/components/ui/native-select'
 import type { SkillListSort, SkillSourceType } from '@/lib/api'
 
 export interface InstalledSkillFilters {
@@ -78,29 +79,31 @@ export function SkillSearchFilters({ filters, onChange, onClear }: SkillSearchFi
         </label>
         <label htmlFor="skill-search-source">
           <span className="c-field__label">{t('skills.sourceFilterLabel')}</span>
-          <select
+          <NativeSelect
             id="skill-search-source"
             aria-label={t('skills.sourceFilterLabel')}
-            className="c-select mt-1 h-9 w-full text-xs"
+            className="c-select text-xs"
+            wrapperClassName="mt-1"
             value={filters.sourceType}
             onChange={(event) => onChange({ ...filters, sourceType: event.target.value as SkillSourceType | '' })}
           >
             {sourceOptions.map((source) => (
               <option key={source || 'all'} value={source}>{t(source ? sourceLabelKey(source) : 'skills.allSources')}</option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         <label htmlFor="skill-search-sort">
           <span className="c-field__label">{t('skills.sortLabel')}</span>
-          <select
+          <NativeSelect
             id="skill-search-sort"
             aria-label={t('skills.sortLabel')}
-            className="c-select mt-1 h-9 w-full text-xs"
+            className="c-select text-xs"
+            wrapperClassName="mt-1"
             value={filters.sort}
             onChange={(event) => onChange({ ...filters, sort: event.target.value as SkillListSort })}
           >
             {sortOptions.map((sort) => <option key={sort} value={sort}>{t(`skills.sort.${sort}`)}</option>)}
-          </select>
+          </NativeSelect>
         </label>
       </div>
     </Surface>

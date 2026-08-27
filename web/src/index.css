@@ -962,7 +962,7 @@ html *::after {
 .ui-action-bar__status { display: flex; min-width: 0; align-items: center; gap: 8px; color: var(--mut); font-size: 11px; line-height: 1.4; }
 .ui-action-bar__status-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--hi); }
 .ui-action-bar__actions { display: flex; min-width: 0; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
-.ui-feedback-stack { position: fixed; right: max(20px, calc(var(--ui-page-gutter) + 56px)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 56px); z-index: var(--ui-z-feedback); display: flex; width: min(360px, calc(100vw - 32px)); flex-direction: column; gap: 8px; pointer-events: none; }
+.ui-feedback-stack { position: fixed; top: calc(var(--ui-topbar-height) + 16px); right: max(20px, var(--ui-page-gutter)); z-index: var(--ui-z-feedback); display: flex; width: min(360px, calc(100vw - 32px)); flex-direction: column; gap: 8px; pointer-events: none; }
 .ui-feedback { display: flex; min-width: 0; align-items: center; gap: 9px; border: 1px solid var(--line2); border-radius: 12px; padding: 11px 12px; color: var(--ink); background: var(--card-paper); box-shadow: 0 14px 34px color-mix(in srgb, var(--ink) 16%, transparent); font-size: 12px; pointer-events: auto; }
 .ui-feedback--success { border-color: color-mix(in srgb, var(--ok) 42%, var(--line)); color: var(--ok); }
 .ui-feedback--error { border-color: color-mix(in srgb, var(--red) 42%, var(--line)); color: var(--red); }
@@ -1000,7 +1000,7 @@ html *::after {
     .ui-action-bar__actions { width: 100%; }
     .ui-action-bar__actions > [data-slot="button"],
     .ui-action-bar__actions > .knowledge-action { flex: 1 1 auto; }
-    .ui-feedback-stack { right: 72px; width: min(360px, calc(100vw - 88px)); bottom: 72px; }
+    .ui-feedback-stack { top: calc(var(--ui-topbar-height) + 12px); right: 16px; width: min(360px, calc(100vw - 32px)); }
     .ui-back-to-top { right: 16px; bottom: 132px; }
 }
 
@@ -1110,4 +1110,143 @@ html *::after {
     .skill-upload-actions .ui-action-bar__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .skill-upload-actions .ui-action-bar__actions > [data-slot="button"] { width: 100%; }
     .skill-upload-actions .ui-action-bar__actions > [data-slot="button"]:first-child:nth-last-child(2) { grid-column: 1 / -1; }
+}
+
+/* Global select controls: shadcn-style trigger spacing and a shared indicator slot. */
+.ui-select {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.ui-select__control,
+select,
+.c-select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: var(--ui-control-height) !important;
+    min-height: var(--ui-control-height) !important;
+    border: 1px solid var(--line2) !important;
+    border-radius: 10px !important;
+    padding: 0 38px 0 12px !important;
+    outline: none !important;
+    color: var(--ink) !important;
+    background-color: var(--paper) !important;
+    background-image: none !important;
+    color-scheme: light;
+    cursor: pointer;
+    font: 500 12px/1.2 var(--font-sans);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+    appearance: none !important;
+}
+.ui-select__icon {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    color: var(--mut);
+    transform: translateY(-50%);
+    transition: color 160ms ease;
+}
+.ui-select:hover .ui-select__icon {
+    color: var(--accent);
+}
+.ui-select__control:hover:not(:disabled),
+select:hover:not(:disabled),
+.c-select:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 52%, var(--line2)) !important;
+    background-color: color-mix(in srgb, var(--paper) 88%, var(--accent-soft)) !important;
+}
+.ui-select__control:focus,
+select:focus,
+.c-select:focus,
+.ui-select__control:focus-visible,
+select:focus-visible,
+.c-select:focus-visible {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+.ui-select__control:disabled,
+select:disabled,
+.c-select:disabled {
+    cursor: wait;
+    opacity: .62;
+}
+.ui-select__control option,
+select option,
+.c-select option {
+    color: var(--ink);
+    background: var(--card-paper);
+}
+[data-theme="dark"] .ui-select__control,
+[data-theme="dark"] select,
+[data-theme="dark"] .c-select {
+    color-scheme: dark;
+}
+
+/* Compact language controls sit inside their own bordered pills. */
+.ui-language-switcher .ui-select {
+    width: 40px !important;
+    flex: 0 0 40px;
+}
+.ui-language-switcher .ui-select__control {
+    width: 40px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    appearance: none !important;
+    font: 600 10px/1 var(--font-mono);
+}
+.ui-language-switcher .ui-select__icon {
+    display: none;
+}
+.ui-language-switcher .ui-select__control:focus,
+.ui-language-switcher .ui-select__control:focus-visible {
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+.setup-locale-control .ui-select {
+    width: auto !important;
+    max-width: 150px;
+    flex: 0 1 auto;
+}
+.setup-locale-control .ui-select__control {
+    width: 100% !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    padding: 0 28px 0 6px !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    font-size: 11px;
+}
+.setup-locale-control .ui-select__control:focus,
+.setup-locale-control .ui-select__control:focus-visible {
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+@media (max-width: 720px) {
+    .setup-locale-control .ui-select {
+        max-width: none;
+        flex: 1 1 auto;
+    }
+}
+
+@media (max-width: 520px) {
+    .ui-language-switcher .ui-select,
+    .ui-language-switcher .ui-select__control {
+        width: 18px !important;
+    }
 }

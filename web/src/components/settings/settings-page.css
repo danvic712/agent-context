@@ -1,0 +1,252 @@
+/* ---------- Settings page (T33) ---------- */
+.settings-page__hero-meta {
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+}
+.settings-page__badge {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+    border-radius: 999px;
+    padding: 0 11px;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    font: 600 10px/1 var(--font-mono);
+    white-space: nowrap;
+}
+.settings-page__badge--muted {
+    border-color: var(--line);
+    color: var(--mut);
+    background: var(--card2-paper);
+}
+.settings-page__index {
+    padding-top: 5px;
+}
+.settings-page__index-label {
+    margin-bottom: 9px;
+    color: var(--mut);
+    font: 600 9px/1 var(--font-mono);
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+.settings-page__index a {
+    display: block;
+    border-left: 2px solid transparent;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 10px;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+.settings-page__index a:hover,
+.settings-page__index a[aria-current="location"] {
+    border-left-color: var(--accent);
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+}
+.settings-page__index-note {
+    margin: 22px 10px 0;
+    border-top: 1px solid var(--line);
+    padding-top: 13px;
+    color: var(--mut);
+    font-size: 10px;
+    line-height: 1.5;
+}
+.settings-page__content {
+    display: grid;
+    gap: clamp(30px, 5vw, 58px);
+    min-width: 0;
+}
+.settings-page__section {
+    min-width: 0;
+    scroll-margin-top: calc(var(--ui-topbar-height) + 18px);
+}
+.settings-page__section-heading {
+    align-items: flex-end;
+    margin-bottom: 16px;
+}
+.settings-page__section-heading .ui-section-heading__description {
+    color: var(--dim);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .035em;
+}
+.settings-page__preferences {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.settings-page__preference-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 20px 12px;
+}
+.settings-page__preference-heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 12px;
+}
+.settings-page__preference-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 12px;
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.settings-page__preference-icon svg {
+    width: 17px;
+    height: 17px;
+}
+.settings-page__preference-heading h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 750;
+}
+.settings-page__preference-heading p {
+    max-width: 38rem;
+    margin: 5px 0 0;
+    color: var(--mut);
+    font-size: 11px;
+    line-height: 1.55;
+}
+.settings-page__language-field {
+    display: grid;
+    max-width: none;
+    gap: 7px;
+    color: var(--mut);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Keep the original segmented treatment while making each choice occupy one equal track. */
+.settings-page .c-segmented {
+    display: grid;
+    align-self: stretch;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 32px;
+    align-items: stretch;
+    margin-top: auto;
+}
+.settings-page .c-segmented__item {
+    width: 100%;
+    min-width: 0;
+    height: 32px !important;
+    min-height: 32px !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+.settings-page__loading {
+    padding: 20px;
+}
+
+/* Keep the existing inference controls readable as the shared page narrows. */
+.c-readiness {
+    top: calc(var(--ui-topbar-height) + 16px);
+}
+.c-panel__header > :first-child {
+    min-width: 0;
+}
+.c-route-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+.c-field-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+.c-check__detail {
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.c-verify-row__label {
+    min-width: 0;
+}
+.c-button--primary {
+    color: var(--primary-foreground) !important;
+}
+
+@media (max-width: 980px) {
+    .settings-page__index {
+        display: flex;
+        gap: 5px;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2px 0 7px;
+        border-bottom: 1px solid var(--line);
+    }
+    .settings-page__index-label,
+    .settings-page__index-note {
+        display: none;
+    }
+    .settings-page__index a {
+        flex: 0 0 auto;
+        border-left: 0;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        white-space: nowrap;
+    }
+    .settings-page__index a:hover,
+    .settings-page__index a[aria-current="location"] {
+        border-bottom-color: var(--accent);
+        border-left: 0;
+    }
+    .c-engine-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    }
+    .c-engine-metric:last-child {
+        display: block;
+    }
+}
+
+@media (max-width: 720px) {
+    .settings-page__hero-meta {
+        display: flex;
+        justify-items: start;
+        flex-wrap: wrap;
+    }
+    .settings-page__section-heading {
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+    .settings-page__preferences {
+        grid-template-columns: 1fr;
+    }
+    .c-panel__header {
+        flex-direction: column;
+    }
+    .c-panel__header > [data-slot="button"] {
+        width: 100%;
+    }
+    .c-engine-panel__header {
+        align-items: stretch;
+    }
+    .c-engine-action {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .settings-page__preference-card {
+        padding: 17px 17px 10px;
+    }
+    .c-engine-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .c-provider-editor .c-editor-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .c-provider-editor .c-editor-heading .c-button {
+        width: 100%;
+    }
+}

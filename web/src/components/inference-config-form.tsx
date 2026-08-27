@@ -18,6 +18,7 @@ import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
 import { Surface } from '@/components/ui/surface'
+import { NativeSelect } from '@/components/ui/native-select'
 import { cn } from '@/lib/utils'
 import type {
   InferenceCapability,
@@ -290,7 +291,7 @@ export function InferenceConfigForm({
                       <Field className="c-field">
                         <FieldLabel htmlFor={`route-provider-${capability}`} required className="c-field__label">{t('inference.provider')}</FieldLabel>
                         <FieldContent>
-                          <select
+                          <NativeSelect
                             id={`route-provider-${capability}`}
                             aria-required="true"
                             className="c-select"
@@ -302,7 +303,7 @@ export function InferenceConfigForm({
                                 {item.name || t('inference.providerNumber', { number: index + 1 })}
                               </option>
                             ))}
-                          </select>
+                          </NativeSelect>
                         </FieldContent>
                       </Field>
                       <Field className="c-field">
