@@ -18,7 +18,6 @@ interface SkillLibraryListProps {
   sentinelRef?: (node: HTMLDivElement | null) => void
   onLoadMore: () => void
   onRetry: () => void
-  onUpload: () => void
   onClearFilter?: () => void
 }
 
@@ -33,16 +32,15 @@ export function SkillLibraryList({
   sentinelRef,
   onLoadMore,
   onRetry,
-  onUpload,
   onClearFilter,
 }: SkillLibraryListProps) {
   const { t } = useTranslation()
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2" aria-busy="true" aria-label={t('skills.loading')}>
+      <div className="skill-library-card-grid" aria-busy="true" aria-label={t('skills.loading')}>
         {Array.from({ length: 6 }, (_, index) => (
-          <Card key={index} className="min-h-[188px] p-4">
+          <Card key={index} className="skill-library-card skill-library-card--skeleton p-0">
             <div className="flex items-start gap-3">
               <Skeleton className="size-10 rounded-xl" />
               <div className="flex-1 space-y-2">
@@ -76,7 +74,7 @@ export function SkillLibraryList({
   if (items.length === 0 && filterActive) {
     return (
       <>
-        <Card className="border-dashed bg-card/70">
+        <Card className="skill-library-empty border-dashed bg-card/70 p-0">
           <CardContent className="flex flex-col items-center justify-center px-6 py-14 text-center">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <SearchXIcon className="size-6" />
@@ -87,7 +85,7 @@ export function SkillLibraryList({
           </CardContent>
         </Card>
         <div ref={sentinelRef} aria-hidden="true" className="h-2" />
-        <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+        <div className="skill-library-pagination flex flex-col items-center justify-center gap-3 text-center">
           {hasMore ? (
             <Button type="button" variant="outline" onClick={onLoadMore} disabled={loadingMore}>
               {loadingMore && <LoaderCircleIcon data-icon="inline-start" className="size-3.5 animate-spin" />}
@@ -103,16 +101,13 @@ export function SkillLibraryList({
 
   if (items.length === 0) {
     return (
-      <Card className="border-dashed bg-card/70">
+      <Card className="skill-library-empty border-dashed bg-card/70 p-0">
         <CardContent className="flex flex-col items-center justify-center px-6 py-14 text-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <SearchXIcon className="size-6" />
           </div>
           <h2 className="serif mt-4 text-2xl font-semibold">{t('skills.emptyTitle')}</h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t('skills.emptyDescription')}</p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <Button type="button" onClick={onUpload}>{t('skills.uploadSkill')}</Button>
-          </div>
         </CardContent>
       </Card>
     )
@@ -129,11 +124,11 @@ export function SkillLibraryList({
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="skill-library-card-grid">
         {items.map((item) => <SkillCard key={item.id} item={item} highlighted={item.id === highlightedId} />)}
       </div>
       <div ref={sentinelRef} aria-hidden="true" className="h-2" />
-      <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+      <div className="skill-library-pagination flex flex-col items-center justify-center gap-3 text-center">
         {hasMore ? (
           <Button type="button" variant="outline" onClick={onLoadMore} disabled={loadingMore}>
             {loadingMore && <LoaderCircleIcon data-icon="inline-start" className="size-3.5 animate-spin" />}

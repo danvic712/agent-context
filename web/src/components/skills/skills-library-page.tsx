@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Badge } from '@/components/ui/badge'
-import { PageFrame, PageHeader } from '@/components/ui/page-frame'
-import { SkillActionBar } from './skill-action-bar'
+import { PageFrame } from '@/components/ui/page-frame'
 import { SkillLibraryList } from './skill-library-list'
+import { SkillPageHeader } from './skill-page-header'
 import { SkillSearchFilters, type InstalledSkillFilters } from './skill-search-filters'
 import { listSkills, type SkillItem } from '@/lib/api'
 
@@ -70,6 +69,9 @@ export function SkillsLibraryPage() {
     requestRef.current = controller
     setLoading(true)
     setLoadingMore(false)
+    setItems([])
+    setNextCursor(null)
+    setHasMore(false)
     setError(null)
     setErrorScope(null)
     try {
@@ -170,17 +172,12 @@ export function SkillsLibraryPage() {
   return (
     <PageFrame
       header={(
-      <PageHeader
-        eyebrow={t('skills.libraryKicker')}
-        title={t('skills.libraryTitle')}
-        description={t('skills.libraryDescription')}
-        actions={<Badge variant="accent" className="font-mono text-[10px]">{t('skills.localOnly')}</Badge>}
-      />
+        <SkillPageHeader items={items} loading={loading} hasMore={hasMore} />
       )}
     >
 
       {notice && (
-        <div className="mb-5 flex items-start gap-3 rounded-xl border border-ok/30 bg-ok/10 px-4 py-3 text-sm" role="status">
+        <div className="skill-library-notice" role="status">
           <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-ok" />
           <div className="min-w-0 flex-1">{notice}</div>
           {highlightedId && <Link className="shrink-0 text-xs font-medium text-primary underline-offset-4 hover:underline" to={`/skills/view/${highlightedId}`}>{t('skills.viewPackage')}</Link>}
@@ -188,33 +185,28 @@ export function SkillsLibraryPage() {
         </div>
       )}
 
-      <SkillActionBar
-        count={items.length}
-        refreshing={refreshing}
-        onUpload={() => navigate('/skills/upload')}
-        onRefresh={() => void refresh()}
-      />
-
       <SkillSearchFilters
         filters={draftFilters}
+        refreshing={refreshing}
         onChange={setDraftFilters}
         onClear={() => setDraftFilters(DEFAULT_FILTERS)}
-      />
-
-      <SkillLibraryList
-        items={items}
-        loading={loading}
-        loadingMore={loadingMore}
-        hasMore={hasMore}
-        error={error}
-        highlightedId={highlightedId}
-        filterActive={Boolean(appliedFilters.search || appliedFilters.domain || appliedFilters.sourceType)}
-        sentinelRef={(node) => { sentinelRef.current = node }}
-        onLoadMore={() => void loadMore()}
-        onRetry={() => void (errorScope === 'initial' ? loadInitial(appliedFilters) : loadMore())}
+        onRefresh={() => void refresh()}
         onUpload={() => navigate('/skills/upload')}
-        onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
-      />
+      >
+        <SkillLibraryList
+          items={items}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          error={error}
+          highlightedId={highlightedId}
+          filterActive={Boolean(appliedFilters.search || appliedFilters.domain || appliedFilters.sourceType)}
+          sentinelRef={(node) => { sentinelRef.current = node }}
+          onLoadMore={() => void loadMore()}
+          onRetry={() => void (errorScope === 'initial' ? loadInitial(appliedFilters) : loadMore())}
+          onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
+        />
+      </SkillSearchFilters>
     </PageFrame>
   )
 }
