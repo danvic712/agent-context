@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useActionFeedback } from '@/components/ui/action-feedback'
 import { PageFrame } from '@/components/ui/page-frame'
 import { SkillLibraryList } from './skill-library-list'
 import { SkillPageHeader } from './skill-page-header'
 import { SkillSearchFilters, type InstalledSkillFilters } from './skill-search-filters'
-import { listSkills, type SkillItem } from '@/lib/api'
+import { deleteSkill, listSkills, type SkillItem } from '@/lib/api'
 
 const PAGE_SIZE = 20
 const DEFAULT_FILTERS: InstalledSkillFilters = {
@@ -23,6 +24,7 @@ interface SkillsNavigationState {
 
 export function SkillsLibraryPage() {
   const { t } = useTranslation()
+  const { push } = useActionFeedback()
   const navigate = useNavigate()
   const location = useLocation()
   const navigationState = location.state as SkillsNavigationState | null
@@ -41,6 +43,7 @@ export function SkillsLibraryPage() {
   const [draftFilters, setDraftFilters] = useState<InstalledSkillFilters>(DEFAULT_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState<InstalledSkillFilters>(DEFAULT_FILTERS)
   const [highlightedId, setHighlightedId] = useState<string | null>(navigationState?.highlightId ?? null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(navigationState?.successSlug ? t('skills.uploadSuccess', { slug: navigationState.successSlug }) : null)
 
   useEffect(() => {
@@ -169,10 +172,25 @@ export function SkillsLibraryPage() {
     }
   }
 
+  const removeSkill = async (item: SkillItem) => {
+    if (deletingId || !window.confirm(t('skills.deleteConfirm', { slug: item.slug }))) return
+
+    setDeletingId(item.id)
+    try {
+      await deleteSkill(item.id)
+      await loadInitial(appliedFilters)
+      push(t('skills.deleteSuccess', { slug: item.slug }), 'success')
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : t('skills.failedDelete'), 'error')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <PageFrame
       header={(
-        <SkillPageHeader items={items} loading={loading} hasMore={hasMore} />
+        <SkillPageHeader items={items} loading={loading} hasMore={hasMore} onUpload={() => navigate('/skills/upload')} />
       )}
     >
 
@@ -191,8 +209,17 @@ export function SkillsLibraryPage() {
         onChange={setDraftFilters}
         onClear={() => setDraftFilters(DEFAULT_FILTERS)}
         onRefresh={() => void refresh()}
-        onUpload={() => navigate('/skills/upload')}
-      >
+      />
+      <div className="skill-library-results">
+        <div className="skill-library-results__head">
+          <div>
+            <p className="kicker">{t('skills.resultsKicker')}</p>
+            <h2>{t('skills.resultsTitle')}</h2>
+          </div>
+          <p className="skill-library-results__count" aria-live="polite">
+            {loading ? '—' : t('skills.resultsCount', { count: items.length })}
+          </p>
+        </div>
         <SkillLibraryList
           items={items}
           loading={loading}
@@ -205,8 +232,10 @@ export function SkillsLibraryPage() {
           onLoadMore={() => void loadMore()}
           onRetry={() => void (errorScope === 'initial' ? loadInitial(appliedFilters) : loadMore())}
           onClearFilter={() => setDraftFilters(DEFAULT_FILTERS)}
+          deletingId={deletingId}
+          onDelete={(item) => void removeSkill(item)}
         />
-      </SkillSearchFilters>
+      </div>
     </PageFrame>
   )
 }

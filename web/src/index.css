@@ -1075,6 +1075,7 @@ html *::after {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.skill-library-header-actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .skill-library-notice {
     display: flex;
     min-width: 0;
@@ -1144,13 +1145,32 @@ html *::after {
     padding: 20px 0 22px;
 }
 .skill-library-filter__fields > label:nth-child(1) { grid-column: span 2; }
-.skill-library-filter__results { min-width: 0; }
+.skill-library-results { min-width: 0; margin-top: 18px; }
+.skill-library-results__head { display: flex; min-width: 0; align-items: flex-end; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+.skill-library-results__head h2 { margin: 6px 0 0; color: var(--ink); font: 600 clamp(21px, 2.4vw, 28px)/1 var(--font-display); letter-spacing: -.035em; }
+.skill-library-results__count { flex: 0 0 auto; margin: 0; color: var(--mut); font: 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.skill-library-results .skill-library-card-grid { margin-top: 16px; }
+@keyframes skill-library-reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.skill-library-results__head { animation: skill-library-reveal .42s ease-out both; }
+.skill-library-card-shell { animation: skill-library-reveal .46s ease-out both; }
+.skill-library-card-shell:nth-child(2) { animation-delay: .04s; }
+.skill-library-card-shell:nth-child(3) { animation-delay: .08s; }
+.skill-library-card-shell:nth-child(4) { animation-delay: .12s; }
+.skill-library-card-shell:nth-child(5) { animation-delay: .16s; }
+.skill-library-card-shell:nth-child(6) { animation-delay: .20s; }
+.skill-library-card-shell:nth-child(7) { animation-delay: .24s; }
+.skill-library-card-shell:nth-child(8) { animation-delay: .28s; }
 .skill-library-card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
     min-width: 0;
 }
+.skill-library-card-shell { position: relative; min-width: 0; min-height: 218px; }
+.skill-library-card-shell > a { height: 100%; }
 .skill-library-card {
     position: relative;
     min-width: 0;
@@ -1197,6 +1217,7 @@ html *::after {
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 14px;
+    padding-right: 38px;
 }
 .skill-library-card__domain,
 .skill-library-card__source,
@@ -1303,6 +1324,17 @@ html *::after {
     background: var(--accent-soft);
     transform: translateY(-1px);
 }
+.skill-library-card__delete {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    opacity: .78;
+    transition: opacity .16s ease, transform .16s ease;
+}
+.skill-library-card__delete:hover { opacity: 1; transform: translateY(-1px); }
+.skill-library-card__delete:focus-visible { opacity: 1; }
+.skill-library-card-shell:hover .skill-library-card__delete { opacity: 1; }
 .skill-library-card--skeleton { padding: 18px 20px 16px 22px !important; }
 .skill-library-empty { border-style: dashed; background: color-mix(in srgb, var(--card-paper) 72%, transparent); }
 .skill-library-pagination { display: flex; min-height: 52px; align-items: center; justify-content: center; padding-top: 18px; text-align: center; }
@@ -1313,6 +1345,7 @@ html *::after {
     .skill-library-filter__fields > label:nth-child(1) { grid-column: span 2; }
 }
 @media (max-width: 720px) {
+    .skill-library-header-actions { justify-content: flex-start; }
     .skill-library-filter__head { flex-direction: column; }
     .skill-library-filter__actions { width: 100%; min-width: 0; justify-content: stretch; }
     .skill-library-filter__actions > [data-slot="button"] { flex: 1 1 auto; }
@@ -1331,6 +1364,8 @@ html *::after {
     .skill-library-filter__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .skill-library-filter__actions > [data-slot="button"] { width: 100%; }
     .skill-library-filter__clear { grid-column: 1 / -1; }
+    .skill-library-results { margin-top: 14px; }
+    .skill-library-results__head { align-items: flex-start; flex-direction: column; gap: 8px; padding-bottom: 10px; }
     .skill-library-card-grid { grid-template-columns: 1fr; gap: 16px; }
     .skill-library-card__content { padding: 16px 16px 15px 19px; }
     .skill-library-card__footer { align-items: center; }

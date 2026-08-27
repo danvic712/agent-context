@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AgentContext.Host.Controllers;
 
-/// <summary>Uploaded Skill package creation and read-only package access.</summary>
+/// <summary>Uploaded Skill package creation, management, and package access.</summary>
 [ApiController]
 [Route("api/skills")]
 public sealed class SkillsController(ISkillAppService skills) : ControllerBase
@@ -88,6 +88,14 @@ public sealed class SkillsController(ISkillAppService skills) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SkillDetail>> Get(Guid id, CancellationToken cancellationToken)
         => Ok(await skills.GetAsync(id, cancellationToken));
+
+    /// <summary>Deletes a Skill and all of its versioned package files.</summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await skills.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 
     /// <summary>
     /// Read one package file (T12): raw bytes with a mime type derived from the

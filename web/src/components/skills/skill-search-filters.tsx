@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react'
-import { ListFilterIcon, RefreshCwIcon, UploadIcon, XIcon } from 'lucide-react'
+import { ListFilterIcon, RefreshCwIcon, XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,8 +19,6 @@ interface SkillSearchFiltersProps {
   onChange: (filters: InstalledSkillFilters) => void
   onClear: () => void
   onRefresh: () => void
-  onUpload: () => void
-  children?: ReactNode
 }
 
 const sourceOptions: Array<SkillSourceType | ''> = ['', 'manual', 'file', 'zip', 'skills_sh', 'local_copy']
@@ -35,7 +32,7 @@ const sourceLabelKey = (source: SkillSourceType): string => {
   return 'skills.sourceZip'
 }
 
-export function SkillSearchFilters({ filters, refreshing = false, onChange, onClear, onRefresh, onUpload, children }: SkillSearchFiltersProps) {
+export function SkillSearchFilters({ filters, refreshing = false, onChange, onClear, onRefresh }: SkillSearchFiltersProps) {
   const { t } = useTranslation()
   const activeFilterCount = [filters.search.trim(), filters.domain.trim(), filters.sourceType, filters.sort !== 'updated-desc' ? filters.sort : ''].filter(Boolean).length
 
@@ -57,10 +54,6 @@ export function SkillSearchFilters({ filters, refreshing = false, onChange, onCl
           <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={refreshing}>
             <RefreshCwIcon data-icon="inline-start" className={refreshing ? 'size-3.5 animate-spin' : 'size-3.5'} />
             {t('skills.refresh')}
-          </Button>
-          <Button type="button" size="sm" onClick={onUpload}>
-            <UploadIcon data-icon="inline-start" className="size-3.5" />
-            {t('skills.uploadSkill')}
           </Button>
           {activeFilterCount > 0 && (
             <Button type="button" size="sm" variant="ghost" className="skill-library-filter__clear" onClick={onClear}>
@@ -121,7 +114,6 @@ export function SkillSearchFilters({ filters, refreshing = false, onChange, onCl
           </NativeSelect>
         </label>
       </div>
-      {children && <div className="skill-library-filter__results">{children}</div>}
     </Surface>
   )
 }

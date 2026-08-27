@@ -289,6 +289,50 @@ public sealed class SkillAppService(AgentContextDbContext db, ISkillPackageStore
         return await ToDetailAsync(skill.s, skill.DomainName ?? "unknown", skill.s.Id == latestId, cancellationToken);
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var target = await db.Skills.AsNoTracking()
+            .Where(s => s.Id == id)
+            .Select(s => new
+            {
+                s.WorkspaceId,
+                s.DomainId,
+                s.Slug,
+                DomainName = s.Domain != null ? s.Domain.Name : null,
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+
+        if (string.IsNullOrWhiteSpace(target.DomainName))
+        {
+            throw new LocalizedException(HttpStatusCode.NotFound, ErrorCodes.Skill.NotFound, id);
+        }
+
+        var skillVersions = await db.Skills.AsNoTracking()
+            .Where(s => s.WorkspaceId == target.WorkspaceId
+                && s.DomainId == target.DomainId
+                && s.Slug == target.Slug)
+            .Select(s => s.Version)
+            .ToListAsync(cancellationToken);
+
+        // Package files are derived from the database metadata. Remove every
+        // version directory before deleting the rows so a successful request
+        // cannot leave a readable package behind.
+        foreach (var version in skillVersions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            packages.DeletePackage(target.DomainName, target.Slug, version);
+        }
+
+        await db.Skills
+            .Where(s => s.WorkspaceId == target.WorkspaceId
+                && s.DomainId == target.DomainId
+                && s.Slug == target.Slug)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task<SkillDetail> GetBySlugAsync(string domainName, string slug, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(domainName);

@@ -358,6 +358,10 @@ export async function getSkillById(id: string): Promise<SkillDetail> {
   return data
 }
 
+export async function deleteSkill(id: string): Promise<void> {
+  await http.delete(`/skills/${id}`)
+}
+
 export async function readSkillFile(id: string, path: string): Promise<Blob> {
   const { data } = await http.get<Blob>(`/skills/${id}/file`, { params: { path }, responseType: 'blob' })
   return data

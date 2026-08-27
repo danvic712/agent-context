@@ -19,6 +19,8 @@ interface SkillLibraryListProps {
   onLoadMore: () => void
   onRetry: () => void
   onClearFilter?: () => void
+  deletingId?: string | null
+  onDelete: (item: SkillItem) => void
 }
 
 export function SkillLibraryList({
@@ -33,6 +35,8 @@ export function SkillLibraryList({
   onLoadMore,
   onRetry,
   onClearFilter,
+  deletingId = null,
+  onDelete,
 }: SkillLibraryListProps) {
   const { t } = useTranslation()
 
@@ -125,7 +129,15 @@ export function SkillLibraryList({
         </Alert>
       )}
       <div className="skill-library-card-grid">
-        {items.map((item) => <SkillCard key={item.id} item={item} highlighted={item.id === highlightedId} />)}
+        {items.map((item) => (
+          <SkillCard
+            key={item.id}
+            item={item}
+            highlighted={item.id === highlightedId}
+            deleting={item.id === deletingId}
+            onDelete={() => onDelete(item)}
+          />
+        ))}
       </div>
       <div ref={sentinelRef} aria-hidden="true" className="h-2" />
       <div className="skill-library-pagination flex flex-col items-center justify-center gap-3 text-center">

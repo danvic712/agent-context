@@ -9,6 +9,22 @@ namespace AgentContext.Host.Tests;
 public sealed class SkillsControllerTests
 {
     [Fact]
+    public async Task Delete_removes_the_skill_and_returns_no_content()
+    {
+        var skillId = Guid.NewGuid();
+        var skills = new Mock<ISkillAppService>(MockBehavior.Strict);
+        skills.Setup(service => service.DeleteAsync(skillId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var controller = new SkillsController(skills.Object);
+
+        var result = await controller.Delete(skillId, CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+        skills.Verify(service => service.DeleteAsync(skillId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Download_returns_the_package_as_a_zip_attachment()
     {
         var skillId = Guid.NewGuid();

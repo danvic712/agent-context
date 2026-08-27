@@ -37,7 +37,6 @@ export function SkillDetailMetadata({ detail, sourceLabel }: SkillDetailMetadata
             <span className="size-1.5 rounded-full bg-ok" aria-hidden="true" />
             {t('skills.statusInstalled')}
           </Badge>
-          <Badge variant="outline">{t('skills.readOnly')}</Badge>
         </div>
         <dl className="skill-detail-metadata">
           <MetadataItem label={t('skills.domain')}>

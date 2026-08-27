@@ -1,4 +1,4 @@
-import { DownloadIcon, LoaderCircleIcon } from 'lucide-react'
+import { DownloadIcon, LoaderCircleIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { SkillFileInfo } from '@/lib/api'
@@ -8,9 +8,11 @@ interface SkillDetailActionsProps {
   isZipPackage: boolean
   downloading: boolean
   onDownload: () => void
+  deleting: boolean
+  onDelete: () => void
 }
 
-export function SkillDetailActions({ mainFile, isZipPackage, downloading, onDownload }: SkillDetailActionsProps) {
+export function SkillDetailActions({ mainFile, isZipPackage, downloading, onDownload, deleting, onDelete }: SkillDetailActionsProps) {
   const { t } = useTranslation()
   const downloadLabel = isZipPackage ? t('skills.downloadPackage') : t('skills.downloadMainFile')
   const downloadHint = isZipPackage ? t('skills.downloadPackageHint') : t('skills.downloadMainFileHint')
@@ -25,6 +27,12 @@ export function SkillDetailActions({ mainFile, isZipPackage, downloading, onDown
             ? <LoaderCircleIcon data-icon="inline-start" className="size-3.5 animate-spin" />
             : <DownloadIcon data-icon="inline-start" className="size-3.5" />}
           {downloadLabel}
+        </Button>
+        <Button type="button" size="sm" variant="destructive" onClick={onDelete} disabled={deleting}>
+          {deleting
+            ? <LoaderCircleIcon data-icon="inline-start" className="size-3.5 animate-spin" />
+            : <Trash2Icon data-icon="inline-start" className="size-3.5" />}
+          {t('skills.deleteSkill')}
         </Button>
       </div>
     </section>

@@ -5,8 +5,7 @@ namespace AgentContext.Application.Contracts;
 
 /// <summary>
 /// Skill package management: uploaded ZIP or single-file packages are persisted
-/// to the filesystem with metadata in the DB. The application surface is read-only
-/// after creation, apart from the two upload-based creation flows.
+/// to the filesystem with metadata in the DB.
 /// </summary>
 public interface ISkillAppService
 {
@@ -57,6 +56,12 @@ public interface ISkillAppService
 
     /// <summary>The Skill row with the given id and its package file manifest.</summary>
     Task<SkillDetail> GetAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the complete skill identified by any version row, including all
+    /// historical versions and their filesystem package directories.
+    /// </summary>
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Resolves the full package (manifest + all file contents) for agent consumption.</summary>
     Task<SkillPackage> GetPackageAsync(string domain, string slug, CancellationToken cancellationToken = default);

@@ -14,6 +14,25 @@ namespace AgentContext.Application.Tests.Skills;
 public sealed class SkillAppServiceTests
 {
     [Fact]
+    public async Task Delete_removes_all_versions_and_their_package_directories()
+    {
+        var workspace = Workspace("workspace");
+        var domain = CreateDomain("dev", workspace.Id);
+        var first = Skill("deletable-guide", 1, domain, Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(-1));
+        var latest = Skill("deletable-guide", 2, domain, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        latest.PreviousVersionId = first.Id;
+        var packages = new Mock<ISkillPackageStore>();
+        var service = new SkillAppService(
+            MockSkillDbContext.Create([workspace], [domain], [first, latest]).Object,
+            packages.Object);
+
+        await service.DeleteAsync(latest.Id);
+
+        packages.Verify(store => store.DeletePackage("dev", "deletable-guide", 1), Times.Once);
+        packages.Verify(store => store.DeletePackage("dev", "deletable-guide", 2), Times.Once);
+    }
+
+    [Fact]
     public async Task Download_package_resolves_the_skill_location_and_returns_a_versioned_zip_name()
     {
         var workspace = Workspace("workspace");

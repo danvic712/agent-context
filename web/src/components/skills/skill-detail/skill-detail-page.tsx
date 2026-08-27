@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircleIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useActionFeedback } from '@/components/ui/action-feedback'
 import { PageFrame } from '@/components/ui/page-frame'
-import { downloadSkillPackage, getSkillById, readSkillFile, type SkillDetail, type SkillFileInfo } from '@/lib/api'
+import { deleteSkill, downloadSkillPackage, getSkillById, readSkillFile, type SkillDetail, type SkillFileInfo } from '@/lib/api'
 import { skillSourceKey } from '../skill-source'
 import { buildFileTree, fileName, sortFiles } from './file-tree'
 import { SkillDetailActions } from './skill-detail-actions'
@@ -19,6 +19,7 @@ import './skill-detail.css'
 export function SkillDetailPage() {
   const { t } = useTranslation()
   const { push } = useActionFeedback()
+  const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [detail, setDetail] = useState<SkillDetail | null>(null)
   const [selectedSupportPath, setSelectedSupportPath] = useState('')
@@ -28,6 +29,7 @@ export function SkillDetailPage() {
   const [loadingMain, setLoadingMain] = useState(false)
   const [loadingSupport, setLoadingSupport] = useState(false)
   const [downloadingPath, setDownloadingPath] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const packageDownloadKey = '__package__'
@@ -158,6 +160,21 @@ export function SkillDetailPage() {
     push(t('skills.backToLibraryFeedback'), 'info')
   }
 
+  const deleteCurrentSkill = async () => {
+    if (!detail || deleting || !window.confirm(t('skills.deleteConfirm', { slug: detail.slug }))) return
+
+    setDeleting(true)
+    try {
+      await deleteSkill(detail.id)
+      push(t('skills.deleteSuccess', { slug: detail.slug }), 'success')
+      navigate('/skills', { replace: true })
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : t('skills.failedDelete'), 'error')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (loading) return <SkillDetailLoadingState />
   if (detailError && !detail) return <SkillDetailErrorState error={detailError} />
   if (!detail) return <SkillDetailErrorState error={t('skills.detailLoadFailed')} />
@@ -198,6 +215,8 @@ export function SkillDetailPage() {
               isZipPackage={detail.sourceType === 'zip'}
               downloading={downloadingPath === packageDownloadKey}
               onDownload={() => void downloadMainPackage()}
+              deleting={deleting}
+              onDelete={() => void deleteCurrentSkill()}
             />
           </aside>
         </div>
