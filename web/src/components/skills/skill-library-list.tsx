@@ -1,11 +1,13 @@
-import { LoaderCircleIcon, RefreshCwIcon, SearchXIcon } from 'lucide-react'
+import { BookOpenIcon, ChevronRightIcon, LoaderCircleIcon, RefreshCwIcon, SearchXIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SkillCard } from './skill-card'
 import type { SkillItem } from '@/lib/api'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { skillSourceKey } from './skill-source'
 
 interface SkillLibraryListProps {
   items: SkillItem[]
@@ -14,13 +16,13 @@ interface SkillLibraryListProps {
   hasMore: boolean
   error: string | null
   highlightedId: string | null
+  selectedId: string | null
   filterActive?: boolean
   sentinelRef?: (node: HTMLDivElement | null) => void
   onLoadMore: () => void
   onRetry: () => void
   onClearFilter?: () => void
-  deletingId?: string | null
-  onDelete: (item: SkillItem) => void
+  onSelect: (item: SkillItem) => void
 }
 
 export function SkillLibraryList({
@@ -30,31 +32,28 @@ export function SkillLibraryList({
   hasMore,
   error,
   highlightedId,
+  selectedId,
   filterActive = false,
   sentinelRef,
   onLoadMore,
   onRetry,
   onClearFilter,
-  deletingId = null,
-  onDelete,
+  onSelect,
 }: SkillLibraryListProps) {
   const { t } = useTranslation()
 
   if (loading) {
     return (
-      <div className="skill-library-card-grid" aria-busy="true" aria-label={t('skills.loading')}>
-        {Array.from({ length: 6 }, (_, index) => (
-          <Card key={index} className="skill-library-card skill-library-card--skeleton p-0">
-            <div className="flex items-start gap-3">
-              <Skeleton className="size-10 rounded-xl" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
+      <div className="skill-library-index__items" aria-busy="true" aria-label={t('skills.loading')}>
+        {Array.from({ length: 8 }, (_, index) => (
+          <div key={index} className="skill-library-index__skeleton">
+            <Skeleton className="size-8 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="h-2.5 w-1/2" />
             </div>
-            <Skeleton className="mt-5 h-10 w-full" />
-            <Skeleton className="mt-5 h-7 w-full" />
-          </Card>
+            <Skeleton className="h-3 w-7" />
+          </div>
         ))}
       </div>
     )
@@ -128,15 +127,34 @@ export function SkillLibraryList({
           </AlertDescription>
         </Alert>
       )}
-      <div className="skill-library-card-grid">
+      <div className="skill-library-index__items" role="list" aria-label={t('skills.listHeading')}>
         {items.map((item) => (
-          <SkillCard
+          <div
             key={item.id}
-            item={item}
-            highlighted={item.id === highlightedId}
-            deleting={item.id === deletingId}
-            onDelete={() => onDelete(item)}
-          />
+            className={cn(
+              'skill-library-index__row',
+              item.id === selectedId && 'is-selected',
+              item.id === highlightedId && 'is-highlighted',
+            )}
+            role="listitem"
+          >
+            <button
+              type="button"
+              className="skill-library-index__select"
+              aria-current={item.id === selectedId ? 'true' : undefined}
+              onClick={() => onSelect(item)}
+            >
+              <span className="skill-library-index__avatar" aria-hidden="true"><BookOpenIcon className="size-3.5" /></span>
+              <span className="skill-library-index__copy">
+                <strong>{item.name}</strong>
+                <small>{item.domainName || t('skills.noDomain')} · {t(skillSourceKey(item.sourceType))}</small>
+              </span>
+              <Badge variant="outline" className="skill-library-index__version font-mono text-[9px]">
+                {t('skills.version', { version: item.version })}
+              </Badge>
+              <ChevronRightIcon className="skill-library-index__chevron size-3.5" aria-hidden="true" />
+            </button>
+          </div>
         ))}
       </div>
       <div ref={sentinelRef} aria-hidden="true" className="h-2" />

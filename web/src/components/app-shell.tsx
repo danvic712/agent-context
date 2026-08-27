@@ -7,7 +7,6 @@ import { ActionFeedbackProvider } from '@/components/ui/action-feedback'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings/settings-page'
-import { SkillDetailPage } from '@/components/skills/skill-detail/skill-detail-page'
 import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
 import { SkillUploadPage } from '@/components/skills/skill-upload-page'
 import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
@@ -117,7 +116,6 @@ export function AppShell() {
             <Route path="/knowledge" element={<KnowledgeManager />} />
             <Route path="/skills" element={<SkillsLibraryPage />} />
             <Route path="/skills/upload" element={<SkillUploadPage />} />
-            <Route path="/skills/view/:id" element={<SkillDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/knowledge" replace />} />
           </Routes>

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { SkillUploadForm, type SkillUploadStep } from './skill-upload-form'
 import { uploadSkill, type SkillUploadInput } from '@/lib/api'
 import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import './skills.css'
 
 const UPLOAD_STEPS: Array<{ id: SkillUploadStep; number: number; labelKey: string }> = [
   { id: 'package', number: 1, labelKey: 'skills.uploadStepPackage' },
