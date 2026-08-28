@@ -6,7 +6,7 @@ import { FirstRunWizard } from './components/setup/first-run-wizard'
 import { AppLoadingSkeleton } from './components/ui/loading-skeletons'
 import { setupPath } from './lib/app-routes'
 import { getLanguage, getSetupStatus } from './lib/api'
-import i18n from './i18n'
+import locale from './locale'
 
 type Phase = 'loading' | 'setup' | 'app'
 
@@ -27,7 +27,7 @@ function AppContent() {
     // The UI language is the DB-configured platform language (T11): resolve it
     // first so the whole tree renders in it, then decide wizard vs app shell.
     getLanguage()
-      .then(({ language }) => i18n.changeLanguage(language))
+      .then(({ language }) => locale.changeLanguage(language))
       .catch(() => undefined)
       .then(() => getSetupStatus())
       .then((status) => setPhase(status.configured ? 'app' : 'setup'))

@@ -11,6 +11,7 @@ import { PageFrame } from '@/components/ui/page-frame'
 import {
   deleteSkill,
   downloadSkillPackage,
+  getUserFacingError,
   getSkillById,
   listSkills,
   readSkillFile,
@@ -154,7 +155,7 @@ export function SkillsLibraryPage() {
       setHasMore(page.hasMore)
     } catch (cause) {
       if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
-        setError(cause instanceof Error ? cause.message : t('skills.failedLoad'))
+        setError(getUserFacingError(cause, t('skills.failedLoad')))
         setErrorScope('initial')
       }
     } finally {
@@ -187,7 +188,7 @@ export function SkillsLibraryPage() {
       setHasMore(page.hasMore)
     } catch (cause) {
       if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
-        setError(cause instanceof Error ? cause.message : t('skills.failedLoadMore'))
+        setError(getUserFacingError(cause, t('skills.failedLoadMore')))
         setErrorScope('more')
       }
     } finally {
@@ -265,7 +266,7 @@ export function SkillsLibraryPage() {
       })
       .catch((cause) => {
         if (active && requestVersion === detailRequestVersionRef.current) {
-          setDetailError(cause instanceof Error ? cause.message : t('skills.detailLoadFailed'))
+          setDetailError(getUserFacingError(cause, t('skills.detailLoadFailed')))
         }
       })
       .finally(() => {
@@ -296,7 +297,7 @@ export function SkillsLibraryPage() {
         setMainContent(mainFile.binary ? '' : await blob.text())
       })
       .catch((cause) => {
-        if (active) setFileError(cause instanceof Error ? cause.message : t('skills.fileLoadFailed'))
+        if (active) setFileError(getUserFacingError(cause, t('skills.fileLoadFailed')))
       })
       .finally(() => {
         if (active) setLoadingMain(false)
@@ -320,7 +321,7 @@ export function SkillsLibraryPage() {
         setSupportContent(selectedSupportFile.binary ? '' : await blob.text())
       })
       .catch((cause) => {
-        if (active) setFileError(cause instanceof Error ? cause.message : t('skills.fileLoadFailed'))
+        if (active) setFileError(getUserFacingError(cause, t('skills.fileLoadFailed')))
       })
       .finally(() => {
         if (active) setLoadingSupport(false)
@@ -348,7 +349,7 @@ export function SkillsLibraryPage() {
       await loadInitial(appliedFilters)
       push(t('skills.deleteSuccess', { slug: detail.slug }), 'success')
     } catch (cause) {
-      push(cause instanceof Error ? cause.message : t('skills.failedDelete'), 'error')
+      push(getUserFacingError(cause, t('skills.failedDelete')), 'error')
     } finally {
       setRefreshing(false)
       setDeletingDetail(false)
@@ -368,7 +369,7 @@ export function SkillsLibraryPage() {
       URL.revokeObjectURL(url)
       push(t('skills.fileDownloaded', { name: fileName(file.path) }), 'success')
     } catch (cause) {
-      push(cause instanceof Error ? cause.message : t('skills.fileLoadFailed'), 'error')
+      push(getUserFacingError(cause, t('skills.fileLoadFailed')), 'error')
     } finally {
       setDownloadingPath('')
     }
@@ -392,7 +393,7 @@ export function SkillsLibraryPage() {
       URL.revokeObjectURL(url)
       push(t('skills.fileDownloaded', { name }), 'success')
     } catch (cause) {
-      push(cause instanceof Error ? cause.message : t('skills.fileLoadFailed'), 'error')
+      push(getUserFacingError(cause, t('skills.fileLoadFailed')), 'error')
     } finally {
       setDownloadingPath('')
     }

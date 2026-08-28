@@ -1,0 +1,88 @@
+{
+  "errorPages": {
+    "notFoundEyebrow": "PAGE NOT FOUND",
+    "errorEyebrow": "A SMALL SETBACK",
+    "notFoundCode": "404",
+    "errorCode": "500",
+    "notFoundTitle": "This path has gone quiet.",
+    "errorTitle": "We hit a small snag.",
+    "notFoundDescription": "This page may have moved, or the address may be out of date. Your saved knowledge is still safe.",
+    "errorDescription": "We couldn't finish loading this page. Try again or return to your knowledge library. Your saved knowledge is safe.",
+    "returnToKnowledge": "Back to Knowledge",
+    "openKnowledge": "Open knowledge library",
+    "goBack": "Go back",
+    "tryAgain": "Try again",
+    "safeRouteAvailable": "a safe place to return",
+    "retryAvailable": "ready to try again",
+    "workspace": "personal workspace",
+    "requestedRoute": "you opened · {{path}}"
+  },
+  "errors": {
+    "internal": {
+      "error": "Something went wrong. Please try again."
+    },
+    "setup": {
+      "displayNameRequired": "Display name is required.",
+      "emailInvalid": "A valid email is required.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "alreadyConfigured": "The platform has already been configured."
+    },
+    "inference": {
+      "notConfigured": "Model services are not set up yet. Complete the model service setup first.",
+      "nameRequired": "Configuration name is required.",
+      "configurationRequired": "Choose your model services before finishing setup.",
+      "providerRequired": "Add at least one model connection.",
+      "providerIdRequired": "Each model connection needs a name.",
+      "providerIdDuplicate": "Each model connection needs a different name.",
+      "providerNameRequired": "Enter a name for this model connection.",
+      "providerTypeUnsupported": "This model service isn't supported yet. Choose an OpenAI-compatible service.",
+      "baseUrlInvalid": "Enter a complete service address starting with http:// or https://.",
+      "apiKeyRequired": "Enter an API key for each new model connection.",
+      "routesRequired": "Choose one service for conversations and one for knowledge search.",
+      "capabilitiesRequired": "Choose a service for both conversations and knowledge search.",
+      "routeIdRequired": "Each service choice needs a name.",
+      "routeIdDuplicate": "Each service choice needs a different name.",
+      "providerNotFound": "Choose a model connection for each service.",
+      "modelRequired": "Choose a model for each service.",
+      "validationFailed": "Check both model connections before saving."
+    },
+    "skill": {
+      "slugExists": "A skill with this short name already exists in \"{1}\".",
+      "slugInvalid": "Use lowercase words separated by single hyphens for the short name.",
+      "nameRequired": "Name is required.",
+      "notFound": "We couldn't find skill {0}.",
+      "slugNotFound": "We couldn't find that skill in \"{1}\".",
+      "packageExists": "This skill already has version {2}.",
+      "filePathInvalid": "Choose a file path inside the skill, such as \"examples/tool.ts\".",
+      "fileNotFound": "We couldn't find file \"{0}\" in this skill.",
+      "fileTooLarge": "File \"{0}\" is larger than 10 MB.",
+      "packageTooLarge": "This skill is larger than the 50 MB limit.",
+      "importInvalid": "This file can't be imported. Check that it is a valid ZIP without unsafe paths.",
+      "pageSizeInvalid": "We couldn't load this list. Please try again.",
+      "cursorInvalid": "We couldn't continue loading this list.",
+      "sortInvalid": "We couldn't sort this list. Please try again.",
+      "versionConflict": "This version has changed. Reload the latest version before publishing.",
+      "versionReadOnly": "This is a previous version. Open the latest version to publish changes."
+    },
+    "session": {
+      "fullContextRequired": "Include the full conversation when you choose to remember it.",
+      "usageInvalid": "The usage details aren't valid. Please check the reported amounts.",
+      "notFound": "We couldn't find that activity."
+    },
+    "knowledge": {
+      "notFound": "Knowledge {0} not found.",
+      "notArchived": "Archived knowledge {0} not found.",
+      "notActive": "Active knowledge {0} not found.",
+      "archivedCannotRate": "Archived knowledge {0} must be restored before it can be rated.",
+      "pageSizeInvalid": "Choose a valid number of knowledge items to show.",
+      "cursorInvalid": "We couldn't continue loading the knowledge library."
+    },
+    "platform": {
+      "notConfigured": "The platform has not been configured yet. Run the first-run wizard first."
+    },
+    "settings": {
+      "unsupportedLanguage": "This language isn't available yet. Choose English or Simplified Chinese.",
+      "unsupportedTheme": "This theme isn't available yet. Choose Light, Dark, or System."
+    }
+  }
+}

@@ -8,7 +8,7 @@ namespace AgentContext.Application.Localization;
 /// positional arguments for interpolation. Call sites throw this instead of a
 /// bare English <see cref="ArgumentException"/>; the REST surface renders the
 /// <c>message</c> in the configured language (T11) and MCP tools localize through
-/// the same <see cref="ITranslationService"/>.
+/// the same <see cref="ILocalesAppService"/>.
 /// </summary>
 public sealed class LocalizedException : Exception
 {

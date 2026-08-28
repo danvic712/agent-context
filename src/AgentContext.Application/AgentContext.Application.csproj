@@ -12,12 +12,12 @@
 
   <ItemGroup>
     <!--
-      Single JSON localization store (ADR 0008): the same i18n/{locale}.json
-      files the frontend bundles via Vite are embedded here for the backend
-      (TranslationService loads them as manifest resources).
+      Grouped JSON localization resources (ADR 0008): the same
+      locales/{locale}/*.json files the frontend bundles via Vite are embedded
+      here for the backend (LocalesAppService loads each namespace resource).
     -->
-    <EmbeddedResource Include="..\..\i18n\en-US.json" LogicalName="i18n.en-US.json" />
-    <EmbeddedResource Include="..\..\i18n\zh-CN.json" LogicalName="i18n.zh-CN.json" />
+    <EmbeddedResource Include="..\..\locales\en-US\*.json" LogicalName="locales.en-US.%(Filename).json" />
+    <EmbeddedResource Include="..\..\locales\zh-CN\*.json" LogicalName="locales.zh-CN.%(Filename).json" />
   </ItemGroup>
 
   <ItemGroup>

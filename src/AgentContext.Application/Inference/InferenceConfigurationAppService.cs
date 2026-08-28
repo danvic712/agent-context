@@ -253,14 +253,19 @@ public sealed class InferenceConfigurationAppService(
                 return new InferenceValidationCheck(
                     capability,
                     false,
-                    $"The provider returned {(int)response.StatusCode} {response.ReasonPhrase}.");
+                    $"The provider returned {(int)response.StatusCode} {response.ReasonPhrase}.",
+                    "inference.verification.providerRejected");
             }
 
             await using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
             if (capability == InferenceCapability.Chat && !HasChatCompletion(document))
             {
-                return new InferenceValidationCheck(capability, false, "The chat response did not contain a completion.");
+                return new InferenceValidationCheck(
+                    capability,
+                    false,
+                    "The chat response did not contain a completion.",
+                    "inference.verification.chatResponseInvalid");
             }
 
             if (capability == InferenceCapability.Embedding && !HasEmbeddingDimension(document, EmbeddingDimension))
@@ -268,22 +273,39 @@ public sealed class InferenceConfigurationAppService(
                 return new InferenceValidationCheck(
                     capability,
                     false,
-                    $"The embedding response must contain {EmbeddingDimension} dimensions.");
+                    $"The embedding response must contain {EmbeddingDimension} dimensions.",
+                    "inference.verification.embeddingResponseInvalid");
             }
 
-            return new InferenceValidationCheck(capability, true, "Connection verified.");
+            return new InferenceValidationCheck(
+                capability,
+                true,
+                "Connection verified.",
+                "inference.verification.success");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return new InferenceValidationCheck(capability, false, "The provider request timed out.");
+            return new InferenceValidationCheck(
+                capability,
+                false,
+                "The provider request timed out.",
+                "inference.verification.timedOut");
         }
         catch (HttpRequestException exception)
         {
-            return new InferenceValidationCheck(capability, false, exception.Message);
+            return new InferenceValidationCheck(
+                capability,
+                false,
+                exception.Message,
+                "inference.verification.unreachable");
         }
         catch (JsonException)
         {
-            return new InferenceValidationCheck(capability, false, "The provider returned invalid JSON.");
+            return new InferenceValidationCheck(
+                capability,
+                false,
+                "The provider returned invalid JSON.",
+                "inference.verification.invalidResponse");
         }
     }
 

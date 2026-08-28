@@ -64,5 +64,5 @@ Root `CODING_STANDARDS.md` documents the repo's C# conventions (notably: interfa
 
 - `.gitignore` anchors `/skills/` (macOS `core.ignoreCase` would otherwise shadow `src/**/Skills/` source files) — never widen it back to a bare `skills/` glob, and use `git add -f` if a real skill needs force-adding.
 - OpenTelemetry export is opt-in: set `OTEL_EXPORTER_OTLP_ENDPOINT` (and optionally `OTEL_EXPORTER_OTLP_PROTOCOL`) to send logs, traces, and metrics to an OTLP collector. `OTEL_SDK_DISABLED=true` disables it explicitly.
-- i18n lives in a **single JSON store** at the repo root (`i18n/{locale}.json`, ADR 0008) — embedded by the backend, imported by the Vite frontend (needs `server.fs.allow: ['..']`).
+- Localization lives in grouped JSON resources at the repo root (`locales/{locale}/*.json`, ADR 0008) — embedded by the backend, imported by the Vite frontend (needs `server.fs.allow: ['..']`).
 - The MCP stdio subprocess is single-session; logs go to stderr to keep the JSON-RPC stream clean.

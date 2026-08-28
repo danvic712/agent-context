@@ -1,0 +1,88 @@
+{
+  "errorPages": {
+    "notFoundEyebrow": "页面未找到",
+    "errorEyebrow": "出现了一点小状况",
+    "notFoundCode": "404",
+    "errorCode": "500",
+    "notFoundTitle": "这条路径暂时没有回应。",
+    "errorTitle": "页面暂时出了点问题。",
+    "notFoundDescription": "页面可能已经移动，或者地址已过期。你保存的知识仍然安全。",
+    "errorDescription": "页面暂时没有加载完成。你可以重试，或返回知识库继续工作。已保存的知识不会受到影响。",
+    "returnToKnowledge": "返回知识库",
+    "openKnowledge": "打开知识库",
+    "goBack": "返回上一页",
+    "tryAgain": "重试",
+    "safeRouteAvailable": "可以返回熟悉的页面",
+    "retryAvailable": "可以再试一次",
+    "workspace": "个人工作区",
+    "requestedRoute": "刚才打开 · {{path}}"
+  },
+  "errors": {
+    "internal": {
+      "error": "出了点问题，请重试。"
+    },
+    "setup": {
+      "displayNameRequired": "需要填写显示名称。",
+      "emailInvalid": "需要有效的邮箱地址。",
+      "passwordTooShort": "密码至少需要 8 个字符。",
+      "alreadyConfigured": "平台已经配置完成。"
+    },
+    "inference": {
+      "notConfigured": "模型服务尚未配置，请先完成模型服务设置。",
+      "nameRequired": "需要填写配置名称。",
+      "configurationRequired": "请先选择模型服务，再完成设置。",
+      "providerRequired": "请至少添加一个模型连接。",
+      "providerIdRequired": "每个模型连接都需要名称。",
+      "providerIdDuplicate": "每个模型连接都需要使用不同的名称。",
+      "providerNameRequired": "请填写模型连接名称。",
+      "providerTypeUnsupported": "暂不支持这种模型服务，请选择 OpenAI 兼容服务。",
+      "baseUrlInvalid": "请输入完整的服务地址，并以 http:// 或 https:// 开头。",
+      "apiKeyRequired": "每个新模型连接都需要填写 API 密钥。",
+      "routesRequired": "请分别选择对话和知识搜索使用的服务。",
+      "capabilitiesRequired": "请同时选择对话和知识搜索服务。",
+      "routeIdRequired": "每个服务选择都需要名称。",
+      "routeIdDuplicate": "每个服务选择都需要使用不同的名称。",
+      "providerNotFound": "请为每项服务选择一个模型连接。",
+      "modelRequired": "请为每项服务选择模型。",
+      "validationFailed": "请先检查两个模型连接，再保存。"
+    },
+    "skill": {
+      "slugExists": "“{1}”中已经有使用这个短名称的技能。",
+      "slugInvalid": "短名称请使用小写单词，并用单个连字符分隔。",
+      "nameRequired": "需要填写名称。",
+      "notFound": "找不到技能 {0}。",
+      "slugNotFound": "在“{1}”中找不到这个技能。",
+      "packageExists": "这个技能已经有版本 {2}。",
+      "filePathInvalid": "请输入技能内的文件路径，例如“examples/tool.ts”。",
+      "fileNotFound": "在这个技能中找不到文件“{0}”。",
+      "fileTooLarge": "文件“{0}”超过 10 MB 限制。",
+      "packageTooLarge": "这个技能超过 50 MB 限制。",
+      "importInvalid": "无法导入这个文件，请确认它是有效的 ZIP，且不包含不安全路径。",
+      "pageSizeInvalid": "无法加载技能列表，请重试。",
+      "cursorInvalid": "技能列表暂时无法继续加载。",
+      "sortInvalid": "技能列表暂时无法排序，请重试。",
+      "versionConflict": "这个版本刚刚发生变化，请重新加载最新版本后再发布。",
+      "versionReadOnly": "这是之前的版本，请打开最新版本进行修改。"
+    },
+    "session": {
+      "fullContextRequired": "选择记住这次活动时，请同时提供完整内容。",
+      "usageInvalid": "用量信息不正确，请检查填写的数量。",
+      "notFound": "找不到这条活动记录。"
+    },
+    "knowledge": {
+      "notFound": "找不到知识条目 {0}。",
+      "notArchived": "找不到已归档的知识条目 {0}。",
+      "notActive": "找不到活跃的知识条目 {0}。",
+      "archivedCannotRate": "已归档的知识条目 {0} 需要先恢复后才能评分。",
+      "pageSizeInvalid": "请选择有效的知识条目显示数量。",
+      "cursorInvalid": "知识库暂时无法继续加载。"
+    },
+    "platform": {
+      "notConfigured": "平台尚未配置。请先运行首次设置向导。"
+    },
+    "settings": {
+      "unsupportedLanguage": "暂不支持这种语言，请选择 English 或简体中文。",
+      "unsupportedTheme": "暂不支持这种主题，请选择亮色、暗色或跟随系统。"
+    }
+  }
+}

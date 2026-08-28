@@ -12,7 +12,7 @@
 ## Status at handoff
 
 - `main` contains T1–T10 — **140/140 tests green** (re-verified 2026-08-16). Build note: two warnings remain in the test project — CS8619 (`tests/.../Testcontainers/McpProcess.cs:29`) and xUnit2013 (`tests/.../SeamTests/ConflictDetectionTests.cs:145`); not blockers, cleanup candidates.
-- Closed: #2–#11 (T1–T10). Open: **#12 (T11) — platform localization (en-US/zh-CN, single JSON store)**.
+- Closed: #2–#11 (T1–T10). Open at the time of this handoff: **#12 (T11) — platform localization (en-US/zh-CN, grouped locale resources)**.
 
 ## Repo conventions (must follow — see CODING_STANDARDS.md)
 
@@ -66,7 +66,7 @@
 
 ## Backlog (open tickets)
 
-- **#12 T11** — Platform localization (en-US/zh-CN, single JSON store, DB-configured language); no open blockers.
+- **#12 T11** — Platform localization (en-US/zh-CN, grouped locale resources, DB-configured language); no open blockers.
 - **#13 T12** — Product-grade UI refactor (Direction D, ref. `docs/design/ui-direction-d.html`) + color theme selector + Skill package model (filesystem storage); coordinates with #12 on i18n structure.
 - **#14 T13** — OpenTelemetry (logs+traces+metrics, enabled by default) + Aspire dashboard service in compose.
 

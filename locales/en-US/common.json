@@ -1,0 +1,40 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "save": "Save",
+    "saved": "Saved ✓"
+  },
+  "appShell": {
+    "title": "Agent Context",
+    "brandTagline": "Shared knowledge for your agents",
+    "home": "Go to Knowledge home",
+    "checking": "Checking…",
+    "healthy": "healthy",
+    "degraded": "degraded",
+    "engineStatusLabel": "Open engine status in Settings",
+    "engineHealthy": "Knowledge engine · {{queued}} waiting",
+    "engineAttention": "Knowledge engine · needs review",
+    "engineDegraded": "Knowledge engine · temporarily unavailable",
+    "workspace": "Personal workspace",
+    "crumb": "WORKSPACE / {{section}}",
+    "primaryNavigation": "Primary navigation",
+    "language": "Language",
+    "languageEnglishShort": "EN",
+    "languageChineseShort": "中",
+    "languageChanged": "Language updated.",
+    "languageChangeFailed": "Language could not be updated.",
+    "backToTop": "Back to top",
+    "dismissFeedback": "Dismiss notification",
+    "tabs": {
+      "knowledge": "Knowledge",
+      "review": "Review",
+      "archived": "Archived",
+      "skills": "Skills",
+      "health": "Engine",
+      "settings": "Settings"
+    }
+  }
+}

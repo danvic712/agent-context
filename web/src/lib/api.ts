@@ -16,6 +16,15 @@ export class ApiError extends Error {
   }
 }
 
+/** Keep transport details out of the interface. */
+export function getUserFacingError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const message = error.details.message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
 // All API calls go through axios (single instance, shared interceptors).
 const http = axios.create({ baseURL: '/api' })
 

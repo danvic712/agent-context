@@ -9,6 +9,8 @@ interface SkillDetailFileTreeProps {
 }
 
 function FileTreeNodeView({ node, selectedPath, onSelect }: { node: FileTreeNode; selectedPath: string; onSelect: (path: string) => void }) {
+  const { t } = useTranslation()
+
   if (node.kind === 'folder') {
     return (
       <details className="skill-file-tree__folder" open>
@@ -39,7 +41,7 @@ function FileTreeNodeView({ node, selectedPath, onSelect }: { node: FileTreeNode
     >
       <FileIcon className="size-3.5 shrink-0" aria-hidden="true" />
       <span className="skill-file-tree__name">{node.name}</span>
-      {node.info.binary && <span className="skill-file-tree__binary">BIN</span>}
+      {node.info.binary && <span className="skill-file-tree__binary">{t('skills.binaryShort')}</span>}
     </button>
   )
 }

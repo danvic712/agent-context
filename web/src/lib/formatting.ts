@@ -1,7 +1,7 @@
-import i18n from '@/i18n'
+import locale from '@/locale'
 
 function currentLocale() {
-  return i18n.resolvedLanguage ?? i18n.language ?? 'en-US'
+  return locale.resolvedLanguage ?? locale.language ?? 'en-US'
 }
 
 export function formatDate(value: string) {

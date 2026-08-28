@@ -354,10 +354,10 @@ export function InferenceConfigForm({
                     <span className="c-provider-mark"><ServerIcon size={14} /></span>
                     <span className="c-provider-meta">
                       <span className="c-provider-name">{provider.name || t('inference.provider')}</span>
-                      <span className="c-provider-url">{provider.providerType} · {provider.baseUrl || t('inference.missingEndpoint')}</span>
+                      <span className="c-provider-url">{t('inference.openAiCompatible')} · {provider.baseUrl || t('inference.missingEndpoint')}</span>
                       <span className="c-usage-tags">
                         {usedBy(provider.id).map((capability) => (
-                          <span key={capability} className="c-usage-tag">{capability === 'Chat' ? 'Chat' : 'Embedding'}</span>
+                          <span key={capability} className="c-usage-tag">{routeLabel(capability)}</span>
                         ))}
                       </span>
                     </span>

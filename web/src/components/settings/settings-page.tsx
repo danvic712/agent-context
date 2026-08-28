@@ -19,12 +19,13 @@ import {
 import {
   getInferenceConfiguration,
   getLanguage,
+  getUserFacingError,
   saveInferenceConfiguration,
   saveLanguage,
   verifyInferenceConfiguration,
   type InferenceValidationResult,
 } from '@/lib/api'
-import i18n from '@/i18n'
+import locale from '@/locale'
 import { useTheme, type ThemeMode } from '@/theme'
 import './settings-page.css'
 
@@ -37,7 +38,7 @@ export function SettingsPage() {
   const { push } = useActionFeedback()
   const [draft, setDraft] = useState<InferenceDraft | null>(null)
   const [validation, setValidation] = useState<InferenceValidationResult | null>(null)
-  const [language, setLanguage] = useState<string>(i18n.language)
+  const [language, setLanguage] = useState<string>(locale.language)
   const [loading, setLoading] = useState(true)
   const [validating, setValidating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -93,11 +94,11 @@ export function SettingsPage() {
       setDraft(createInferenceDraft(configuration))
       setValidation(null)
       setLanguage(lang.language)
-      if (lang.language !== i18n.language) {
-        await i18n.changeLanguage(lang.language)
+      if (lang.language !== locale.language) {
+        await locale.changeLanguage(lang.language)
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('settings.failedLoad'))
+      setError(getUserFacingError(cause, t('settings.failedLoad')))
     } finally {
       setLoading(false)
     }
@@ -115,7 +116,7 @@ export function SettingsPage() {
       setValidation(await verifyInferenceConfiguration(toInferenceInput(draft)))
     } catch (cause) {
       setValidation(null)
-      setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
+      setError(getUserFacingError(cause, t('settings.failedSave')))
     } finally {
       setValidating(false)
     }
@@ -131,20 +132,20 @@ export function SettingsPage() {
       setValidation(null)
       push(t('settings.saved'), 'success')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
+      setError(getUserFacingError(cause, t('settings.failedSave')))
     } finally {
       setSaving(false)
     }
   }
 
-  const changeLanguage = async (locale: string) => {
+  const changeLanguage = async (nextLocale: string) => {
     setError(null)
     try {
-      await saveLanguage(locale)
-      setLanguage(locale)
-      await i18n.changeLanguage(locale)
+      await saveLanguage(nextLocale)
+      setLanguage(nextLocale)
+      await locale.changeLanguage(nextLocale)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('settings.failedSave'))
+      setError(getUserFacingError(cause, t('settings.failedSave')))
     }
   }
 

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/ui/page-frame'
+import locale from '@/locale'
 import type { SkillItem } from '@/lib/api'
 
 interface SkillPageHeaderProps {
@@ -34,14 +35,14 @@ function SnapshotStat({
 }
 
 export function SkillPageHeader({ items, loading, hasMore, onUpload }: SkillPageHeaderProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const latestUpdatedAt = items.reduce<string | null>((latest, item) => {
     if (!latest || new Date(item.updatedAtUtc).getTime() > new Date(latest).getTime()) return item.updatedAtUtc
     return latest
   }, null)
   const domainCount = new Set(items.map((item) => item.domainName.trim()).filter(Boolean)).size
   const updatedLabel = latestUpdatedAt
-    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(latestUpdatedAt))
+    ? new Intl.DateTimeFormat(locale.language, { dateStyle: 'medium' }).format(new Date(latestUpdatedAt))
     : t('skills.snapshotNoDate')
 
   return (

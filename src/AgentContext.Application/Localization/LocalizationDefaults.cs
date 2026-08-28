@@ -10,7 +10,7 @@ public static class LocalizationDefaults
 {
     public const string DefaultLocale = "en-US";
 
-    /// <summary>Locales with a resource file in <c>i18n/{locale}.json</c>.</summary>
+    /// <summary>Locales with resources in <c>locales/{locale}/*.json</c>.</summary>
     public static readonly IReadOnlyList<string> SupportedLocales = ["en-US", "zh-CN"];
 
     /// <summary>

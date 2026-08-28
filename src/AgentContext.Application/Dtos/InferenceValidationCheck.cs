@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using AgentContext.Domain;
 
 namespace AgentContext.Application.Dtos;
@@ -6,4 +7,5 @@ namespace AgentContext.Application.Dtos;
 public sealed record InferenceValidationCheck(
     InferenceCapability Capability,
     bool Valid,
-    string? Message);
+    string? Message,
+    [property: JsonIgnore] string? MessageKey = null);

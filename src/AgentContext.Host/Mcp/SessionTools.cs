@@ -9,13 +9,13 @@ namespace AgentContext.Host.Mcp;
 /// The v1 toolset's save_session tool (spec §6.1 / T2): reports a session to the
 /// platform over MCP — domain tag, structured summary, optional remember, and
 /// an optional reported Usage payload. Errors are localized (T11) through the
-/// shared translation service in the configured platform language.
+/// shared locales app service in the configured platform language.
 /// </summary>
 [McpServerToolType]
 public sealed class SessionTools(
     ISaveSessionAppService sessions,
     ISettingsAppService settings,
-    ITranslationService translations)
+    ILocalesAppService locales)
 {
     [McpServerTool(Name = "save_session")]
     [Description("Records a session with the platform: a domain tag, a structured summary (task, conclusion, key snippets), optional remember of the full context, and an optional reported Usage payload.")]
@@ -29,7 +29,7 @@ public sealed class SessionTools(
         [Description("Name of the reporting agent instance.")] string? agentName = null,
         [Description("Usage reported for this completed conversation: model snapshot and input, cached input, and output token counts.")] SessionUsageInput? usage = null,
         CancellationToken cancellationToken = default)
-        => await McpErrorLocalizer.ExecuteAsync(settings, translations, () =>
+        => await McpErrorLocalizer.ExecuteAsync(settings, locales, () =>
             sessions.SaveAsync(
                 new SaveSessionRequest(
                     domain, task, conclusion, keySnippets, remember, fullContext,

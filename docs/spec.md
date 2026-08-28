@@ -49,7 +49,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - API keys are write-only at the REST boundary: reads return only configured/masked state. Changes apply immediately without a restart; the platform scope remains global in this MVP.
 
 ### 2.9 Localization (T11)
-- Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **single JSON resource store** shared by frontend and backend (`i18n/{locale}.json`, namespaces `ui` + `errors`, ADR 0008 — no .resx, one file per locale).
+- Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **grouped JSON resources** shared by frontend and backend (`locales/{locale}/*.json`, ADR 0008 — no .resx, one directory per locale).
 - react-i18next across all components; first-run wizard language step + settings dropdown; backend coded errors → localized `message` + stable `errorCode` (`LocalizedExceptionFilter`, REST + MCP); existing Knowledge untouched.
 
 ### 2.10 Product-grade UI + theme (T12)
@@ -80,7 +80,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 | T9 (#10) | Craft Agents integration + guide skill + full-loop validation | 2026-08-16 |
 | T10 (#11) | LLM endpoint configuration | 2026-08-16 |
 | T14 (#16) | Platform inference configuration: three tables, multi-provider routes, connection validation, and three-step setup | 2026-08-19 |
-| T11 (#12) | Platform localization (en-US/zh-CN, single JSON store) | 2026-08-16 |
+| T11 (#12) | Platform localization (en-US/zh-CN, grouped locale resources) | 2026-08-16 |
 | T12 (#13) | Product-grade UI + DB theme + Skill package model | 2026-08-16 |
 | T13 (#14) | OpenTelemetry | 2026-08-16 |
 

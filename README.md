@@ -100,14 +100,14 @@ C# split into class libraries by system function, one host project (single publi
 src/AgentContext.Domain/        entities + enums (no dependencies beyond pgvector types)
 src/AgentContext.Infrastructure/ EF Core DbContext + migrations + design-time factory
 src/AgentContext.Application/   application services (primary test seam) + AddApplicationServices
-                                + localization resources (embedded i18n JSON)
+                                + localization resources (embedded locale JSON)
 src/AgentContext.Host/          single no-args entrypoint: Program (ASP.NET Core host),
                                 Controllers/ (REST), Mcp/ (HTTP tools),
                                 Workers/ (session processing, knowledge hygiene),
                                 Observability/ (OTel), wwwroot (built UI)
 web/                            React UI (Vite + TS + shadcn/ui + react-i18next + shiki),
                                 built into the host's wwwroot
-i18n/                           single-store localization (ADR 0008): en-US.json, zh-CN.json
+locales/                        grouped localization (ADR 0008): one resource directory per locale
 skills/                         default skill-package root for local dev (Skills__Directory)
 docs/                           spec, ADRs, guides, design exploration, validation records
 tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)

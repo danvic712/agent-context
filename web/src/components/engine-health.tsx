@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { EngineMetricsSkeleton } from '@/components/ui/loading-skeletons'
 import { Surface } from '@/components/ui/surface'
-import { getEngineHealth, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
+import { getEngineHealth, getUserFacingError, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
 import { getEngineHealthState } from '@/lib/engine-health-state'
 
 type EngineError = {
@@ -33,7 +33,7 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
     } catch (cause) {
       setError({
         source: 'load',
-        message: cause instanceof Error ? cause.message : t('engineHealth.failedLoad'),
+        message: getUserFacingError(cause, t('engineHealth.failedLoad')),
       })
     } finally {
       if (showLoading) setLoading(false)
@@ -54,7 +54,7 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
     } catch (cause) {
       setError({
         source: 'run',
-        message: cause instanceof Error ? cause.message : t('engineHealth.failedRun'),
+        message: getUserFacingError(cause, t('engineHealth.failedRun')),
       })
     } finally {
       setRunningHygiene(false)

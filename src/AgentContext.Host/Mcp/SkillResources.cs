@@ -17,7 +17,7 @@ namespace AgentContext.Host.Mcp;
 public sealed class SkillResources(
     ISkillAppService skills,
     ISettingsAppService settings,
-    ITranslationService translations)
+    ILocalesAppService locales)
 {
     [McpServerResource(UriTemplate = "skill://{domain}/{slug}", Name = "Skill", MimeType = "text/markdown")]
     [Description("The latest version of a Skill's main instructions file (SKILL.md), resolved by domain and slug.")]

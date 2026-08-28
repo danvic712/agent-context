@@ -13,7 +13,7 @@ namespace AgentContext.Host;
 /// this filter is the single error seam on the REST surface.
 /// </summary>
 public sealed class LocalizedExceptionFilter(
-    ITranslationService translations,
+    ILocalesAppService locales,
     ISettingsAppService settings) : IAsyncExceptionFilter
 {
     public async Task OnExceptionAsync(ExceptionContext context)
@@ -28,7 +28,7 @@ public sealed class LocalizedExceptionFilter(
         var body = new Dictionary<string, object?>
         {
             ["errorCode"] = ex.ErrorCode,
-            ["message"] = translations.GetError(ex.ErrorCode, locale, ex.Args),
+            ["message"] = locales.GetError(ex.ErrorCode, locale, ex.Args),
         };
         if (ex.Details is not null)
         {

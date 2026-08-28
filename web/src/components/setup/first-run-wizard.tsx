@@ -6,8 +6,8 @@ import { StepIndicator, type StepIndicatorItem } from '@/components/ui/step-indi
 import { NativeSelect } from '@/components/ui/native-select'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { createInferenceDraft, toInferenceInput, type InferenceDraft } from '@/components/inference-config-form'
-import { postSetup, verifyInferenceConfiguration, type InferenceValidationResult } from '@/lib/api'
-import i18n from '@/i18n'
+import { getUserFacingError, postSetup, verifyInferenceConfiguration, type InferenceValidationResult } from '@/lib/api'
+import locale from '@/locale'
 import { AccountStep } from './steps/account-step'
 import { ModelServiceStep } from './steps/model-service-step'
 import { ReviewStep } from './steps/review-step'
@@ -36,7 +36,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const [draft, setDraft] = useState<InferenceDraft>(() => createInferenceDraft())
   const [validation, setValidation] = useState<InferenceValidationResult | null>(null)
   const [inferenceSkipped, setInferenceSkipped] = useState(false)
-  const [language, setLanguage] = useState<string>(i18n.language)
+  const [language, setLanguage] = useState<string>(locale.language)
   const [validating, setValidating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,14 +61,14 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
     setStep(nextStep as SetupStep)
   }
 
-  const chooseLanguage = async (locale: string) => {
-    if (!languages.includes(locale as (typeof languages)[number]) || locale === language) return
+  const chooseLanguage = async (nextLocale: string) => {
+    if (!languages.includes(nextLocale as (typeof languages)[number]) || nextLocale === language) return
     setError(null)
     try {
-      await i18n.changeLanguage(locale)
-      setLanguage(locale)
+      await locale.changeLanguage(nextLocale)
+      setLanguage(nextLocale)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('wizard.failedGeneric'))
+      setError(getUserFacingError(cause, t('wizard.failedGeneric')))
     }
   }
 
@@ -82,7 +82,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       return result.valid
     } catch (cause) {
       setValidation(null)
-      setError(cause instanceof Error ? cause.message : t('wizard.failedGeneric'))
+      setError(getUserFacingError(cause, t('wizard.failedGeneric')))
       return false
     } finally {
       setValidating(false)
@@ -105,7 +105,7 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       onComplete()
     } catch (cause) {
       completionStartedRef.current = false
-      setError(cause instanceof Error ? cause.message : t('wizard.failedGeneric'))
+      setError(getUserFacingError(cause, t('wizard.failedGeneric')))
     } finally {
       setSubmitting(false)
     }

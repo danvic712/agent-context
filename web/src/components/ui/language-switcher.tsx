@@ -2,8 +2,8 @@ import { ChevronDownIcon, LanguagesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useActionFeedback } from './action-feedback'
-import { saveLanguage } from '@/lib/api'
-import i18n from '@/i18n'
+import { getUserFacingError, saveLanguage } from '@/lib/api'
+import locale from '@/locale'
 
 const languages = ['en-US', 'zh-CN'] as const
 
@@ -11,17 +11,17 @@ export function LanguageSwitcher() {
   const { t } = useTranslation()
   const { push } = useActionFeedback()
   const [saving, setSaving] = useState(false)
-  const language = i18n.resolvedLanguage === 'zh-CN' ? 'zh-CN' : 'en-US'
+  const language = locale.resolvedLanguage === 'zh-CN' ? 'zh-CN' : 'en-US'
 
   const changeLanguage = async (nextLanguage: string) => {
     if (!languages.includes(nextLanguage as (typeof languages)[number]) || nextLanguage === language) return
     setSaving(true)
     try {
       await saveLanguage(nextLanguage)
-      await i18n.changeLanguage(nextLanguage)
-      push(i18n.t('appShell.languageChanged'), 'success')
+      await locale.changeLanguage(nextLanguage)
+      push(locale.t('appShell.languageChanged'), 'success')
     } catch (cause) {
-      push(cause instanceof Error ? cause.message : t('appShell.languageChangeFailed'), 'error')
+      push(getUserFacingError(cause, t('appShell.languageChangeFailed')), 'error')
     } finally {
       setSaving(false)
     }

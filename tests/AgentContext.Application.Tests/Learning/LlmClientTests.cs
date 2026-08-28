@@ -75,8 +75,8 @@ public sealed class LlmClientTests
             .Setup(item => item.GetLanguageAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync("en-US");
 
-        var translations = new Mock<ITranslationService>();
-        translations
+        var locales = new Mock<ILocalesAppService>();
+        locales
             .Setup(item => item.Get(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object?[]>()))
             .Returns("Extract reusable knowledge.");
 
@@ -89,7 +89,7 @@ public sealed class LlmClientTests
 
         return new LlmClient(
             settings.Object,
-            translations.Object,
+            locales.Object,
             inference.Object,
             new HttpClient(handler));
     }

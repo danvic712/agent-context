@@ -8,7 +8,7 @@ import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/
 import { Input } from '@/components/ui/input'
 import { SectionHeading, Surface } from '@/components/ui/surface'
 import { Textarea } from '@/components/ui/textarea'
-import type { SkillUploadInput, SkillUploadKind } from '@/lib/api'
+import { getUserFacingError, type SkillUploadInput, type SkillUploadKind } from '@/lib/api'
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 const MAX_PACKAGE_BYTES = 50 * 1024 * 1024
@@ -110,7 +110,7 @@ export function SkillUploadForm({ step, onStepChange, onReadyChange, onCancel, o
         setProgress,
       )
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('skills.uploadFailed'))
+      setError(getUserFacingError(cause, t('skills.uploadFailed')))
       onStepChange('validation')
     } finally {
       setUploading(false)

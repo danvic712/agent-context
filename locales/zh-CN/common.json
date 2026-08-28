@@ -1,0 +1,40 @@
+{
+  "common": {
+    "loading": "加载中…",
+    "delete": "删除",
+    "cancel": "取消",
+    "retry": "重试",
+    "save": "保存",
+    "saved": "已保存 ✓"
+  },
+  "appShell": {
+    "title": "Agent Context",
+    "brandTagline": "让代理共享有价值的知识",
+    "home": "返回知识首页",
+    "checking": "检查中…",
+    "healthy": "正常",
+    "degraded": "异常",
+    "engineStatusLabel": "在设置中查看知识引擎状态",
+    "engineHealthy": "知识引擎 · {{queued}} 个待处理",
+    "engineAttention": "知识引擎 · 需要查看",
+    "engineDegraded": "知识引擎 · 暂时不可用",
+    "workspace": "个人工作区",
+    "crumb": "工作区 / {{section}}",
+    "primaryNavigation": "主导航",
+    "language": "语言",
+    "languageEnglishShort": "EN",
+    "languageChineseShort": "中",
+    "languageChanged": "语言已更新。",
+    "languageChangeFailed": "语言更新失败。",
+    "backToTop": "回到顶部",
+    "dismissFeedback": "关闭通知",
+    "tabs": {
+      "knowledge": "知识",
+      "review": "复查",
+      "archived": "已归档",
+      "skills": "技能",
+      "health": "引擎",
+      "settings": "设置"
+    }
+  }
+}

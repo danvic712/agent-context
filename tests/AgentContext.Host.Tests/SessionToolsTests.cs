@@ -21,7 +21,7 @@ public sealed class SessionToolsTests
         var tools = new SessionTools(
             sessions.Object,
             new Mock<ISettingsAppService>(MockBehavior.Strict).Object,
-            new Mock<ITranslationService>(MockBehavior.Strict).Object);
+            new Mock<ILocalesAppService>(MockBehavior.Strict).Object);
 
         await tools.SaveSession(
             domain: "dev",

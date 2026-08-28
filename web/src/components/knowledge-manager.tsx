@@ -15,6 +15,7 @@ import { KnowledgeDetailSkeleton, KnowledgeListSkeleton } from '@/components/ui/
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   deleteKnowledge,
+  getUserFacingError,
   listKnowledgeLibrary,
   rateKnowledge,
   restoreKnowledge,
@@ -98,7 +99,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
       setSelectedId((current) => page.items.some((item) => item.id === current) ? current : page.items[0]?.id ?? null)
     } catch (cause) {
       if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
-        setError(cause instanceof Error ? cause.message : t('knowledge.failedLoad'))
+        setError(getUserFacingError(cause, t('knowledge.failedLoad')))
       }
     } finally {
       if (!controller.signal.aborted && requestVersion === requestVersionRef.current) setLoading(false)
@@ -125,7 +126,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
       setCounts(page.counts)
     } catch (cause) {
       if (!controller.signal.aborted && requestVersion === requestVersionRef.current) {
-        setError(cause instanceof Error ? cause.message : t('knowledge.failedLoadMore'))
+        setError(getUserFacingError(cause, t('knowledge.failedLoadMore')))
       }
     } finally {
       if (requestVersion === requestVersionRef.current) setLoadingMore(false)
@@ -164,7 +165,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
       await action()
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('knowledge.failedUpdate'))
+      setError(getUserFacingError(cause, t('knowledge.failedUpdate')))
     } finally {
       setMutatingId(null)
     }

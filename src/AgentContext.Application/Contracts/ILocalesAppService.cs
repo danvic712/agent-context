@@ -1,12 +1,12 @@
 namespace AgentContext.Application.Contracts;
 
 /// <summary>
-/// Reads strings from the single JSON localization store (ADR 0008:
-/// <c>i18n/{locale}.json</c>, embedded at build time). Backend error messages and
-/// the extraction prompt resolve through this service in the configured language;
-/// a missing key falls back to en-US, then to the key itself.
+/// Reads strings from the grouped JSON localization resources (ADR 0008:
+/// <c>locales/{locale}/*.json</c>, embedded at build time). Backend error messages
+/// and the extraction prompt resolve through this service in the configured
+/// language; a missing key falls back to en-US, then to the key itself.
 /// </summary>
-public interface ITranslationService
+public interface ILocalesAppService
 {
     /// <summary>
     /// Returns the localized string for <paramref name="key"/> (a full dotted key,

@@ -29,8 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AgentContextDbContext>(options =>
             DbContextOptionsFactory.Configure(options, configuration));
 
-        // Localization (T11): embedded i18n JSON, shared with the frontend (ADR 0008).
-        services.AddSingleton<ITranslationService, TranslationService>();
+        // Localization (T11): embedded locale JSON resources, shared with the frontend (ADR 0008).
+        services.AddSingleton<ILocalesAppService, LocalesAppService>();
 
         // First-run wizard
         services.AddScoped<ISetupAppService, SetupAppService>();

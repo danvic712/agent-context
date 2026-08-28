@@ -23,13 +23,13 @@ namespace AgentContext.Application.Learning;
 /// OpenAI-compatible routes (ADR 0003), resolved from the dedicated inference
 /// configuration on every call so a provider or route change takes effect
 /// without a restart. The extraction prompt (T11) is
-/// resolved from the shared JSON store in the configured language — the model
+    /// resolved from the shared locale resources in the configured language — the model
 /// writes Problem/Solution/Pattern in that language while keeping code
 /// identifiers, technical terms and key original snippets verbatim.
 /// </summary>
 public sealed class LlmClient(
     ISettingsAppService settings,
-    ITranslationService translations,
+    ILocalesAppService locales,
     IInferenceConfigurationAppService inference,
     HttpClient? httpClient = null) : ILlmClient
 {
@@ -93,12 +93,12 @@ public sealed class LlmClient(
     }
 
     /// <summary>
-    /// The extraction prompt (T11, mixed mode): the shared JSON store's
+    /// The extraction prompt (T11, mixed mode): the shared JSON resource's
     /// <c>prompts.extraction</c> template for the configured locale — en-US and
     /// zh-CN instruct output in that language while preserving identifiers and
     /// key original snippets.
     /// </summary>
-    private string BuildExtractionPrompt(string locale) => translations.Get("prompts.extraction", locale);
+    private string BuildExtractionPrompt(string locale) => locales.Get("prompts.extraction", locale);
 
     private IEmbeddingGenerator<string, Embedding<float>> CreateGenerator(InferenceRuntimeRoute route)
     {

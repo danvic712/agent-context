@@ -52,7 +52,7 @@ export function ReviewStep({
           <div className="setup-surface-body setup-review-body">
             <div className="setup-review-overview">
               <div className="setup-review-item"><span>{t('wizard.displayName')}</span><strong>{account.displayName}</strong></div>
-              <div className="setup-review-item"><span>{t('wizard.language')}</span><strong>{language}</strong></div>
+              <div className="setup-review-item"><span>{t('wizard.language')}</span><strong>{language === 'zh-CN' ? t('wizard.chinese') : t('wizard.english')}</strong></div>
               <div className="setup-review-item"><span>{t('inference.providersTitle')}</span><strong>{inferenceSkipped ? t('wizard.notConfigured') : t('wizard.providerCount', { count: draft.providers.length })}</strong></div>
             </div>
 
@@ -61,7 +61,7 @@ export function ReviewStep({
               <div className="setup-review-details">
                 <div><span>{t('wizard.displayName')}</span><strong>{account.displayName}</strong></div>
                 <div><span>{t('wizard.email')}</span><strong>{account.email}</strong></div>
-                <div><span>{t('wizard.language')}</span><strong>{language}</strong></div>
+                <div><span>{t('wizard.language')}</span><strong>{language === 'zh-CN' ? t('wizard.chinese') : t('wizard.english')}</strong></div>
               </div>
             </div>
 

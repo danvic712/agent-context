@@ -2,7 +2,7 @@
 
 Manual browser verification of the T11 localization work (issue #12): the platform
 language lives in `settings.language` (per-call resolution), all UI strings come
-from the shared `i18n/{locale}.json` store via react-i18next, and backend errors
+from the shared `locales/{locale}/*.json` resources via react-i18next, and backend errors
 render in the configured language.
 
 ## Environment
@@ -39,7 +39,7 @@ render in the configured language.
 
 ## Notes
 
-- Backend: 153/153 tests green (140 prior + 13 new: TranslationService fallback/args,
+- Backend: 153/153 tests green (140 prior + 13 new: LocalesAppService fallback/args,
   language REST round-trip + invalid 400, error localization per language, extraction
   prompt en/zh assertions, updated seam tests asserting `LocalizedException.ErrorCode`).
 - Extraction prompt language is asserted by tests (`LlmClientTests`); no real-LLM call

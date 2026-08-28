@@ -10,7 +10,10 @@ namespace AgentContext.Host.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/inference")]
-public sealed class InferenceController(IInferenceConfigurationAppService inference) : ControllerBase
+public sealed class InferenceController(
+    IInferenceConfigurationAppService inference,
+    ISettingsAppService settings,
+    ILocalesAppService locales) : ControllerBase
 {
     [HttpGet("configuration")]
     public async Task<ActionResult<InferenceConfigurationDto>> GetConfiguration(CancellationToken cancellationToken)
@@ -26,5 +29,15 @@ public sealed class InferenceController(IInferenceConfigurationAppService infere
     public async Task<ActionResult<InferenceValidationResult>> VerifyConfiguration(
         [FromBody] InferenceConfigurationInput request,
         CancellationToken cancellationToken)
-        => Ok(await inference.VerifyAsync(request, cancellationToken));
+    {
+        var result = await inference.VerifyAsync(request, cancellationToken);
+        var language = await settings.GetLanguageAsync(cancellationToken);
+        var checks = result.Checks
+            .Select(check => check.MessageKey is null
+                ? check
+                : check with { Message = locales.Get(check.MessageKey, language) })
+            .ToArray();
+
+        return Ok(new InferenceValidationResult(result.Valid, checks));
+    }
 }
