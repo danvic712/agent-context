@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { SkillLibraryListSkeleton } from '@/components/ui/loading-skeletons'
 import type { SkillItem } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -43,20 +43,7 @@ export function SkillLibraryList({
   const { t } = useTranslation()
 
   if (loading) {
-    return (
-      <div className="skill-library-index__items" aria-busy="true" aria-label={t('skills.loading')}>
-        {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="skill-library-index__skeleton">
-            <Skeleton className="size-8 rounded-xl" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-3.5 w-3/4" />
-              <Skeleton className="h-2.5 w-1/2" />
-            </div>
-            <Skeleton className="h-3 w-7" />
-          </div>
-        ))}
-      </div>
-    )
+    return <SkillLibraryListSkeleton label={t('skills.loading')} />
   }
 
   if (error && items.length === 0) {

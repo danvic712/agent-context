@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Navigate, useLocation } from 'react-router-dom'
 import { AppShell } from './components/app-shell'
 import { FirstRunWizard } from './components/setup/first-run-wizard'
+import { AppLoadingSkeleton } from './components/ui/loading-skeletons'
 import { setupPath } from './lib/app-routes'
 import { getLanguage, getSetupStatus } from './lib/api'
 import i18n from './i18n'
@@ -36,9 +37,7 @@ function AppContent() {
   const isSetupPath = pathname.replace(/\/+$/, '') === setupPath
   const content =
     phase === 'loading' ? (
-      <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">
-        {t('common.loading')}
-      </div>
+      <AppLoadingSkeleton label={t('common.loading')} />
     ) : phase === 'setup' ? (
       isSetupPath ? <FirstRunWizard onComplete={() => setPhase('app')} /> : <Navigate to={setupPath} replace />
     ) : isSetupPath ? (

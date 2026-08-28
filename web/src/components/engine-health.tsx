@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIcon, CheckIcon, RefreshCwIcon, SparklesIcon } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { EngineMetricsSkeleton } from '@/components/ui/loading-skeletons'
 import { Surface } from '@/components/ui/surface'
 import { getEngineHealth, runHygiene, type EngineHealth, type HygieneResult } from '@/lib/api'
 import { getEngineHealthState } from '@/lib/engine-health-state'
@@ -112,15 +112,7 @@ export function EngineHealthPanel({ className }: EngineHealthPanelProps) {
 
       <div className="c-panel__body c-engine-panel__body" aria-busy={loading}>
         {loading && !health ? (
-          <div className="c-engine-metrics" aria-label={t('engineHealth.statusChecking')}>
-            {Array.from({ length: 5 }, (_, index) => (
-              <div key={index} className="c-engine-metric" aria-hidden="true">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="mt-3 h-7 w-12" />
-                <Skeleton className="mt-2 h-3 w-20" />
-              </div>
-            ))}
-          </div>
+          <EngineMetricsSkeleton label={t('engineHealth.statusChecking')} />
         ) : health ? (
           <>
             <div className="c-engine-metrics">

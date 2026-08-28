@@ -149,6 +149,9 @@
 .settings-page__loading {
     padding: 20px;
 }
+.settings-page__inference-shell { position: relative; min-width: 0; }
+.settings-page__refreshing { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; color: var(--dim); font: 9px/1.4 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.settings-page__refreshing svg { width: 13px; height: 13px; color: var(--accent); }
 
 /* Keep the existing inference controls readable as the shared page narrows. */
 .c-readiness {

@@ -170,6 +170,24 @@
       "settingsActionHint": "配置保存后会立即生效。",
       "resetDraft": "重置草稿"
     },
+    "errorPages": {
+      "notFoundEyebrow": "页面未找到",
+      "errorEyebrow": "系统中断",
+      "notFoundCode": "404",
+      "errorCode": "500",
+      "notFoundTitle": "这条路径暂时没有回应。",
+      "errorTitle": "上下文还没来得及回答。",
+      "notFoundDescription": "这个路径已经不在当前工作区中，或者它从未存在过。你的共享知识仍然安稳地保留在那里。",
+      "errorDescription": "加载页面时发生了意外中断。你可以重试，或者返回一个已知可用的页面。已保存的知识不会受到影响。",
+      "returnToKnowledge": "返回知识库",
+      "openKnowledge": "打开知识库",
+      "goBack": "返回上一页",
+      "tryAgain": "重试",
+      "safeRouteAvailable": "可返回安全路径",
+      "retryAvailable": "可以重试",
+      "workspace": "工作区 · 个人",
+      "requestedRoute": "请求路径 · {{path}}"
+    },
     "knowledge": {
       "libraryKicker": "工作区 · 个人",
       "libraryTitle": "知识库",

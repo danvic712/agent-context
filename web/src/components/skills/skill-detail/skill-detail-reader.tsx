@@ -1,6 +1,7 @@
-import { FileIcon, LoaderCircleIcon } from 'lucide-react'
+import { FileIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
+import { SkillFilePreviewSkeleton } from '@/components/ui/loading-skeletons'
 import { SkillFilePreview } from '../skill-file-preview'
 import { SkillLanguageBadge } from '../skill-language-badge'
 import type { SkillFileInfo } from '@/lib/api'
@@ -37,10 +38,7 @@ export function SkillDetailReader({ file, content, loading }: SkillDetailReaderP
             <span>{t('skills.emptyPackage')}</span>
           </div>
         ) : loading ? (
-          <div className="skill-detail-reader__loading" aria-busy="true">
-            <LoaderCircleIcon className="size-4 animate-spin" />
-            {t('skills.loadingFile')}
-          </div>
+          <SkillFilePreviewSkeleton label={t('skills.loadingFile')} />
         ) : file.binary ? (
           <div className="skill-detail-reader__binary">
             <FileIcon className="size-6" aria-hidden="true" />

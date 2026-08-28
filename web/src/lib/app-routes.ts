@@ -1,6 +1,7 @@
 export type AppTab = 'knowledge' | 'skills' | 'settings'
 
 export const setupPath = '/setup'
+export const errorPath = '/error'
 
 export const appTabs: readonly { id: AppTab; path: string }[] = [
   { id: 'knowledge', path: '/knowledge' },

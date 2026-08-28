@@ -1,8 +1,7 @@
-import { LanguagesIcon } from 'lucide-react'
+import { ChevronDownIcon, LanguagesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useActionFeedback } from './action-feedback'
-import { NativeSelect } from './native-select'
 import { saveLanguage } from '@/lib/api'
 import i18n from '@/i18n'
 
@@ -31,10 +30,20 @@ export function LanguageSwitcher() {
   return (
     <label className="ui-language-switcher" aria-label={t('appShell.language')}>
       <LanguagesIcon className="size-3.5 shrink-0" aria-hidden="true" />
-      <NativeSelect value={language} onChange={(event) => void changeLanguage(event.target.value)} disabled={saving} aria-label={t('appShell.language')} wrapperClassName="ui-language-switcher__select">
+      <span className="ui-language-switcher__value" aria-hidden="true">
+        {t(language === 'zh-CN' ? 'appShell.languageChineseShort' : 'appShell.languageEnglishShort')}
+      </span>
+      <ChevronDownIcon className="ui-language-switcher__chevron" aria-hidden="true" />
+      <select
+        className="ui-language-switcher__control"
+        value={language}
+        onChange={(event) => void changeLanguage(event.target.value)}
+        disabled={saving}
+        aria-label={t('appShell.language')}
+      >
         <option value="en-US">{t('appShell.languageEnglishShort')}</option>
         <option value="zh-CN">{t('appShell.languageChineseShort')}</option>
-      </NativeSelect>
+      </select>
     </label>
   )
 }

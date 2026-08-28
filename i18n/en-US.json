@@ -170,6 +170,24 @@
       "settingsActionHint": "Changes apply immediately after the configuration is saved.",
       "resetDraft": "Reset draft"
     },
+    "errorPages": {
+      "notFoundEyebrow": "PAGE NOT FOUND",
+      "errorEyebrow": "SYSTEM INTERRUPTION",
+      "notFoundCode": "404",
+      "errorCode": "500",
+      "notFoundTitle": "This path has gone quiet.",
+      "errorTitle": "The context paused before it could answer.",
+      "notFoundDescription": "This route is not part of the workspace anymore — or it never was. Your shared Knowledge is still right where you left it.",
+      "errorDescription": "Something interrupted this request. Try again or return to a known-good surface. Your saved Knowledge remains untouched.",
+      "returnToKnowledge": "Return to Knowledge",
+      "openKnowledge": "Open Knowledge",
+      "goBack": "Go back",
+      "tryAgain": "Try again",
+      "safeRouteAvailable": "safe route available",
+      "retryAvailable": "retry available",
+      "workspace": "workspace · personal",
+      "requestedRoute": "requested route · {{path}}"
+    },
     "knowledge": {
       "libraryKicker": "Workspace · Personal",
       "libraryTitle": "Knowledge library",

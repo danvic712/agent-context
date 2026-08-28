@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertCircleIcon, PanelRightCloseIcon, PanelRightOpenIcon, SearchXIcon, Trash2Icon, WrenchIcon } from 'lucide-react'
+import { AlertCircleIcon, LoaderCircleIcon, PanelRightCloseIcon, PanelRightOpenIcon, SearchXIcon, Trash2Icon, WrenchIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useActionFeedback } from '@/components/ui/action-feedback'
+import { SkillLibraryDetailSkeleton } from '@/components/ui/loading-skeletons'
+import { Skeleton } from '@/components/ui/skeleton'
 import { PageFrame } from '@/components/ui/page-frame'
 import {
   deleteSkill,
@@ -44,36 +45,6 @@ interface SkillsNavigationState {
   successSlug?: string
 }
 
-function SkillLibraryDetailSkeleton() {
-  const { t } = useTranslation()
-
-  return (
-    <div className="skill-library-detail-skeleton" aria-busy="true" aria-label={t('skills.loadingDetail')}>
-      <div className="skill-library-detail-skeleton__heading">
-        <Skeleton className="h-3 w-32" />
-        <Skeleton className="h-9 w-2/3" />
-        <Skeleton className="h-4 w-full" />
-      </div>
-      <div className="skill-detail-reader ui-surface overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border/70 p-4">
-          <Skeleton className="size-8 rounded-xl" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-2.5 w-28" />
-          </div>
-        </div>
-        <div className="space-y-4 p-6 sm:p-10">
-          <Skeleton className="h-7 w-1/2" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
-          <Skeleton className="mt-8 h-32 w-full rounded-xl" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function SkillLibraryNoSelection() {
   const { t } = useTranslation()
 
@@ -98,6 +69,7 @@ export function SkillsLibraryPage() {
   const paginationRequestRef = useRef<AbortController | null>(null)
   const requestVersionRef = useRef(0)
   const detailRequestVersionRef = useRef(0)
+  const hasItemsRef = useRef(false)
   const [items, setItems] = useState<SkillItem[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -123,13 +95,14 @@ export function SkillsLibraryPage() {
   const [deletingDetail, setDeletingDetail] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  hasItemsRef.current = items.length > 0
 
   const selectedIsLoaded = Boolean(selectedId && items.some((item) => item.id === selectedId))
   const highlightedSelectionId = navigationHighlightRef.current && items.some((item) => item.id === navigationHighlightRef.current)
     ? navigationHighlightRef.current
     : null
   const activeId = selectedIsLoaded ? selectedId : highlightedSelectionId ?? items[0]?.id ?? null
-  const detailId = loading ? null : activeId
+  const detailId = activeId
 
   const selectSkill = useCallback((id: string) => {
     setSelectedId(id)
@@ -166,9 +139,6 @@ export function SkillsLibraryPage() {
     requestRef.current = controller
     setLoading(true)
     setLoadingMore(false)
-    setItems([])
-    setNextCursor(null)
-    setHasMore(false)
     setError(null)
     setErrorScope(null)
     try {
@@ -226,7 +196,11 @@ export function SkillsLibraryPage() {
   }, [appliedFilters, hasMore, loadingMore, nextCursor, t])
 
   useEffect(() => {
-    void loadInitial(appliedFilters)
+    const preserveCurrent = hasItemsRef.current
+    if (preserveCurrent) setRefreshing(true)
+    void loadInitial(appliedFilters).finally(() => {
+      if (preserveCurrent) setRefreshing(false)
+    })
     return () => {
       requestRef.current?.abort()
       paginationRequestRef.current?.abort()
@@ -367,6 +341,7 @@ export function SkillsLibraryPage() {
     if (!detail || deletingDetail || !window.confirm(t('skills.deleteConfirm', { slug: detail.slug }))) return
 
     setDeletingDetail(true)
+    setRefreshing(true)
     try {
       await deleteSkill(detail.id)
       clearSelection()
@@ -375,6 +350,7 @@ export function SkillsLibraryPage() {
     } catch (cause) {
       push(cause instanceof Error ? cause.message : t('skills.failedDelete'), 'error')
     } finally {
+      setRefreshing(false)
       setDeletingDetail(false)
     }
   }
@@ -423,6 +399,7 @@ export function SkillsLibraryPage() {
   }
 
   const filterActive = Boolean(appliedFilters.search || appliedFilters.domain || appliedFilters.sourceType)
+  const initialLoading = loading && items.length === 0
   const domainOptions = useMemo(
     () => Array.from(new Set(items.map((item) => item.domainName.trim()).filter(Boolean))).sort((left, right) => left.localeCompare(right)),
     [items],
@@ -431,7 +408,7 @@ export function SkillsLibraryPage() {
   return (
     <PageFrame
       header={(
-        <SkillPageHeader items={items} loading={loading} hasMore={hasMore} onUpload={() => navigate('/skills/upload')} />
+        <SkillPageHeader items={items} loading={initialLoading} hasMore={hasMore} onUpload={() => navigate('/skills/upload')} />
       )}
     >
       {notice && (
@@ -442,14 +419,16 @@ export function SkillsLibraryPage() {
         </div>
       )}
 
-      <section className={cn('skill-library-workspace', metaCollapsed && 'is-meta-collapsed')} aria-label={t('skills.libraryWorkspace')}>
+      <section className={cn('skill-library-workspace', metaCollapsed && 'is-meta-collapsed')} aria-label={t('skills.libraryWorkspace')} aria-busy={loading || refreshing}>
         <aside className="skill-library-index-panel ui-surface" aria-label={t('skills.listHeading')}>
           <div className="skill-library-index-panel__header">
             <div className="skill-library-index-panel__title">
               <WrenchIcon aria-hidden="true" />
               <span>{t('skills.listHeading')}</span>
             </div>
-            <span className="skill-library-index-panel__count">{loading ? '—' : items.length}</span>
+            <span className="skill-library-index-panel__count">
+              {initialLoading ? <Skeleton className="inline-block h-3 w-5 align-middle" /> : items.length}
+            </span>
           </div>
           <SkillSearchFilters
             compact
@@ -460,13 +439,19 @@ export function SkillsLibraryPage() {
             onClear={() => setDraftFilters(DEFAULT_FILTERS)}
             onRefresh={() => void refresh()}
           />
+          {refreshing && (
+            <div className="skill-library-refreshing" role="status">
+              <LoaderCircleIcon aria-hidden="true" />
+              <span>{t('common.loading')}</span>
+            </div>
+          )}
           <div className="skill-library-index-panel__list-heading">
             <span>{t('skills.package')}</span>
             <span>{t('skills.resultsCount', { count: items.length })}{hasMore ? ` · ${t('skills.loadMore')}` : ''}</span>
           </div>
           <SkillLibraryList
             items={items}
-            loading={loading}
+            loading={initialLoading}
             loadingMore={loadingMore}
             hasMore={hasMore}
             error={error}
@@ -482,8 +467,8 @@ export function SkillsLibraryPage() {
         </aside>
 
         <section className="skill-library-reader-column" aria-live="polite">
-          {loading || loadingDetail ? (
-            <SkillLibraryDetailSkeleton />
+          {initialLoading || loadingDetail ? (
+            <SkillLibraryDetailSkeleton label={t('skills.loadingDetail')} />
           ) : detailError && !detail ? (
             <Alert variant="destructive" className="skill-library-detail-error" role="alert">
               <AlertCircleIcon className="size-4" />

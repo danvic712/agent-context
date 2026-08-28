@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BookOpenIcon, SettingsIcon, SparklesIcon, WrenchIcon } from 'lucide-react'
-import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ActionFeedbackProvider } from '@/components/ui/action-feedback'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { ErrorPage, NotFoundPage } from '@/components/error-pages/error-page'
 import { KnowledgeManager } from '@/components/knowledge-manager'
 import { SettingsPage } from '@/components/settings/settings-page'
 import { SkillsLibraryPage } from '@/components/skills/skills-library-page'
 import { SkillUploadPage } from '@/components/skills/skill-upload-page'
-import { appTabs, getTabFromPath, type AppTab } from '@/lib/app-routes'
+import { appTabs, errorPath, getTabFromPath, type AppTab } from '@/lib/app-routes'
 import { getEngineHealth, type EngineHealth } from '@/lib/api'
 import { getEngineHealthState } from '@/lib/engine-health-state'
 import { cn } from '@/lib/utils'
@@ -117,7 +118,8 @@ export function AppShell() {
             <Route path="/skills" element={<SkillsLibraryPage />} />
             <Route path="/skills/upload" element={<SkillUploadPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/knowledge" replace />} />
+            <Route path={errorPath} element={<ErrorPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
       </div>

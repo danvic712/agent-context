@@ -8,10 +8,11 @@ import {
   SearchIcon,
   TrashIcon,
 } from 'lucide-react'
-import { Skeleton } from '@/components/ui/skeleton'
 import { ActionBar } from '@/components/ui/action-bar'
 import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import { Surface } from '@/components/ui/surface'
+import { KnowledgeDetailSkeleton, KnowledgeListSkeleton } from '@/components/ui/loading-skeletons'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   deleteKnowledge,
   listKnowledgeLibrary,
@@ -105,7 +106,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
   }, [t])
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || loadingMore || !nextCursor) return
+    if (!hasMore || loading || loadingMore || !nextCursor) return
     const requestVersion = requestVersionRef.current
     const controller = new AbortController()
     paginationRequestRef.current?.abort()
@@ -129,7 +130,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
     } finally {
       if (requestVersion === requestVersionRef.current) setLoadingMore(false)
     }
-  }, [appliedSearch, hasMore, loadingMore, nextCursor, status, t])
+  }, [appliedSearch, hasMore, loading, loadingMore, nextCursor, status, t])
 
   useEffect(() => {
     void loadInitial(status, appliedSearch)
@@ -246,7 +247,9 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                 className="knowledge-status-tab"
               >
                 {statusMeta[value].label}
-                <span className="knowledge-count">{countFor(value)}</span>
+                <span className="knowledge-count">
+                  {loading && items.length === 0 ? <Skeleton className="h-2.5 w-3" /> : countFor(value)}
+                </span>
               </button>
             ))}
           </div>
@@ -256,12 +259,16 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
             <span><strong>{t('knowledge.confidenceLabel')}</strong> {t('knowledge.confidenceMeaning')}</span>
           </div>
 
-          <div className="knowledge-list">
+          <div className="knowledge-list" aria-busy={loading}>
             {error && <p className="knowledge-error" role="alert">{error}</p>}
-            {loading ? (
-              <div className="knowledge-loading" aria-busy="true">
-                {[0, 1, 2].map((value) => <Skeleton key={value} className="h-28 w-full rounded-xl" />)}
+            {loading && items.length > 0 && (
+              <div className="knowledge-refreshing" role="status">
+                <LoaderCircleIcon aria-hidden="true" />
+                <span>{t('common.loading')}</span>
               </div>
+            )}
+            {loading && items.length === 0 ? (
+              <KnowledgeListSkeleton label={t('common.loading')} />
             ) : items.length === 0 ? (
               <div className="knowledge-empty">
                 {search.trim() ? t('knowledge.noMatches') : t(`knowledge.empty${status}` as 'knowledge.emptyActive' | 'knowledge.emptyReview' | 'knowledge.emptyArchived')}
@@ -297,7 +304,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
             )}
             <div ref={sentinelRef} aria-hidden="true" className="h-1" />
             {hasMore && (
-              <button type="button" className="knowledge-load-more" onClick={() => void loadMore()} disabled={loadingMore}>
+              <button type="button" className="knowledge-load-more" onClick={() => void loadMore()} disabled={loading || loadingMore}>
                 {loadingMore && <LoaderCircleIcon className="mr-1.5 inline-block size-3.5 animate-spin align-[-2px]" />}
                 {loadingMore ? t('knowledge.loadingMore') : t('knowledge.loadMore')}
               </button>
@@ -380,6 +387,8 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
                 </ActionBar>
               </div>
             </div>
+          ) : loading && items.length === 0 ? (
+            <KnowledgeDetailSkeleton label={t('common.loading')} />
           ) : (
             <div className="knowledge-detail flex items-center justify-center text-sm text-muted-foreground">
               {t('knowledge.selectItem')}

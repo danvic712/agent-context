@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LanguagesIcon, MonitorIcon, MoonIcon, SunIcon } from 'lucide-react'
+import { LanguagesIcon, LoaderCircleIcon, MonitorIcon, MoonIcon, SunIcon } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { EngineHealthPanel } from '@/components/engine-health'
 import { PageFrame, PageHeader } from '@/components/ui/page-frame'
 import { SectionHeading, Surface } from '@/components/ui/surface'
+import { SettingsInferenceSkeleton } from '@/components/ui/loading-skeletons'
 import { useActionFeedback } from '@/components/ui/action-feedback'
 import { NativeSelect } from '@/components/ui/native-select'
 import {
@@ -251,29 +251,33 @@ export function SettingsPage() {
             description={t('settings.inferenceDescription')}
             className="settings-page__section-heading"
           />
-          {loading || !draft ? (
+          {!draft ? (
             <Surface className="settings-page__loading" aria-busy="true">
-              <div className="flex flex-col gap-3">
-                <Skeleton className="h-5 w-44" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-              </div>
+              <SettingsInferenceSkeleton label={t('common.loading')} />
             </Surface>
           ) : (
-            <InferenceConfigForm
-              draft={draft}
-              onChange={(next) => {
-                setDraft(next)
-                setValidation(null)
-              }}
-              validation={validation}
-              validating={validating}
-              onValidate={() => void validate()}
-              onSave={() => void save()}
-              onReset={() => void load()}
-              saving={saving}
-              saveDisabled={!validation?.valid}
-            />
+            <div className="settings-page__inference-shell" aria-busy={loading}>
+              {loading && (
+                <div className="settings-page__refreshing" role="status">
+                  <LoaderCircleIcon aria-hidden="true" />
+                  <span>{t('common.loading')}</span>
+                </div>
+              )}
+              <InferenceConfigForm
+                draft={draft}
+                onChange={(next) => {
+                  setDraft(next)
+                  setValidation(null)
+                }}
+                validation={validation}
+                validating={validating}
+                onValidate={() => void validate()}
+                onSave={() => void save()}
+                onReset={() => void load()}
+                saving={saving}
+                saveDisabled={!validation?.valid}
+              />
+            </div>
           )}
         </section>
       </div>

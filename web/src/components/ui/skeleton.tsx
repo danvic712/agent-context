@@ -1,15 +1,14 @@
 import { cn } from '@/lib/utils'
 
 /**
- * A pulsing placeholder used while content loads (T12): replaces bare
- * "Loading…" text across the app. Colours follow the Direction D palette via the
- * muted/card variables.
+ * A presentational placeholder used while content loads. The containing loading
+ * region owns aria-busy and the announcement; individual blocks stay silent.
  */
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="skeleton"
-      aria-busy="true"
+      aria-hidden="true"
       className={cn('animate-pulse rounded-md bg-muted/60', className)}
       {...props}
     />

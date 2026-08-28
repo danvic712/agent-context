@@ -490,6 +490,8 @@
 .skill-library-index__skeleton { display: flex; min-height: 58px; align-items: center; gap: 8px; padding: 8px; }
 .skill-library-index-panel .skill-library-pagination { min-height: 43px; flex: 0 0 auto; margin: 18px 7px 0; border-top: 1px solid var(--line); padding: 14px 0 0; }
 .skill-library-index-panel .skill-library-pagination [data-slot="button"] { min-height: 30px; height: 30px; border: 0; padding-inline: 0; color: var(--accent-ink); background: transparent; font: 600 10px/1 var(--font-mono); }
+.skill-library-refreshing { display: flex; align-items: center; gap: 7px; margin: 8px 16px 0; color: var(--dim); font: 9px/1.4 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.skill-library-refreshing svg { width: 13px; height: 13px; color: var(--accent); }
 .skill-library-index-panel > [role="alert"] { margin: 8px 10px; }
 .skill-library-index-panel .skill-library-empty { margin: 8px 10px; }
 .skill-library-index-panel .skill-library-empty [data-slot="card-content"] { padding: 24px 14px; }
