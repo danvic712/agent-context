@@ -25,6 +25,7 @@ public sealed class SessionsControllerTests
               "domain": "dev",
               "task": "task",
               "conclusion": "conclusion",
+              "skillsUsed": ["tdd", "code-review"],
               "usage": {
                 "model": "provider/model-snapshot",
                 "inputTokens": 100,
@@ -44,5 +45,6 @@ public sealed class SessionsControllerTests
         Assert.Equal(100, captured.Usage.InputTokens);
         Assert.Equal(25, captured.Usage.CachedInputTokens);
         Assert.Equal(40, captured.Usage.OutputTokens);
+        Assert.Equal(["tdd", "code-review"], captured.SkillsUsed);
     }
 }

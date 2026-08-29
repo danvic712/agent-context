@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using AgentContext.Application.Dtos;
 using AgentContext.Application.Localization;
 using AgentContext.Application.Sessions;
@@ -49,6 +50,25 @@ public sealed class SaveSessionAppServiceTests
             Conclusion: "conclusion"));
 
         Assert.Empty(Assert.Single(savedSessions).Usage);
+    }
+
+    [Fact]
+    public async Task Save_persists_the_skills_used_as_json()
+    {
+        var savedSessions = new List<Session>();
+        var service = CreateService(savedSessions);
+
+        await service.SaveAsync(new SaveSessionRequest(
+            Domain: null,
+            Task: "task",
+            Conclusion: "conclusion",
+            SkillsUsed: ["tdd", "code-review"]));
+
+        var session = Assert.Single(savedSessions);
+        var skills = JsonSerializer.Deserialize<string[]>(session.SkillsUsed);
+
+        Assert.NotNull(skills);
+        Assert.Equal(["tdd", "code-review"], skills);
     }
 
     [Fact]

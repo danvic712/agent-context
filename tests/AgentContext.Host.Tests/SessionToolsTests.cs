@@ -27,6 +27,7 @@ public sealed class SessionToolsTests
             domain: "dev",
             task: "task",
             conclusion: "conclusion",
+            skillsUsed: ["tdd", "code-review"],
             usage: new SessionUsageInput("provider/model-snapshot", 100, 25, 40),
             cancellationToken: CancellationToken.None);
 
@@ -35,5 +36,6 @@ public sealed class SessionToolsTests
         Assert.Equal(100, captured.Usage.InputTokens);
         Assert.Equal(25, captured.Usage.CachedInputTokens);
         Assert.Equal(40, captured.Usage.OutputTokens);
+        Assert.Equal(["tdd", "code-review"], captured.SkillsUsed);
     }
 }

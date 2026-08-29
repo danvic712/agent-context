@@ -1,6 +1,6 @@
 namespace AgentContext.Application.Dtos;
 
-/// <summary>Full session view including Usage (spec §6.2: overview data queryable from Usage).</summary>
+/// <summary>Full Session view including reported Skills and Usage.</summary>
 public sealed record SessionDetail(
     Guid Id,
     Guid WorkspaceId,
@@ -9,6 +9,7 @@ public sealed record SessionDetail(
     string Task,
     string Conclusion,
     string SummaryJson,
+    IReadOnlyList<string> SkillsUsed,
     string Status,
     bool Remembered,
     DateTimeOffset CreatedAtUtc,

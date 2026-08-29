@@ -7,7 +7,7 @@ namespace AgentContext.Host.Mcp;
 
 /// <summary>
 /// The v1 toolset's save_session tool (spec §6.1 / T2): reports a session to the
-/// platform over MCP — domain tag, structured summary, optional remember, and
+/// platform over MCP — domain tag, structured summary, reported Skills, optional remember, and
 /// an optional reported Usage payload. Errors are localized (T11) through the
 /// shared locales app service in the configured platform language.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed class SessionTools(
     ILocalesAppService locales)
 {
     [McpServerTool(Name = "save_session")]
-    [Description("Records a session with the platform: a domain tag, a structured summary (task, conclusion, key snippets), optional remember of the full context, and an optional reported Usage payload.")]
+    [Description("Records a session with the platform: a domain tag, a structured summary (task, conclusion, key snippets), reported Skills, optional remember of the full context, and an optional reported Usage payload.")]
     public async Task<SaveSessionResult> SaveSession(
         [Description("Domain tag for the session, e.g. \"dev\" or \"home\". An unknown domain is registered automatically.")] string? domain,
         [Description("What the conversation set out to do.")] string task,
@@ -28,11 +28,12 @@ public sealed class SessionTools(
         [Description("Full original context; stored only when remember is true.")] string? fullContext = null,
         [Description("Name of the reporting agent instance.")] string? agentName = null,
         [Description("Usage reported for this completed conversation: model snapshot and input, cached input, and output token counts.")] SessionUsageInput? usage = null,
+        [Description("Skill identifiers used during this session, such as tdd or code-review.")] IReadOnlyList<string>? skillsUsed = null,
         CancellationToken cancellationToken = default)
         => await McpErrorLocalizer.ExecuteAsync(settings, locales, () =>
             sessions.SaveAsync(
                 new SaveSessionRequest(
                     domain, task, conclusion, keySnippets, remember, fullContext,
-                    agentName, usage),
+                    agentName, usage, skillsUsed),
                 cancellationToken), cancellationToken);
 }

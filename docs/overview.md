@@ -82,7 +82,7 @@ running the binary with no arguments starts everything:
 The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): the portal serves the v1 toolset over Streamable HTTP at `/mcp` — Craft Agents connect by URL.
 
 Tools:
-- `save_session` — domain, structured summary, optional `remember` (full context), optional pre-structured knowledge
+- `save_session` — domain, structured summary, reported Skill identifiers, optional `remember` (full context), optional pre-structured knowledge
 - `search_memory` / `find_similar_solution` — shared retrieval backend in v1
 - `get_skill` — fetch a skill by slug
 - `rate_knowledge` — useful/useless feedback (feeds Confidence)
@@ -91,7 +91,7 @@ Resources: `skill://{domain}/{slug}/{file}` (T12 package files), `knowledge://{i
 
 ### 6.2 Session Management
 
-- Agents report a **structured summary** (task, conclusion, key snippets) plus an optional Usage payload containing the reported model snapshot, input tokens, cached input tokens, and output tokens.
+- Agents report a **structured summary** (task, conclusion, key snippets) plus the Skill identifiers used during the Session and an optional Usage payload containing the reported model snapshot, input tokens, cached input tokens, and output tokens.
 - Full original context is stored only when the user explicitly says "remember" (which also marks it important).
 - `Usage` is a source-aware token ledger: reported Session rows attach to a Session,
   while Learning Engine rows may be sessionless and may carry nullable route/capability

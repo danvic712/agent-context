@@ -17,7 +17,7 @@ An AI assistant instance connected to the platform that reads and writes shared 
 _Avoid_: bot, model
 
 **Session**:
-A record of one agent interaction, reported by the agent itself over MCP as a structured summary (task, conclusion, key snippets), including model, token usage, and skills used. Full original context is stored only when the user explicitly asks to remember.
+A record of one agent interaction, reported by the agent itself over MCP as a structured summary (task, conclusion, key snippets), including the Skills used, model, and token usage. Full original context is stored only when the user explicitly asks to remember.
 _Avoid_: conversation, thread
 
 **Remember**:

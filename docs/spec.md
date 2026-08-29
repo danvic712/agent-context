@@ -18,7 +18,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
 ### 2.2 Sessions & Usage (T2)
-- `save_session`: structured summary (task/conclusion/key snippets) + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
+- `save_session`: structured summary (task/conclusion/key snippets) + reported Skill identifiers used during the Session + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
 - `Usage` is a source-aware token ledger: `reported_session` rows attach to a Session, while `learning_engine` rows may be sessionless and may carry nullable route/capability bindings. Cached input tokens are a subset of input tokens. The Analytics UI/API is deferred for redesign; cost is not part of the Usage contract.
 
 ### 2.3 Learning Engine (T3)
@@ -121,6 +121,7 @@ Workspace ──┬── Domain ──┬── Knowledge (Type/Content/Confide
             │            └── Skill (versioned; package files on filesystem)
             ├── Membership ── User
             └── Session ──┬── Agent
+                          ├── SkillsUsed (reported Skill identifiers)
                           ├── Usage (source-aware tokens by model; optional route/session bindings)
                           └── ⟶ Knowledge (distilled into)
 AppSetting (language, theme) · InferenceConfiguration ── InferenceRoute ── InferenceProvider

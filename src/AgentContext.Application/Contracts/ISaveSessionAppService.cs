@@ -2,7 +2,7 @@ using AgentContext.Application.Dtos;
 namespace AgentContext.Application.Contracts;
 
 /// <summary>
-/// Session recording service (T2): persists a reported Session with Usage
+/// Session recording service (T2): persists a reported Session with Skills and Usage
 /// attached, resolves/creates the domain tag, honours the remember flag, and
 /// exposes the recorded data for the session overview. Primary test seam.
 /// </summary>

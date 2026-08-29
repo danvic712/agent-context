@@ -27,7 +27,7 @@ Vocabulary follows the project's `CONTEXT.md` exactly: **Workspace**, **Domain**
 
 | Tool | Purpose |
 |---|---|
-| `save_session` | Report a Session: domain + structured summary + optional Usage |
+| `save_session` | Report a Session: domain + structured summary + used Skill identifiers + optional Usage |
 | `search_memory` | Retrieve Knowledge within a Domain, ranked semantically |
 | `find_similar_solution` | Reuse a recorded Solution for a problem description |
 | `get_skill` | Load a centrally-managed Skill by (domain, slug) |
@@ -57,7 +57,7 @@ decision, a reusable pattern, or a conclusion another session would benefit from
 ## How to structure a summary
 
 The quality of the summary is the quality of the Knowledge. `save_session` takes
-`task`, `conclusion`, and `keySnippets`:
+`task`, `conclusion`, `keySnippets`, and the optional `skillsUsed` list:
 
 - **`task`** — what the conversation set out to do, in one sentence. Concrete and
   verifiable: "Fix the null-ref crash on the sessions page", not "worked on stuff".
@@ -68,6 +68,9 @@ The quality of the summary is the quality of the Knowledge. `save_session` takes
 - **`keySnippets`** — 2–5 short, self-contained facts worth keeping verbatim: the exact
   config that worked, the command that unblocked you, the API shape. Not the whole
   transcript — just the fragments a future session would quote.
+- **`skillsUsed`** — Skill identifiers loaded or applied during the Session, such as
+  `tdd` or `code-review`. Report identifiers only; the platform already stores Skill
+  packages separately.
 - **Write for a stranger** — a future agent that wasn't in the conversation must be
   able to act on the summary alone. Expand acronyms the first time, name the files
   touched, and prefer concrete values over prose.
@@ -106,7 +109,7 @@ version is always what you get.
 
 ## Golden rules
 
-1. **Report** real work, structured as task/conclusion/snippets, with a domain.
+1. **Report** real work, structured as task/conclusion/snippets, with used Skill identifiers and a domain.
 2. **Search** before reinventing, and rate what you used.
 3. **Respect the privacy contract**: full context only on explicit "remember".
 4. **Never fabricate**: if the summary or search result is uncertain, say so rather

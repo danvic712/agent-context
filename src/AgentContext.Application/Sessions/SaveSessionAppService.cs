@@ -62,6 +62,7 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
             Conclusion = request.Conclusion,
             SummaryJson = JsonSerializer.Serialize(
                 new { request.Task, request.Conclusion, request.KeySnippets }, JsonOptions),
+            SkillsUsed = JsonSerializer.Serialize(request.SkillsUsed ?? [], JsonOptions),
             Status = SessionStatus.Pending,
             Remembered = request.Remembered,
             // Full original context is stored only when the user explicitly asks to remember.
@@ -145,6 +146,7 @@ public sealed class SaveSessionAppService(AgentContextDbContext db) : ISaveSessi
         s.Task,
         s.Conclusion,
         s.SummaryJson,
+        JsonSerializer.Deserialize<IReadOnlyList<string>>(s.SkillsUsed, JsonOptions) ?? [],
         s.Status.ToString(),
         s.Remembered,
         s.CreatedAtUtc,

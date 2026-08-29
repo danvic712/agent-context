@@ -26,6 +26,9 @@ public sealed class Session
     /// <summary>Structured summary payload reported by the agent (JSON document).</summary>
     public string SummaryJson { get; set; } = "{}";
 
+    /// <summary>Skill identifiers reported as used during the Session (JSON array).</summary>
+    public string SkillsUsed { get; set; } = "[]";
+
     public SessionStatus Status { get; set; } = SessionStatus.Pending;
 
     /// <summary>True when the user explicitly asked to remember the full context.</summary>

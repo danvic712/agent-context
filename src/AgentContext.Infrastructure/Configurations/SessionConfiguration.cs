@@ -18,6 +18,7 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Task).HasColumnName("task").IsRequired();
         builder.Property(s => s.Conclusion).HasColumnName("conclusion").IsRequired();
         builder.Property(s => s.SummaryJson).HasColumnName("summary_json").HasColumnType("jsonb").IsRequired();
+        builder.Property(s => s.SkillsUsed).HasColumnName("skills_used").HasColumnType("jsonb").IsRequired();
         builder.Property(s => s.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(s => s.Remembered).HasColumnName("remembered").IsRequired();
         builder.Property(s => s.FullContext).HasColumnName("full_context").HasColumnType("text");
