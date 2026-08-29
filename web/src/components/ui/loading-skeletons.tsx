@@ -71,19 +71,16 @@ export function KnowledgeListSkeleton({ label, count = 3 }: { label: string; cou
   return (
     <LoadingRegion label={label} className="ui-loading-knowledge-list">
       {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="ui-loading-knowledge-card">
-          <div className="ui-loading-knowledge-card__top">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-3.5 w-3/4" />
-              <Skeleton className="h-2.5 w-16 rounded-full" />
-            </div>
-            <Skeleton className="h-5 w-12 rounded-md" />
+        <div key={index} className="ui-loading-knowledge-row">
+          <Skeleton className="ui-loading-knowledge-row__avatar size-8 rounded-xl" />
+          <div className="ui-loading-knowledge-row__copy">
+            <Skeleton className="h-3.5 w-3/4" />
+            <Skeleton className="h-2.5 w-1/2" />
+            <Skeleton className="h-2.5 w-full" />
           </div>
-          <Skeleton className="mt-4 h-3 w-full" />
-          <Skeleton className="mt-2 h-3 w-5/6" />
-          <div className="mt-4 flex gap-2">
-            <Skeleton className="h-2.5 w-24" />
-            <Skeleton className="h-2.5 w-20" />
+          <div className="ui-loading-knowledge-row__end">
+            <Skeleton className="h-2.5 w-11" />
+            <Skeleton className="size-3.5 rounded" />
           </div>
         </div>
       ))}
@@ -96,18 +93,42 @@ export function KnowledgeDetailSkeleton({ label }: { label: string }) {
     <LoadingRegion label={label} className="ui-loading-knowledge-detail">
       <div className="ui-loading-knowledge-detail__header">
         <Skeleton className="h-2.5 w-36" />
-        <Skeleton className="mt-4 h-9 w-4/5 max-w-full" />
-        <Skeleton className="mt-3 h-5 w-20 rounded-full" />
+        <Skeleton className="mt-3 h-10 w-4/5 max-w-full" />
+        <Skeleton className="mt-3 h-3 w-3/5 max-w-full" />
+        <Skeleton className="mt-3 h-5 w-24 rounded-full" />
       </div>
-      <div className="ui-loading-knowledge-detail__body">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="mt-2 h-4 w-5/6" />
-        <Skeleton className="mt-2 h-4 w-3/5" />
-        <Skeleton className="mt-8 h-20 w-full rounded-xl" />
-        <div className="mt-8 grid grid-cols-2 gap-3">
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
+      <div className="ui-loading-knowledge-detail__grid">
+        <div className="ui-loading-knowledge-detail__main">
+          <div className="ui-loading-knowledge-detail__reader-head">
+            <Skeleton className="h-2.5 w-40" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ui-loading-knowledge-detail__body">
+            <Skeleton className="h-2.5 w-20" />
+            <Skeleton className="mt-4 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-5/6" />
+            <Skeleton className="mt-2 h-4 w-3/5" />
+            <Skeleton className="mt-8 h-20 w-full rounded-xl" />
+            <Skeleton className="mt-9 h-10 w-full rounded-xl" />
+          </div>
         </div>
+        <aside className="ui-loading-knowledge-detail__context">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-2.5 w-16" />
+          </div>
+          <div className="mt-4 border-b border-border/70 pb-4">
+            <div className="flex items-center justify-between gap-3">
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-5 w-10" />
+            </div>
+            <Skeleton className="mt-3 h-2 w-full rounded-full" />
+            <Skeleton className="mt-3 h-2.5 w-4/5" />
+          </div>
+          <Skeleton className="mt-4 h-10 w-full" />
+          <Skeleton className="mt-3 h-10 w-full" />
+          <Skeleton className="mt-3 h-10 w-full" />
+        </aside>
       </div>
     </LoadingRegion>
   )
