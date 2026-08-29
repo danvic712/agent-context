@@ -2,7 +2,7 @@
 
 Manual browser verification of the T11 localization work (issue #12): the platform
 language lives in `settings.language` (per-call resolution), all UI strings come
-from the shared `locales/{locale}/*.json` resources via react-i18next, and backend errors
+from the shared `src/AgentContext.Application/locales/{locale}/*.json` resources via react-i18next, and backend errors
 render in the configured language.
 
 ## Environment

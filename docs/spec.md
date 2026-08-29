@@ -49,7 +49,7 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 - API keys are write-only at the REST boundary: reads return only configured/masked state. Changes apply immediately without a restart; the platform scope remains global in this MVP.
 
 ### 2.9 Localization (T11)
-- Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **grouped JSON resources** shared by frontend and backend (`locales/{locale}/*.json`, ADR 0008 — no .resx, one directory per locale).
+- Platform-level language `en-US` / `zh-CN` stored in the settings table (`GET/PUT /api/settings/language`); **grouped JSON resources** shared by frontend and backend (`src/AgentContext.Application/locales/{locale}/*.json`, ADR 0008 — no .resx, one directory per locale).
 - react-i18next across all components; first-run wizard language step + settings dropdown; backend coded errors → localized `message` + stable `errorCode` (`LocalizedExceptionFilter`, REST + MCP); existing Knowledge untouched.
 
 ### 2.10 Product-grade UI + theme (T12)

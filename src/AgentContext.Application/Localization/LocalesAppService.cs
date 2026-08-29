@@ -9,7 +9,8 @@ namespace AgentContext.Application.Localization;
 /// <inheritdoc cref="ILocalesAppService"/>
 /// <summary>
 /// Loads every embedded <c>locales.*.json</c> resource (the same physical files
-/// the frontend bundles via Vite — ADR 0008) into separate per-locale resources,
+/// the frontend bundles via Vite from the Application project's <c>locales</c>
+/// folder — ADR 0008) into separate per-locale resources,
 /// then resolves dotted keys with an en-US → raw-key fallback chain.
 /// </summary>
 public sealed class LocalesAppService : ILocalesAppService

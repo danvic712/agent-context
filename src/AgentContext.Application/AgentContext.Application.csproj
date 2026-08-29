@@ -13,11 +13,11 @@
   <ItemGroup>
     <!--
       Grouped JSON localization resources (ADR 0008): the same
-      locales/{locale}/*.json files the frontend bundles via Vite are embedded
-      here for the backend (LocalesAppService loads each namespace resource).
+      locales/{locale}/*.json files shared with the frontend are embedded here
+      for the backend (LocalesAppService loads each namespace resource).
     -->
-    <EmbeddedResource Include="..\..\locales\en-US\*.json" LogicalName="locales.en-US.%(Filename).json" />
-    <EmbeddedResource Include="..\..\locales\zh-CN\*.json" LogicalName="locales.zh-CN.%(Filename).json" />
+    <EmbeddedResource Include="locales\en-US\*.json" LogicalName="locales.en-US.%(Filename).json" />
+    <EmbeddedResource Include="locales\zh-CN\*.json" LogicalName="locales.zh-CN.%(Filename).json" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,7 +2,8 @@ namespace AgentContext.Application.Contracts;
 
 /// <summary>
 /// Reads strings from the grouped JSON localization resources (ADR 0008:
-/// <c>locales/{locale}/*.json</c>, embedded at build time). Backend error messages
+/// <c>src/AgentContext.Application/locales/{locale}/*.json</c>, embedded at build
+/// time). Backend error messages
 /// and the extraction prompt resolve through this service in the configured
 /// language; a missing key falls back to en-US, then to the key itself.
 /// </summary>

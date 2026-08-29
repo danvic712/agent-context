@@ -107,7 +107,8 @@ src/AgentContext.Host/          single no-args entrypoint: Program (ASP.NET Core
                                 Observability/ (OTel), wwwroot (built UI)
 web/                            React UI (Vite + TS + shadcn/ui + react-i18next + shiki),
                                 built into the host's wwwroot
-locales/                        grouped localization (ADR 0008): one resource directory per locale
+src/AgentContext.Application/locales/
+                                grouped localization (ADR 0008): one resource directory per locale
 skills/                         default skill-package root for local dev (Skills__Directory)
 docs/                           spec, ADRs, guides, design exploration, validation records
 tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)

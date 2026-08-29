@@ -3,7 +3,7 @@ namespace AgentContext.Application.Localization;
 /// <summary>
 /// The stable error codes used by <see cref="LocalizedException"/> across the
 /// platform (T11). Each code maps to a translation key <c>errors.{code}</c> in
-/// the shared JSON resources (<c>locales/{locale}/errors.json</c>) — call sites reference these
+/// the shared JSON resources (<c>src/AgentContext.Application/locales/{locale}/errors.json</c>) — call sites reference these
 /// constants so codes never drift from the resource files.
 /// </summary>
 public static class ErrorCodes

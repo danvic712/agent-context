@@ -6,7 +6,7 @@ All user-facing strings — frontend UI text, backend error messages, and Learni
 Engine prompts — come from the shared locale resource tree:
 
 ```text
-locales/
+src/AgentContext.Application/locales/
 ├── en-US/
 │   ├── common.json
 │   ├── setup.json

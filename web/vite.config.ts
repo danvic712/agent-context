@@ -13,9 +13,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // The localization store lives at the repo root (../../locales, ADR 0008) —
-    // allow Vite to serve files outside web/ so frontend and backend read the
-    // same locale resources.
+    // The localization store lives in the Application project
+    // (../../src/AgentContext.Application/locales, ADR 0008) — allow Vite to
+    // serve files outside web/ so frontend and backend read the same resources.
     fs: { allow: ['..'] },
     proxy: {
       // Dev: the REST API runs on the ASP.NET Core host (default 8080).

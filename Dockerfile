@@ -8,8 +8,9 @@ COPY web/package*.json ./
 # re-runs skip the download (BuildKit).
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY web/ ./
-# The locale store lives at the repo root (ADR 0008); web/ imports it via ../../.
-COPY locales/ ../locales/
+# The locale store lives with the Application project (ADR 0008); web/ imports
+# it via ../../src/AgentContext.Application/locales.
+COPY src/AgentContext.Application/locales/ ../src/AgentContext.Application/locales/
 # Vite outDir is ../src/AgentContext.Host/wwwroot.
 RUN npm run build
 
@@ -19,7 +20,7 @@ WORKDIR /src
 COPY AgentContext.slnx ./
 COPY Directory.Packages.props ./
 # The localization store (ADR 0008): embedded by the Application project.
-COPY locales/ ./locales/
+COPY src/AgentContext.Application/locales/ ./src/AgentContext.Application/locales/
 COPY src/AgentContext.Domain/AgentContext.Domain.csproj src/AgentContext.Domain/
 COPY src/AgentContext.Infrastructure/AgentContext.Infrastructure.csproj src/AgentContext.Infrastructure/
 COPY src/AgentContext.Application/AgentContext.Application.csproj src/AgentContext.Application/
