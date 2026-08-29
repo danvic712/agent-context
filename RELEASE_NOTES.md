@@ -1,37 +1,42 @@
-# v0.0.2
+# v0.0.3
 
-> Released 2026-08-16 · linux/amd64 + linux/arm64
+> Released 2026-08-29 · linux/amd64 + linux/arm64
 
 ## Summary
 
-v0.0.2 is a release-hygiene + documentation release on top of the T1–T13 feature
-work shipped in v0.0.1. The image is functionally identical to v0.0.1's code but
-its multi-arch index is now clean.
+v0.0.3 is a product and platform release focused on a more usable knowledge
+workspace, versioned Skill packages, and richer session provenance. It also
+keeps the frontend and backend localization resources in one build-owned
+location so the two surfaces cannot drift apart.
 
-## Fixed
+## Highlights
 
-- **GHCR image index no longer shows an `unknown/unknown` platform.** Buildx
-  defaults to `provenance: true`, appending a SLSA attestation manifest per
-  architecture that GitHub Packages renders as a third `unknown/unknown` entry
-  alongside `linux/amd64` and `linux/arm64`. Provenance is now disabled
-  (`provenance: false`), so the index contains exactly the two real
-  architectures. Applies to this tag and all future releases.
-- **CI test flakiness.** The build workflow retries the test suite once when a
-  Testcontainers container dies mid-run (transient Npgsql connection reset),
-  instead of failing the whole pipeline on an infrastructure flake.
+- **Knowledge workspace.** The library now has a responsive browse-and-review
+  workspace with clearer Active / Review / Archived states, contextual detail,
+  and improved empty, loading, and error experiences.
+- **Skill packages.** Skills support a versioned filesystem package model with
+  library and detail views, package file browsing, Monaco editing, language
+  detection, upload and ZIP import, immutable publishing, archive downloads,
+  and deletion.
+- **Session provenance.** `save_session` accepts `skillsUsed`, and the session
+  record persists the Skill identifiers used by an agent for later inspection.
+- **Setup and inference.** First-run setup can defer provider configuration,
+  while platform inference routes and provider validation remain available from
+  the settings surface.
+- **Localization packaging.** Grouped `en-US` and `zh-CN` JSON resources now
+  live under `src/AgentContext.Application/locales/`, are embedded by the
+  backend, and are imported by the Vite frontend from the same source tree.
 
-## Documentation
+## Engineering
 
-- `README.md`, `AGENTS.md`, `docs/spec.md` and `docs/overview.md` synced to the
-  delivered state (T1–T13):
-  - Three-mode entrypoint — `--web` (REST API + UI), `--mcp-stdio` (Craft
-    Agents MCP over stdio), `--apphost` (Aspire dashboard Resources view).
-  - Compose now runs portal + Postgres(pgvector) + **Aspire dashboard**;
-    prebuilt images ship from GHCR.
-  - Skill packages (file-tree management), platform localization (en-US/zh-CN),
-    DB-persisted LLM/language/theme settings, OpenTelemetry + dashboard,
-    GitHub Actions CI/CD, and the **191/191** test baseline.
+- PostgreSQL persistence mappings and migrations use explicit lowercase
+  `snake_case` names for the application schema.
+- CI discovers and runs all test projects under `tests/`, with a retry for
+  transient Testcontainers failures.
+- Docker releases continue to publish the application image for both
+  `linux/amd64` and `linux/arm64`, with provenance disabled to keep the GHCR
+  image index limited to the real architectures.
 
 ## Images
 
-`ghcr.io/danvic712/agent-context` → `latest` + `v0.0.2` (multi-arch).
+`ghcr.io/danvic712/agent-context` → `latest` + `v0.0.3` (multi-arch).
