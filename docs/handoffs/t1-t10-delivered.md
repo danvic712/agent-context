@@ -7,7 +7,7 @@
 
 > **Historical handoff:** this snapshot predates T11–T15. For the current
 > single-entrypoint, Streamable HTTP MCP, and in-process dashboard topology, use
-> `AGENTS.md`, `docs/spec.md`, and `docs/guides/apphost-mode.md`.
+> `AGENTS.md`, `docs/spec.md`, and the user-facing [guides](../../guides/README.md).
 
 ## Status at handoff
 

@@ -14,8 +14,8 @@
   endpoint `https://danvic712.openai.azure.com/openai/v1`, Bearer auth,
   extraction model `gpt-5.6-sol`, embedding model `text-embedding-3-large`.
 - MCP source: the platform's `--mcp-stdio` registered as a local stdio source
-  in the Craft Agents workspace (`sources/agent-context/`), with `guide.md` and
-  `permissions.json` (see `docs/guides/craft-agents-source.md`).
+  in the Craft Agents workspace (`sources/agent-context/`), with `config.json` and
+  `permissions.json` (see the [current Craft Agents guide](../../guides/integrations/craft-agents.md); this validation record retains the historical stdio setup).
 
 ## What was validated (in order)
 
@@ -44,9 +44,10 @@
 5. **Feedback (AC2 →)** — `rate_knowledge(useful=true)` on the top hit raised its
    Confidence 0.584 → 0.684, persisted (the dynamic Confidence loop from T5).
 
-6. **Skill path (AC3)** — `get_skill(domain="dev", slug="craft-agents-guide")`
-   returned v1 of the guide skill from the platform registry (REST and MCP both
-   verified).
+6. **Skill path (AC3)** — the historical `get_skill(domain="dev",
+   slug="craft-agents-guide")` call returned v1 of the guide Skill from the
+   platform registry (REST and MCP both verified). The current shared package is
+   [`guides/skills/agent-context-guide/SKILL.md`](../../guides/skills/agent-context-guide/SKILL.md).
 
 ## What worked
 

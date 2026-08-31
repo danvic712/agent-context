@@ -2,11 +2,11 @@
 
 A shared context layer for AI agents — manage skills, memory, sessions, and knowledge across personal, family, and team workspaces. Self-hosted, .NET + React, MCP-first.
 
-> Canonical design docs: [`docs/spec.md`](docs/spec.md) · Terminology: [`CONTEXT.md`](CONTEXT.md) · Decisions: [`docs/adr/`](docs/adr/) · Validation history: [`docs/validation/`](docs/validation/)
+> User setup: [`guides/`](guides/) · Platform spec: [`docs/spec.md`](docs/spec.md) · Terminology: [`CONTEXT.md`](CONTEXT.md) · Decisions: [`docs/adr/`](docs/adr/) · Validation history: [`docs/validation/`](docs/validation/)
 
 ## Features
 
-- **MCP gateway** — five v1 tools over Streamable HTTP at `/mcp` for Craft Agents (`save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`) + `skill://{domain}/{slug}/{file}` resources.
+- **MCP gateway** — five v1 tools over Streamable HTTP at `/mcp` for Codex and Craft Agents (`save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`) + `skill://{domain}/{slug}/{file}` resources.
 - **Learning Engine** — a background pipeline turns agent session summaries into domain-scoped, confidence-scored Knowledge (Problem / Solution / Pattern) via a configurable OpenAI-compatible LLM endpoint; embeddings land in pgvector.
 - **Retrieval** — domain-scoped, cosine-ranked search with a Confidence threshold; conflict groups surfaced side by side.
 - **Knowledge management** — review / archive / restore, temporal decay hygiene, private markers, usage feedback (`rate_knowledge`).
@@ -33,6 +33,10 @@ Open http://localhost:8080 and the **first-run wizard** creates your admin accou
 and a Personal Workspace (language → account → optional LLM endpoint). Rerunning
 the wizard is blocked once configured.
 
+After setup, connect Codex or Craft Agents using the
+[user integration guides](guides/README.md). The local MCP URL is
+`http://localhost:8080/mcp`.
+
 Prebuilt images (`ghcr.io/danvic712/agent-context:latest`, multi-arch
 linux/amd64 + arm64) are published by the [release workflow](.github/workflows/release.yml)
 on every `v*` tag; `docker compose up -d` pulls them automatically. The local
@@ -53,7 +57,7 @@ Docker Compose starts PostgreSQL beside the application and passes it through
 All processes share one DI graph (`AddApplicationServices`).
 
 ```
-Users (React UI / Craft Agents)
+Users (React UI / Codex / Craft Agents)
           │
           ▼
 ┌──────────────────────────────────────────┐
@@ -65,6 +69,18 @@ Users (React UI / Craft Agents)
                ▼
         PostgreSQL (+ pgvector)
 ```
+
+## Skills
+
+Skills are versioned filesystem packages containing `SKILL.md`, assets, and
+scripts. The platform stores them under `Skills__Directory`, returns the latest
+package through `get_skill`, and exposes package files through
+`skill://{domain}/{slug}/{file}`.
+
+The user-facing Skill source lives under
+[`guides/skills/`](guides/skills/). The root `skills/` directory is reserved for
+local runtime data and is ignored by Git; it is not the public documentation
+directory.
 
 ## Development
 
@@ -110,7 +126,8 @@ web/                            React UI (Vite + TS + shadcn/ui + react-i18next 
 src/AgentContext.Application/locales/
                                 grouped localization (ADR 0008): one resource directory per locale
 skills/                         default skill-package root for local dev (Skills__Directory)
-docs/                           spec, ADRs, guides, design exploration, validation records
+guides/                         user-facing setup, integrations, and Skill packages
+docs/                           spec, ADRs, contributor notes, validation, and handoffs
 tests/AgentContext.Tests/       seam tests (application services vs Testcontainers pgvector)
                                 + adapter smoke tests (REST / MCP stdio / OTel / web host)
 AgentContext.slnx               solution (new XML format)
@@ -119,3 +136,13 @@ Dockerfile · docker-compose.yml ASP.NET Core image + Postgres(pgvector)
 ```
 
 Versions are centralised in `Directory.Packages.props` (CPM, transitive pinning on).
+
+## Documentation
+
+- [User guides](guides/README.md)
+- [Platform specification](docs/spec.md)
+- [Project overview](docs/overview.md)
+- [Canonical terminology](CONTEXT.md)
+- [Architecture decisions](docs/adr/)
+- [Validation records](docs/validation/)
+- [Implementation handoffs](docs/handoffs/)

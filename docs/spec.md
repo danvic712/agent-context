@@ -13,9 +13,9 @@ Agent Context is a self-hosted shared context layer for AI agents: agents report
 ## 2. Delivered Capabilities (T1–T15)
 
 ### 2.1 Integration — MCP gateway (T2, T6, T9)
-- One project, one entrypoint: no-args startup runs the ASP.NET Core host — REST API + React UI + MCP over Streamable HTTP at `/mcp`. PostgreSQL is supplied through `ConnectionStrings__Default` (ADR 0006). Craft Agents connect to the MCP toolset by URL; the legacy stdio server remains as an internal/test path.
+- One project, one entrypoint: no-args startup runs the ASP.NET Core host — REST API + React UI + MCP over Streamable HTTP at `/mcp`. PostgreSQL is supplied through `ConnectionStrings__Default` (ADR 0006). Codex and Craft Agents connect to the MCP toolset by URL; the legacy stdio path remains internal/test-only.
 - Five tools: `save_session`, `search_memory`, `find_similar_solution`, `get_skill`, `rate_knowledge`. Resources: `skill://{domain}/{slug}/{file}` (T12), `knowledge://{id}`.
-- Craft Agents integration: registered as a local stdio source + in-repo guide skill (`docs/skills/craft-agents-guide.md`, `docs/guides/craft-agents-source.md`); full-loop validated with real LLM usage (`docs/validation/t9-full-loop.md`).
+- Client integrations: Codex and Craft Agents use the user-facing URL guides (`guides/integrations/codex.md`, `guides/integrations/craft-agents.md`) and the shared Skill package (`guides/skills/agent-context-guide/SKILL.md`); the full learning loop is validated with real LLM usage (`docs/validation/t9-full-loop.md`).
 
 ### 2.2 Sessions & Usage (T2)
 - `save_session`: structured summary (task/conclusion/key snippets) + reported Skill identifiers used during the Session + explicit domain tag + optional `remember` (full context) + optional reported Usage payload (`model`, `inputTokens`, `cachedInputTokens`, `outputTokens`). Sessions land `Pending` in Postgres-as-queue (ADR 0005). Reported model snapshots are stored as supplied and are independent of platform InferenceRoute configuration.
@@ -160,8 +160,9 @@ Skill marketplace · enterprise SSO/audit · auto memory injection · git-synced
 ## 11. References
 
 - `docs/handoffs/t1-t10-delivered.md` (context bridge for implementers)
-- `docs/design/` (UI design exploration — botanical theme lineage)
-- `docs/guides/craft-agents-source.md` · `docs/skills/craft-agents-guide.md`
+- `docs/design/` (local-only UI design exploration — not a public repository surface)
+- `guides/integrations/codex.md` · `guides/integrations/craft-agents.md`
+- `guides/skills/agent-context-guide/SKILL.md`
 - `docs/validation/t9-full-loop.md` · `t11-localization-ui.md` · `t12-ui-skill-package.md` · `t12-redesign-ui.md` · `t13-otel.md`
 - `docs/adr/0010-embedded-observability-local-diagnostics.md` · `.scratch/embedded-observability/spec.md`
 - `docs/research/competitive-landscape.md` (positioning evidence)

@@ -21,7 +21,7 @@ The platform exposes five v1 tools over Streamable HTTP at `/mcp` (see the MCP r
 
 Resources: `skill://{domain}/{slug}/{file}` (sub-paths support `%2F`).
 
-Register the binary as a local Craft Agents stdio source: see [`docs/guides/craft-agents-source.md`](docs/guides/craft-agents-source.md). The in-repo guide skill lives at [`docs/skills/craft-agents-guide.md`](docs/skills/craft-agents-guide.md).
+Connect Codex or Craft Agents to the Streamable HTTP endpoint by following [`guides/integrations/codex.md`](guides/integrations/codex.md) or [`guides/integrations/craft-agents.md`](guides/integrations/craft-agents.md). The shared in-repo Skill package lives at [`guides/skills/agent-context-guide/SKILL.md`](guides/skills/agent-context-guide/SKILL.md).
 
 ## Agent skills
 
@@ -48,9 +48,10 @@ Root `CODING_STANDARDS.md` documents the repo's C# conventions (notably: interfa
 | [`docs/spec.md`](docs/spec.md) | authoritative platform spec (capabilities, ADR table, testing strategy) |
 | [`CONTEXT.md`](CONTEXT.md) | canonical terminology (Workspace, Domain, Agent, Session, Skill, Knowledge, Confidence, …) |
 | [`docs/adr/`](docs/adr/) | architecture decision records 0001–0008 |
-| [`docs/guides/`](docs/guides/) | operational guides (deployment, Craft Agents source) |
+| [`guides/`](guides/) | user-facing setup, client integrations, and Skill packages |
+| [`docs/agents/`](docs/agents/) | contributor and issue-tracker guidance |
 | [`docs/validation/`](docs/validation/) | per-ticket UI/end-to-end validation write-ups |
-| [`docs/design/`](docs/design/) | UI design exploration HTML files (botanical theme lineage) |
+| [`docs/design/`](docs/design/) | local-only UI design exploration HTML files (botanical theme lineage) |
 | [`docs/handoffs/`](docs/handoffs/) | context bridges for implementers |
 
 ## Development & testing

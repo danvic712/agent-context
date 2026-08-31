@@ -49,7 +49,7 @@ One project, one entrypoint ([ADR 0006](./adr/0006-single-project-dual-mode.md))
 running the binary with no arguments starts everything:
 
 ```
-                 Users (React UI, botanical theme)
+                 Users (React UI, Codex, Craft Agents)
                       |
         ┌─────────────┴─────────────┐
         │   AgentContext (single .NET project)   │
@@ -62,7 +62,7 @@ running the binary with no arguments starts everything:
       PostgreSQL (+ pgvector)
       (Redis deferred, ADR 0007)
                 |
-         Craft Agents (Streamable HTTP /mcp)
+         Codex / Craft Agents (Streamable HTTP /mcp)
 ```
 
 ## 5. Technology Stack
@@ -79,7 +79,7 @@ running the binary with no arguments starts everything:
 
 ### 6.1 MCP Gateway (v1 toolset)
 
-The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): the portal serves the v1 toolset over Streamable HTTP at `/mcp` — Craft Agents connect by URL.
+The MCP surface lives in the same project as the API ([ADR 0006](./adr/0006-single-project-dual-mode.md)): the portal serves the v1 toolset over Streamable HTTP at `/mcp` — Codex and Craft Agents connect by URL. See the [user guides](../guides/README.md) for client setup.
 
 Tools:
 - `save_session` — domain, structured summary, reported Skill identifiers, optional `remember` (full context), optional pre-structured knowledge
@@ -136,7 +136,7 @@ Workspace ──┬── Domain ──┬── Knowledge (confidence, source s
 
 ## 9. MVP Scope
 
-**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), Usage recording, platform localization, inference/theme/language settings, optional OTel observability, Craft Agents integration (MCP server + guide skill), one personal workspace, domain-level visibility.
+**In**: learning loop (session → knowledge → retrieval), skill packages (file-tree management + publish), Usage recording, platform localization, inference/theme/language settings, optional OTel observability, Codex and Craft Agents integration (MCP server + shared Skill), one personal workspace, domain-level visibility.
 
 **Out (no-list)**: skill marketplace, enterprise SSO/audit, auto memory injection, git-synced skills, per-item ACL, built-in chat UI, traffic proxy, SaaS hosting.
 
