@@ -1,7 +1,7 @@
 namespace AgentContext.Application.Dtos;
 
 /// <summary>Current setup state of the platform (first-run wizard gate).</summary>
-public sealed record SetupStatus(bool Configured);
+public sealed record SetupStatus(bool Configured, string? WorkspaceName = null);
 
 /// <summary>
 /// Input for the first-run wizard: account/preferences plus an optional

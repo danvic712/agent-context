@@ -15,7 +15,7 @@ import type { AccountForm } from './types'
 import './first-run-wizard.css'
 
 interface FirstRunWizardProps {
-  onComplete: () => void
+  onComplete: (workspaceName: string) => void
 }
 
 const emptyAccount: AccountForm = { displayName: '', email: '', password: '' }
@@ -95,14 +95,14 @@ export function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
     setError(null)
     setSubmitting(true)
     try {
-      await postSetup(
+      const result = await postSetup(
         account.displayName.trim(),
         account.email.trim(),
         account.password,
         language,
         inferenceSkipped ? undefined : toInferenceInput(draft),
       )
-      onComplete()
+      onComplete(result.workspaceName)
     } catch (cause) {
       completionStartedRef.current = false
       setError(getUserFacingError(cause, t('wizard.failedGeneric')))

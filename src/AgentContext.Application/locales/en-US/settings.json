@@ -1,7 +1,7 @@
 {
   "settings": {
     "pageKicker": "PLATFORM SETTINGS",
-    "pageTitle": "Platform settings",
+    "pageTitle": "Preferences",
     "pageDescription": "Manage the look and language of the platform, and choose the model services that organize your knowledge. Changes take effect right away.",
     "platformBadge": "Platform settings",
     "noRestart": "No restart required",

@@ -3,7 +3,6 @@ import { UploadIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader } from '@/components/ui/page-frame'
 import locale from '@/locale'
 import type { SkillItem } from '@/lib/api'
 
@@ -47,26 +46,18 @@ export function SkillPageHeader({ items, loading, hasMore, onUpload }: SkillPage
 
   return (
     <>
-      <PageHeader
-        eyebrow={t('skills.libraryKicker')}
-        title={t('skills.libraryTitle')}
-        description={t('skills.libraryDescription')}
-        actions={(
-          <div className="skill-library-header-actions">
-            <Badge variant="accent" className="font-mono text-[10px]">{t('skills.localOnly')}</Badge>
-            <Button type="button" size="sm" onClick={onUpload}>
-              <UploadIcon data-icon="inline-start" className="size-3.5" />
-              {t('skills.uploadSkill')}
-            </Button>
-          </div>
-        )}
-      />
-
+      <div className="skill-library-header-actions">
+        <Badge variant="accent" className="font-mono text-[10px]">{t('skills.localOnly')}</Badge>
+        <Button type="button" size="sm" onClick={onUpload}>
+          <UploadIcon data-icon="inline-start" className="size-3.5" />
+          {t('skills.uploadSkill')}
+        </Button>
+      </div>
       <section
-        className="skill-library-snapshot"
-        aria-busy={loading}
-        aria-labelledby="skill-library-snapshot-title"
-      >
+          className="skill-library-snapshot"
+          aria-busy={loading}
+          aria-labelledby="skill-library-snapshot-title"
+        >
         <div className="skill-library-snapshot__intro">
           <p className="kicker">{t('skills.snapshotKicker')}</p>
           <h2 id="skill-library-snapshot-title">{t('skills.snapshotTitle')}</h2>

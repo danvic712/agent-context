@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { EngineHealthPanel } from '@/components/engine-health'
-import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import { PageFrame } from '@/components/ui/page-frame'
 import { SectionHeading, Surface } from '@/components/ui/surface'
 import { SettingsInferenceSkeleton } from '@/components/ui/loading-skeletons'
 import { useActionFeedback } from '@/components/ui/action-feedback'
@@ -158,19 +158,6 @@ export function SettingsPage() {
   return (
     <PageFrame
       className="settings-page"
-      header={(
-        <PageHeader
-          eyebrow={t('settings.pageKicker')}
-          title={t('settings.pageTitle')}
-          description={t('settings.pageDescription')}
-          actions={(
-            <div className="settings-page__hero-meta">
-              <span className="settings-page__badge"><span className="c-dot" />{t('settings.platformBadge')}</span>
-              <span className="settings-page__badge settings-page__badge--muted">{t('settings.noRestart')}</span>
-            </div>
-          )}
-        />
-      )}
       indexClassName="settings-page__index"
       index={(
         <>

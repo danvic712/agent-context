@@ -18,7 +18,14 @@ public sealed class SetupAppService(
     public async Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         var configured = await db.Users.AnyAsync(cancellationToken);
-        return new SetupStatus(configured);
+        var workspaceName = configured
+            ? await db.Workspaces
+                .AsNoTracking()
+                .OrderBy(workspace => workspace.CreatedAtUtc)
+                .Select(workspace => workspace.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        return new SetupStatus(configured, workspaceName);
     }
 
     public async Task<SetupResult> ConfigureAsync(SetupRequest request, CancellationToken cancellationToken = default)

@@ -1,7 +1,7 @@
 {
   "settings": {
     "pageKicker": "平台设置",
-    "pageTitle": "平台设置",
+    "pageTitle": "偏好设置",
     "pageDescription": "管理平台的外观和语言，并选择用于整理知识的模型服务。更改会立即生效。",
     "platformBadge": "平台设置",
     "noRestart": "无需重启",

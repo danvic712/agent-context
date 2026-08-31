@@ -22,6 +22,7 @@ function AppContent() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const [phase, setPhase] = useState<Phase>('loading')
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null)
 
   useEffect(() => {
     // The UI language is the DB-configured platform language (T11): resolve it
@@ -30,7 +31,10 @@ function AppContent() {
       .then(({ language }) => locale.changeLanguage(language))
       .catch(() => undefined)
       .then(() => getSetupStatus())
-      .then((status) => setPhase(status.configured ? 'app' : 'setup'))
+      .then((status) => {
+        setWorkspaceName(status.workspaceName)
+        setPhase(status.configured ? 'app' : 'setup')
+      })
       .catch(() => setPhase('setup'))
   }, [])
 
@@ -39,11 +43,18 @@ function AppContent() {
     phase === 'loading' ? (
       <AppLoadingSkeleton label={t('common.loading')} />
     ) : phase === 'setup' ? (
-      isSetupPath ? <FirstRunWizard onComplete={() => setPhase('app')} /> : <Navigate to={setupPath} replace />
+      isSetupPath ? (
+        <FirstRunWizard
+          onComplete={(name) => {
+            setWorkspaceName(name)
+            setPhase('app')
+          }}
+        />
+      ) : <Navigate to={setupPath} replace />
     ) : isSetupPath ? (
       <Navigate to="/knowledge" replace />
     ) : (
-      <AppShell />
+      <AppShell workspaceName={workspaceName} />
     )
 
   return content

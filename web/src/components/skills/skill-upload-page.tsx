@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { SkillUploadForm, type SkillUploadStep } from './skill-upload-form'
 import { uploadSkill, type SkillUploadInput } from '@/lib/api'
-import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import { PageFrame } from '@/components/ui/page-frame'
 import './skills.css'
 
 const UPLOAD_STEPS: Array<{ id: SkillUploadStep; number: number; labelKey: string }> = [
@@ -27,18 +27,6 @@ export function SkillUploadPage() {
   return (
     <PageFrame
       className="skill-upload-page"
-      header={(
-        <PageHeader
-          eyebrow={t('skills.uploadKicker')}
-          title={t('skills.uploadTitle')}
-          description={t('skills.uploadDescription')}
-          actions={(
-            <Link to="/skills" className="ui-inline-action">
-              <ArrowLeftIcon className="size-3.5" />{t('skills.backToLibrary')}
-            </Link>
-          )}
-        />
-      )}
       indexClassName="skill-upload-index"
       index={(
         <nav aria-label={t('skills.uploadProgressLabel')}>
@@ -69,6 +57,11 @@ export function SkillUploadPage() {
         </nav>
       )}
     >
+      <div className="skill-upload-content-actions">
+        <Link to="/skills" className="ui-inline-action">
+          <ArrowLeftIcon className="size-3.5" />{t('skills.backToLibrary')}
+        </Link>
+      </div>
       <div className="skill-upload-workspace">
         <SkillUploadForm
           step={step}

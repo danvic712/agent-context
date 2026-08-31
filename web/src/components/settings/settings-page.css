@@ -64,7 +64,7 @@
 }
 .settings-page__section {
     min-width: 0;
-    scroll-margin-top: calc(var(--ui-topbar-height) + 18px);
+    scroll-margin-top: var(--ui-shell-index-top);
 }
 .settings-page__section-heading {
     align-items: flex-end;
@@ -155,7 +155,7 @@
 
 /* Keep the existing inference controls readable as the shared page narrows. */
 .c-readiness {
-    top: calc(var(--ui-topbar-height) + 16px);
+    top: var(--ui-shell-index-top);
 }
 .c-panel__header > :first-child {
     min-width: 0;

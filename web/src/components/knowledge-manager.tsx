@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { ActionBar, ActionBarStatus } from '@/components/ui/action-bar'
 import { useActionFeedback } from '@/components/ui/action-feedback'
-import { PageFrame, PageHeader } from '@/components/ui/page-frame'
+import { PageFrame } from '@/components/ui/page-frame'
 import { Surface } from '@/components/ui/surface'
 import { KnowledgeDetailSkeleton, KnowledgeListSkeleton } from '@/components/ui/loading-skeletons'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -240,16 +240,7 @@ export function KnowledgeManager(_props: KnowledgeManagerProps) {
   }
 
   return (
-    <PageFrame
-      className="knowledge-page"
-      header={(
-        <PageHeader
-          eyebrow={t('knowledge.libraryKicker')}
-          title={t('knowledge.libraryTitle')}
-          description={t('knowledge.libraryDescription')}
-        />
-      )}
-    >
+    <PageFrame className="knowledge-page">
       <Surface as="section" className="knowledge-library-snapshot" aria-label={t('knowledge.workspaceTitle')}>
         <div className="knowledge-library-snapshot__intro">
           <p>{t('knowledge.workspaceKicker')}</p>

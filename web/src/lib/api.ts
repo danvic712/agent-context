@@ -40,6 +40,7 @@ http.interceptors.response.use(
 
 export interface SetupStatus {
   configured: boolean
+  workspaceName: string | null
 }
 
 export interface SetupResult {

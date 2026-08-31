@@ -20,49 +20,77 @@ function LoadingRegion({ label, className, children }: LoadingRegionProps) {
 export function AppLoadingSkeleton({ label }: { label: string }) {
   return (
     <LoadingRegion label={label} className="ui-loading-app">
-      <div className="ui-loading-app__topbar">
-        <div className="ui-loading-app__topbar-inner">
-          <div className="ui-loading-app__brand">
-            <Skeleton className="size-8 rounded-[13px_17px_13px_17px]" />
-            <div className="space-y-2">
-              <Skeleton className="h-3.5 w-28" />
-              <Skeleton className="h-2 w-40" />
+      <aside className="ui-loading-app__rail" aria-hidden="true">
+        <div className="ui-loading-app__brand">
+          <Skeleton className="size-10 rounded-[14px_18px_14px_18px]" />
+          <div className="ui-loading-app__brand-copy space-y-2">
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-2 w-40" />
+          </div>
+          <Skeleton className="ui-loading-app__rail-toggle size-8 rounded-lg" />
+        </div>
+        <div className="ui-loading-app__workspace">
+          <Skeleton className="size-8 rounded-lg" />
+          <div className="ui-loading-app__workspace-copy space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-2 w-32" />
+          </div>
+          <Skeleton className="size-3.5 rounded" />
+        </div>
+        <div className="ui-loading-app__nav">
+          <Skeleton className="ui-loading-app__nav-label h-2 w-14" />
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="ui-loading-app__nav-link">
+              <Skeleton className="size-8 rounded-lg" />
+              <Skeleton className="h-3 w-20 max-w-full" />
+              <Skeleton className="size-3.5 rounded" />
+            </div>
+          ))}
+        </div>
+      </aside>
+      <main className="ui-loading-app__main">
+        <div className="ui-loading-app__topbar">
+          <div className="ui-loading-app__topbar-inner">
+            <div className="ui-loading-app__heading">
+              <Skeleton className="ui-loading-app__heading-mark w-1 rounded-full" />
+              <Skeleton className="h-9 w-44 max-w-full" />
+            </div>
+            <div className="ui-loading-app__tools">
+              <div className="ui-loading-app__engine-status">
+                <Skeleton className="size-2 rounded-full" />
+                <div className="ui-loading-app__engine-copy">
+                  <Skeleton className="h-3 w-14" />
+                  <Skeleton className="mt-1 h-2 w-28 max-w-full" />
+                </div>
+              </div>
+              <div className="ui-loading-app__preferences">
+                <Skeleton className="h-8 w-20 rounded-lg" />
+                <div className="ui-loading-app__theme-toggle">
+                  <Skeleton className="h-8 flex-1 rounded-md" />
+                  <Skeleton className="h-8 flex-1 rounded-md" />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="ui-loading-app__nav">
-            <Skeleton className="h-9 w-28 rounded-full" />
-            <Skeleton className="h-9 w-20 rounded-full" />
-            <Skeleton className="h-9 w-24 rounded-full" />
-          </div>
-          <div className="ui-loading-app__utilities">
-            <Skeleton className="h-8 w-24 rounded-full" />
-            <Skeleton className="h-8 w-16 rounded-lg" />
-            <Skeleton className="h-8 w-16 rounded-lg" />
+        </div>
+        <div className="ui-loading-app__page ui-page">
+          <div className="ui-loading-app__body">
+            <div className="ui-loading-app__sidebar">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="mt-5 h-10 w-full rounded-xl" />
+              <Skeleton className="mt-4 h-7 w-40 rounded-full" />
+              {[0, 1, 2].map((item) => <Skeleton key={item} className="mt-3 h-20 w-full rounded-xl" />)}
+            </div>
+            <div className="ui-loading-app__content">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="mt-5 h-10 w-3/5 max-w-full" />
+              <Skeleton className="mt-3 h-3.5 w-full" />
+              <Skeleton className="mt-2 h-3.5 w-4/5" />
+              <Skeleton className="mt-9 h-44 w-full rounded-2xl" />
+            </div>
           </div>
         </div>
-      </div>
-      <div className="ui-loading-app__page ui-page">
-        <div className="ui-loading-app__heading">
-          <Skeleton className="h-2.5 w-28" />
-          <Skeleton className="mt-4 h-12 w-64 max-w-full" />
-          <Skeleton className="mt-3 h-3.5 w-[min(34rem,80vw)] max-w-full" />
-        </div>
-        <div className="ui-loading-app__body">
-          <div className="ui-loading-app__sidebar">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="mt-5 h-10 w-full rounded-xl" />
-            <Skeleton className="mt-4 h-7 w-40 rounded-full" />
-            {[0, 1, 2].map((item) => <Skeleton key={item} className="mt-3 h-20 w-full rounded-xl" />)}
-          </div>
-          <div className="ui-loading-app__content">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="mt-5 h-10 w-3/5 max-w-full" />
-            <Skeleton className="mt-3 h-3.5 w-full" />
-            <Skeleton className="mt-2 h-3.5 w-4/5" />
-            <Skeleton className="mt-9 h-44 w-full rounded-2xl" />
-          </div>
-        </div>
-      </div>
+      </main>
     </LoadingRegion>
   )
 }
