@@ -62,6 +62,13 @@ wwwroot/
 # silently excluded src/AgentContext.Application/Skills/*.cs from the repo.
 /skills/
 
+# Local-only design workspace. Durable architecture, guide, validation, and
+# platform documentation remains under docs/ and is intentionally tracked.
+/docs/design/
+/docs/specs/
+/docs/ui-*-review-*.md
+/.scratch/
+
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
